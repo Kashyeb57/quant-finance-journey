@@ -84,6 +84,8 @@ const config = {
             label: 'Tutorial',
           },
           {to: '/roadmap', label: 'Roadmap', position: 'left'},
+          {to: '/books', label: 'Books', position: 'left'},
+          {to: '/resources', label: 'Resources', position: 'left'},
           {
             href: 'https://github.com/facebook/docusaurus',
             label: 'GitHub',

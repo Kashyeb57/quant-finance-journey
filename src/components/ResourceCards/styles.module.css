@@ -1,0 +1,53 @@
+/* Reusable card grid for Books / Resources pages */
+
+.wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+.intro {
+  color: var(--ifm-color-emphasis-700);
+  max-width: 720px;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.1rem;
+}
+.card {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-top: 4px solid var(--ifm-color-primary);
+  border-radius: 12px;
+  background: var(--ifm-background-surface-color);
+  padding: 1.1rem 1.25rem;
+}
+.cardTitle {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: var(--ifm-color-primary);
+}
+.group { margin-top: 0.85rem; }
+.groupName {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ifm-color-emphasis-600);
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+.list { list-style: none; margin: 0; padding: 0; }
+.item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.bullet { color: var(--ifm-color-primary); flex: 0 0 auto; }
+.item a { color: var(--ifm-color-primary); text-decoration: none; }
+.item a:hover { text-decoration: underline; }

@@ -2,6 +2,7 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import QuantRoadmap from '@site/src/components/QuantRoadmap';
+import MathDeepDive from '@site/src/components/MathDeepDive';
 
 export default function RoadmapPage() {
   return (
@@ -18,6 +19,7 @@ export default function RoadmapPage() {
       </header>
       <main>
         <QuantRoadmap />
+        <MathDeepDive />
       </main>
     </Layout>
   );
