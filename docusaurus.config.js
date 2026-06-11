@@ -77,12 +77,7 @@ const config = {
           src: 'img/logo.svg',
         },
         items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Tutorial',
-          },
+          {to: '/tutorial', label: 'Tutorial', position: 'left'},
           {to: '/roadmap', label: 'Roadmap', position: 'left'},
           {to: '/books', label: 'Books', position: 'left'},
           {to: '/resources', label: 'Resources', position: 'left'},
@@ -102,7 +97,7 @@ const config = {
             items: [
               {
                 label: 'My Notes',
-                to: '/docs/Finance/Quant_Finance_Bootcamp/Introduction/1',
+                to: '/tutorial',
               },
             ],
           },
