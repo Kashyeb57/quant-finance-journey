@@ -24,6 +24,8 @@ const SECTIONS = [
       {
         group: 'Courses',
         items: [
+          { label: 'Python Programming — Udemy (my course #1)', url: 'https://www.udemy.com/share/10b9kU3@PgZvojW1c9-iRC20napACqdDs6eJ3qcYkL1WBHteZnV2GZCz8zXBy4YD4qh7Edk2Lg==/' },
+          { label: 'Python Programming — Udemy (my course #2)', url: 'https://www.udemy.com/share/101WEE3@bufHULrZI91pZK3BjEfV9Ne_RPIGFUJD-OGm7mmRnAIKakIGN8Oy5oY39TfVCPiCOg==/' },
           { label: '100 Days of Code: Python — Udemy', url: 'https://www.udemy.com/course/100-days-of-code/' },
           { label: 'Data Structures & Algorithms in C (IBM) — edX', url: 'https://www.edx.org/learn/data-structures/ibm-data-structures-algorithms-using-c' },
           { label: 'Machine Learning A-Z — Udemy', url: 'https://www.udemy.com/course/machinelearning/' },
@@ -39,6 +41,7 @@ const SECTIONS = [
         items: [
           { label: 'Kaplan Schweser CFA Level 1 — Equity Investments, Financial Statement Analysis (Book 2), Portfolio Management (Book 4)' },
           { label: 'Financial Markets (Yale, Robert Shiller) — Coursera', url: 'https://www.coursera.org/learn/financial-markets-global' },
+          { label: 'Quant Finance Bootcamp 25 — Quant Finance Institute (my course)', url: 'https://quantfinanceinstitute.com/courses/quant-finance-bootcamp-25/' },
         ],
       },
     ],
