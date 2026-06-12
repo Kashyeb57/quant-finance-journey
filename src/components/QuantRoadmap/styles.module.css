@@ -58,11 +58,46 @@
 .resetBtn:hover { background: var(--ifm-color-emphasis-100); }
 
 /* ── Tracks ───────────────────────────────────────── */
+.tracksNote {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-600);
+  margin: 0 auto 1rem;
+  max-width: 640px;
+}
 .tracks {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1rem;
   margin-bottom: 2.5rem;
+  align-items: start;
+}
+.trackDoesLabel {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--ifm-color-emphasis-600);
+  margin: 0.8rem 0 0.35rem;
+}
+.trackDoes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8rem;
+}
+.trackDoes li {
+  position: relative;
+  padding-left: 0.95rem;
+  margin: 0.25rem 0;
+  color: var(--ifm-color-emphasis-800);
+  line-height: 1.35;
+}
+.trackDoes li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--ifm-color-primary);
 }
 .trackCard {
   border: 1px solid var(--ifm-color-emphasis-200);

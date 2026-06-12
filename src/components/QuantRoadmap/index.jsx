@@ -191,9 +191,86 @@ const DATA = {
 // across all tracks but was not gated in the source roadmap, so it is shown but
 // not counted toward track completion.
 const TRACKS = [
-  { id: 'trader', name: 'Quant Trader', req: { math: 2, cs: 2, ml: 2, prob: 3 } },
-  { id: 'dev', name: 'Quant Developer', req: { math: 2, cs: 3, ml: 3, prob: 2 } },
-  { id: 'research', name: 'Quant Researcher', req: { math: 3, cs: 3, ml: 3, prob: 3 } },
+  {
+    id: 'analyst', name: 'Quant Analyst', req: { math: 3, cs: 2, ml: 2, prob: 3 },
+    does: [
+      'Analyzes market data and prices derivatives (equity, rates, commodities, FX, credit)',
+      'Computes Greeks, implied volatility, and sensitivities for traders',
+      'Builds pricing models (Black-Scholes, Binomial, Monte Carlo, Finite Difference)',
+      'Improves model accuracy via market-data calibration',
+      'Works closely with traders, risk, and structuring teams',
+    ],
+  },
+  {
+    id: 'research', name: 'Quant Researcher', req: { math: 3, cs: 3, ml: 3, prob: 3 },
+    does: [
+      'Designs new trading models, pricing methods, and ML frameworks',
+      'Works on stochastic calculus, volatility surfaces, and HFT microstructure',
+      'Runs large-scale backtests and optimization experiments',
+      'Publishes research, white papers, and internal documentation',
+      'Collaborates with quants and PMs to turn theory into strategy',
+    ],
+  },
+  {
+    id: 'dev', name: 'Quant Developer', req: { math: 2, cs: 3, ml: 3, prob: 2 },
+    does: [
+      'Converts pricing models and trading logic into production systems',
+      'Builds low-latency engines, risk libraries, APIs, and data pipelines',
+      'Ensures accuracy, speed, and scalability of trading models in real time',
+      'Optimizes execution, caching, threading, and memory usage',
+      'Works with researchers and traders to deploy code',
+    ],
+  },
+  {
+    id: 'trader', name: 'Quant Trader', req: { math: 2, cs: 2, ml: 2, prob: 3 },
+    does: [
+      'Executes trades and manages inventory and portfolio risk',
+      'Uses Greeks, volatility, and statistical signals to size positions',
+      'Monitors order-book dynamics, spreads, and slippage continuously',
+      'Adjusts strategy based on market movements and risk limits',
+      'Works with quants to refine strategies and stress-test models',
+    ],
+  },
+  {
+    id: 'pm', name: 'Portfolio Manager', req: { math: 2, cs: 2, ml: 2, prob: 3 },
+    does: [
+      'Manages portfolios using factor models, alpha signals, and risk parity',
+      'Allocates capital based on Sharpe, drawdowns, and risk constraints',
+      'Uses optimization (Markowitz, Black-Litterman, Kelly)',
+      'Runs live strategy monitoring with execution-cost modeling',
+      'Works closely with researchers and risk teams',
+    ],
+  },
+  {
+    id: 'modelval', name: 'Model Validation Quant', req: { math: 3, cs: 2, ml: 3, prob: 3 },
+    does: [
+      'Independently checks pricing and risk models built by other quants',
+      'Performs backtesting, benchmarking, sensitivity analysis, and stress testing',
+      'Reviews documentation, assumptions, calibration, and limitations',
+      'Identifies model weaknesses and regulatory non-compliance',
+      'Signs off models used in trading, valuation, and risk reporting',
+    ],
+  },
+  {
+    id: 'marketrisk', name: 'Market Risk Quant', req: { math: 2, cs: 2, ml: 2, prob: 3 },
+    does: [
+      'Builds and monitors VaR, Expected Shortfall, stress, and volatility models',
+      'Assesses trading-desk limits and real-time PnL impact',
+      'Investigates losses and explains them to regulators and management',
+      'Designs scenario tests (2008 crisis, COVID, high-vol events)',
+      'Works with traders to control risk \u2014 but does not trade',
+    ],
+  },
+  {
+    id: 'creditrisk', name: 'Credit Risk Quant', req: { math: 2, cs: 2, ml: 3, prob: 3 },
+    does: [
+      'Builds and validates PD, LGD, and EAD models',
+      'Uses scorecards, logistic regression, survival models, and ML',
+      'Tracks default trends, credit migration, and loan exposure',
+      'Works under Basel IRB, IFRS-9, CECL, and CCAR frameworks',
+      'Used in banks, rating agencies, lending platforms, and hedge funds',
+    ],
+  },
 ];
 
 const LEVEL_LABEL = { 1: 'L1', 2: 'L2', 3: 'Mastery' };
@@ -305,6 +382,10 @@ function RoadmapInner() {
       </div>
 
       {/* Tracks */}
+      <p className={styles.tracksNote}>
+        Eight quant career tracks and what each role actually does. Level targets for the
+        newer roles are my own estimates &mdash; adjust to taste.
+      </p>
       <div className={styles.tracks}>
         {TRACKS.map((t) => {
           const tp = trackProgress(t);
@@ -334,6 +415,12 @@ function RoadmapInner() {
                     </li>
                   );
                 })}
+              </ul>
+              <div className={styles.trackDoesLabel}>What they do</div>
+              <ul className={styles.trackDoes}>
+                {t.does.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
               </ul>
             </div>
           );
