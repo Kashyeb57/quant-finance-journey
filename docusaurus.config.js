@@ -81,9 +81,10 @@ const config = {
           {to: '/roadmap', label: 'Roadmap', position: 'left'},
           {to: '/books', label: 'Books', position: 'left'},
           {to: '/resources', label: 'Resources', position: 'left'},
+          {to: '/projects', label: 'Projects', position: 'left'},
           {to: '/scope', label: 'Scope', position: 'left'},
           {
-            href: 'https://github.com/facebook/docusaurus',
+            href: 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb',
             label: 'GitHub',
             position: 'right',
           },
