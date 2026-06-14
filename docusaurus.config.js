@@ -83,6 +83,7 @@ const config = {
           {to: '/resources', label: 'Resources', position: 'left'},
           {to: '/projects', label: 'Projects', position: 'left'},
           {to: '/scope', label: 'Scope', position: 'left'},
+          {to: '/tools', label: 'Tools', position: 'left'},
           {
             href: 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb',
             label: 'GitHub',

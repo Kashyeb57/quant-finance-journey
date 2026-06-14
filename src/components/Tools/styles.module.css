@@ -1,0 +1,55 @@
+/* Tools — cards for tools/software used */
+
+.wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+.intro {
+  text-align: center;
+  color: var(--ifm-color-emphasis-700);
+  max-width: 700px;
+  margin: 0 auto 2rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.card {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-top: 4px solid var(--ifm-color-primary);
+  border-radius: 12px;
+  background: var(--ifm-background-surface-color);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+}
+.name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0 0 0.2rem;
+  color: var(--ifm-color-primary);
+}
+.category {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 0.5rem;
+}
+.desc {
+  margin: 0 0 0.9rem;
+  line-height: 1.5;
+  font-size: 0.9rem;
+  color: var(--ifm-color-emphasis-900);
+  flex: 1;
+}
+.link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+  text-decoration: none;
+}
+.link:hover { text-decoration: underline; }
