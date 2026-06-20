@@ -1,0 +1,97 @@
+/* Market Terminal — chart + news dashboard scaffold */
+
+.wrap {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 4rem;
+}
+
+/* Ticker bar */
+.tickerBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.tickerLabel {
+  font-weight: 700;
+  margin-right: 0.25rem;
+  color: var(--ifm-color-emphasis-700);
+}
+.tickerBtn {
+  font-family: var(--ifm-font-family-monospace);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 7px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-surface-color);
+  color: var(--ifm-font-color-base);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tickerBtn:hover { border-color: var(--ifm-color-primary); }
+.tickerBtnActive {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: #fff;
+}
+
+/* Two-pane layout */
+.grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1rem;
+}
+.panel {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: 12px;
+  background: var(--ifm-background-surface-color);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 460px;
+}
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.panelTicker {
+  font-family: var(--ifm-font-family-monospace);
+  color: var(--ifm-color-primary);
+}
+.panelBody {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+}
+.placeholder {
+  color: var(--ifm-color-emphasis-500);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 320px;
+}
+.placeholder strong { color: var(--ifm-color-emphasis-700); display: block; margin-bottom: 0.4rem; }
+
+.note {
+  margin-top: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--ifm-color-emphasis-600);
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  padding-top: 1rem;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .grid { grid-template-columns: 1fr; }
+  .panel { min-height: 320px; }
+}
