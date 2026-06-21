@@ -276,3 +276,10 @@
 .imp_pos { color: #22c55e; }
 .imp_neg { color: #ef4444; }
 .imp_neu { color: var(--ifm-color-emphasis-500); }
+
+/* TradingView chart fills the panel */
+.chartWrap {
+  flex: 1;
+  min-height: 460px;
+  width: 100%;
+}

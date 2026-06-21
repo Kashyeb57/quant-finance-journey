@@ -4,10 +4,19 @@ import styles from './styles.module.css';
 
 /*
  * Market Terminal.
- * Left: price chart (placeholder — wired next).  Right: live news feed.
+ * Left: live price chart (TradingView).  Right: live RSS news feed.
  */
 
 const TICKERS = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'SPY'];
+
+// TradingView symbol mapping (exchange-qualified for reliable resolution).
+const TV_SYMBOL = {
+  AAPL: 'NASDAQ:AAPL',
+  MSFT: 'NASDAQ:MSFT',
+  NVDA: 'NASDAQ:NVDA',
+  TSLA: 'NASDAQ:TSLA',
+  SPY: 'AMEX:SPY',
+};
 
 export default function Terminal() {
   const [ticker, setTicker] = useState(TICKERS[0]);
@@ -33,12 +42,12 @@ export default function Terminal() {
             <span>Price Chart</span>
             <span className={styles.panelTicker}>{ticker}</span>
           </div>
-          <div className={styles.panelBody}>
-            <div className={styles.placeholder}>
-              <strong>Chart</strong>
-              The price chart for {ticker} will render here once we wire in the data source (next step).
-            </div>
-          </div>
+          <BrowserOnly fallback={<div className={styles.panelBody}><div className={styles.placeholder}>Loading chart…</div></div>}>
+            {() => {
+              const Chart = require('./Chart').default;
+              return <Chart symbol={TV_SYMBOL[ticker] || ticker} />;
+            }}
+          </BrowserOnly>
         </div>
 
         <div className={styles.panel}>
@@ -56,7 +65,7 @@ export default function Terminal() {
       </div>
 
       <p className={styles.note}>
-        Market Terminal — news feed is live (RSS via rss2json). Chart wiring is the next piece.
+        Market Terminal — live TradingView chart (left) and live RSS news feed (right).
       </p>
     </div>
   );
