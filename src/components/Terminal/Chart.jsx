@@ -4,11 +4,11 @@ import styles from './styles.module.css';
 
 /*
  * Price chart — rendered in-page with TradingView's open-source lightweight-charts
- * library (loaded from CDN, draws into our own canvas — nothing external to block)
- * fed by keyless daily OHLC data from Stooq via the CORS proxy.
+ * library (loaded from CDN, draws into our own canvas — nothing external to block).
+ * Daily OHLC data is keyless, pulled from Yahoo Finance's chart JSON through a
+ * multi-proxy fallback chain (if one CORS proxy is throttled, it tries the next).
  */
 
-const STOOQ = { AAPL: 'aapl.us', MSFT: 'msft.us', NVDA: 'nvda.us', TSLA: 'tsla.us', SPY: 'spy.us' };
 const LIB = 'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
 
 let _libPromise = null;
@@ -26,26 +26,47 @@ function loadLib() {
   return _libPromise;
 }
 
-async function fetchCandles(stooqSym) {
+const PROXIES = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+  (u) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
+  (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`, // wraps body in {contents}
+];
+
+function ymd(sec) {
+  const d = new Date(sec * 1000);
+  return d.toISOString().slice(0, 10);
+}
+
+function parseYahoo(text) {
+  let j;
+  try { j = JSON.parse(text); } catch { return []; }
+  if (j && typeof j.contents === 'string') {
+    try { j = JSON.parse(j.contents); } catch { return []; }
+  }
+  const r = j && j.chart && j.chart.result && j.chart.result[0];
+  if (!r || !r.timestamp || !r.indicators || !r.indicators.quote) return [];
+  const ts = r.timestamp;
+  const q = r.indicators.quote[0];
+  const out = [];
+  for (let i = 0; i < ts.length; i++) {
+    const o = q.open[i], h = q.high[i], l = q.low[i], c = q.close[i];
+    if (o == null || h == null || l == null || c == null) continue;
+    out.push({ time: ymd(ts[i]), open: o, high: h, low: l, close: c });
+  }
+  return out;
+}
+
+async function fetchCandles(sym) {
   const bucket = Math.floor(Date.now() / 120000);
-  const url = `https://stooq.com/q/d/l/?s=${stooqSym}&i=d&_=${bucket}`;
-  const proxies = [
-    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-  ];
-  for (const p of proxies) {
+  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?range=1y&interval=1d&_=${bucket}`;
+  for (const p of PROXIES) {
     try {
-      const res = await fetch(p(url), { cache: 'no-store' });
+      const res = await fetch(p(target), { cache: 'no-store' });
       if (!res.ok) continue;
-      const text = await res.text();
-      const lines = text.trim().split('\n');
-      if (lines.length < 2 || !/date/i.test(lines[0])) continue;
-      const rows = lines.slice(1).map((ln) => {
-        const [date, o, h, l, c] = ln.split(',');
-        return { time: date, open: +o, high: +h, low: +l, close: +c };
-      }).filter((r) => r.time && !isNaN(r.open) && !isNaN(r.close));
-      if (rows.length) return rows.slice(-260); // ~1 trading year
-    } catch (e) { /* next proxy */ }
+      const rows = parseYahoo(await res.text());
+      if (rows.length) return rows;
+    } catch (e) { /* try next proxy */ }
   }
   return [];
 }
@@ -56,6 +77,17 @@ export default function Chart({ ticker }) {
   const seriesRef = useRef(null);
   const { colorMode } = useColorMode();
   const [status, setStatus] = useState('loading');
+
+  function load(sym) {
+    setStatus('loading');
+    fetchCandles(sym).then((rows) => {
+      if (!seriesRef.current) return;
+      if (rows.length === 0) { setStatus('error'); return; }
+      seriesRef.current.setData(rows);
+      chartRef.current.timeScale().fitContent();
+      setStatus('ok');
+    });
+  }
 
   // Create / theme the chart.
   useEffect(() => {
@@ -94,15 +126,7 @@ export default function Chart({ ticker }) {
         }
       });
       resizeObs.observe(el);
-      // trigger data load for current ticker
-      setStatus('loading');
-      fetchCandles(STOOQ[ticker] || (ticker || '').toLowerCase() + '.us').then((rows) => {
-        if (disposed || !seriesRef.current) return;
-        if (rows.length === 0) { setStatus('error'); return; }
-        seriesRef.current.setData(rows);
-        chartRef.current.timeScale().fitContent();
-        setStatus('ok');
-      });
+      load(ticker);
     }).catch(() => setStatus('error'));
 
     return () => {
@@ -113,17 +137,9 @@ export default function Chart({ ticker }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [colorMode]);
 
-  // Update data when the ticker changes (chart already exists).
+  // Reload data when the ticker changes (chart already exists).
   useEffect(() => {
-    if (!seriesRef.current) return;
-    setStatus('loading');
-    fetchCandles(STOOQ[ticker] || (ticker || '').toLowerCase() + '.us').then((rows) => {
-      if (!seriesRef.current) return;
-      if (rows.length === 0) { setStatus('error'); return; }
-      seriesRef.current.setData(rows);
-      chartRef.current.timeScale().fitContent();
-      setStatus('ok');
-    });
+    if (seriesRef.current) load(ticker);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticker]);
 
@@ -131,7 +147,7 @@ export default function Chart({ ticker }) {
     <div className={styles.chartArea}>
       {status !== 'ok' && (
         <div className={styles.chartMsg}>
-          {status === 'error' ? 'Could not load chart data.' : 'Loading chart…'}
+          {status === 'error' ? 'Could not load chart data — proxy busy, try the ↻ ticker again.' : 'Loading chart…'}
         </div>
       )}
       <div ref={wrapRef} className={styles.chartWrap} />
