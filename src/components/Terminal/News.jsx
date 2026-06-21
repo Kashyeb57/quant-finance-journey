@@ -3,8 +3,9 @@ import styles from './styles.module.css';
 
 /*
  * News feed — pulls live headlines from a curated set of financial RSS feeds
- * (sourced from the Fincept Terminal feed list) via the keyless rss2json proxy,
- * which is CORS-enabled so it works from the static site in the browser.
+ * (sourced from the Fincept Terminal feed list). RSS feeds block cross-origin
+ * browser requests, so we fetch through a raw CORS proxy and parse the XML
+ * client-side. Two proxies are tried in order for resilience.
  */
 
 const FEEDS = [
@@ -12,7 +13,7 @@ const FEEDS = [
   { name: 'CNBC Finance', source: 'CNBC', category: 'Markets', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114' },
   { name: 'Investing.com', source: 'INVESTING.COM', category: 'Markets', url: 'https://www.investing.com/rss/news.rss' },
   { name: 'Seeking Alpha', source: 'SEEKING ALPHA', category: 'Markets', url: 'https://seekingalpha.com/market_currents.xml' },
-  { name: 'BBC Business', source: 'BBC', category: 'Markets', url: 'http://feeds.bbci.co.uk/news/business/rss.xml' },
+  { name: 'BBC Business', source: 'BBC', category: 'Markets', url: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
   { name: 'CoinDesk', source: 'COINDESK', category: 'Crypto', url: 'https://www.coindesk.com/arc/outboundfeeds/rss/' },
   { name: 'CoinTelegraph', source: 'COINTELEGRAPH', category: 'Crypto', url: 'https://cointelegraph.com/rss' },
   { name: 'TechCrunch', source: 'TECHCRUNCH', category: 'Tech', url: 'https://techcrunch.com/feed/' },
@@ -21,6 +22,11 @@ const FEEDS = [
 ];
 
 const CATEGORIES = ['All', 'Markets', 'Crypto', 'Tech', 'Regulatory'];
+
+const PROXIES = [
+  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+];
 
 function timeAgo(dateStr) {
   const d = new Date(dateStr);
@@ -31,23 +37,49 @@ function timeAgo(dateStr) {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function parseFeed(xmlText, feed) {
+  const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+  if (doc.querySelector('parsererror')) return [];
+  let nodes = Array.from(doc.querySelectorAll('item'));
+  if (nodes.length === 0) nodes = Array.from(doc.querySelectorAll('entry'));
+  return nodes
+    .map((n) => {
+      const title = (n.querySelector('title')?.textContent || '').trim();
+      let link = '';
+      for (const l of Array.from(n.querySelectorAll('link'))) {
+        const href = l.getAttribute('href');
+        if (href) {
+          if (l.getAttribute('rel') !== 'self') { link = href; break; }
+          if (!link) link = href;
+        } else if (l.textContent) { link = l.textContent.trim(); break; }
+      }
+      const date =
+        n.querySelector('pubDate')?.textContent ||
+        n.querySelector('published')?.textContent ||
+        n.querySelector('updated')?.textContent ||
+        n.getElementsByTagName('dc:date')[0]?.textContent ||
+        '';
+      return { title, link: link.trim(), pubDate: date.trim(), source: feed.source, category: feed.category };
+    })
+    .filter((x) => x.title);
 }
 
 async function fetchFeed(feed) {
-  const api = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=8`;
-  const res = await fetch(api);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  if (data.status !== 'ok' || !Array.isArray(data.items)) throw new Error('bad feed');
-  return data.items.map((it) => ({
-    title: it.title,
-    link: it.link,
-    pubDate: it.pubDate,
-    source: feed.source,
-    category: feed.category,
-  }));
+  for (const proxy of PROXIES) {
+    try {
+      const res = await fetch(proxy(feed.url));
+      if (!res.ok) continue;
+      const text = await res.text();
+      const items = parseFeed(text, feed);
+      if (items.length) return items;
+    } catch (e) {
+      /* try next proxy */
+    }
+  }
+  return [];
 }
 
 export default function News() {
