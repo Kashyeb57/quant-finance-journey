@@ -116,8 +116,10 @@ function parseFeed(xmlText, feed) {
 }
 
 async function fetchFeed(feed) {
-  // Cache-bust the TARGET url so neither the browser nor the proxy serves a stale copy.
-  const bust = (feed.url.includes('?') ? '&' : '?') + '_=' + Date.now();
+  // Cache-bust per ~2-minute bucket: fresh enough to avoid day-old data, but lets the
+  // proxy reuse a cached copy within the window so we don't get rate-limited.
+  const bucket = Math.floor(Date.now() / 120000);
+  const bust = (feed.url.includes('?') ? '&' : '?') + '_=' + bucket;
   const target = feed.url + bust;
   for (const proxy of PROXIES) {
     try {
