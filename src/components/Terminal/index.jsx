@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 import styles from './styles.module.css';
 
 /*
- * Market Terminal — scaffold.
- * Layout: price chart (left) + news feed (right) for a selected ticker.
- * Data sources are wired in incrementally; for now both panels show placeholders.
+ * Market Terminal.
+ * Left: price chart (placeholder — wired next).  Right: live news feed.
  */
 
 const TICKERS = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'SPY'];
@@ -36,27 +36,27 @@ export default function Terminal() {
           <div className={styles.panelBody}>
             <div className={styles.placeholder}>
               <strong>Chart</strong>
-              The price chart for {ticker} will render here once we wire in the data source.
+              The price chart for {ticker} will render here once we wire in the data source (next step).
             </div>
           </div>
         </div>
 
         <div className={styles.panel}>
           <div className={styles.panelHead}>
-            <span>News</span>
-            <span className={styles.panelTicker}>{ticker}</span>
+            <span>Market News</span>
+            <span className={styles.panelTicker}>LIVE</span>
           </div>
-          <div className={styles.panelBody}>
-            <div className={styles.placeholder}>
-              <strong>News Feed</strong>
-              Latest headlines for {ticker} will appear here once we connect the news source.
-            </div>
-          </div>
+          <BrowserOnly fallback={<div className={styles.panelBody}><div className={styles.placeholder}>Loading news…</div></div>}>
+            {() => {
+              const News = require('./News').default;
+              return <News />;
+            }}
+          </BrowserOnly>
         </div>
       </div>
 
       <p className={styles.note}>
-        Market Terminal — work in progress. Chart and news panels are wired in one piece at a time.
+        Market Terminal — news feed is live (RSS via rss2json). Chart wiring is the next piece.
       </p>
     </div>
   );
