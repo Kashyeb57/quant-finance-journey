@@ -45,7 +45,7 @@ export default function Terminal() {
           <BrowserOnly fallback={<div className={styles.panelBody}><div className={styles.placeholder}>Loading chart…</div></div>}>
             {() => {
               const Chart = require('./Chart').default;
-              return <Chart symbol={TV_SYMBOL[ticker] || ticker} />;
+              return <Chart ticker={ticker} />;
             }}
           </BrowserOnly>
         </div>
