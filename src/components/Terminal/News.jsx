@@ -88,23 +88,42 @@ export default function News() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const load = useCallback(async (cat) => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async (cat, initial) => {
+    if (initial) {
+      setLoading(true);
+      setError(null);
+    }
     const feeds = FEEDS.filter((f) => cat === 'All' || f.category === cat);
     const results = await Promise.allSettled(feeds.map(fetchFeed));
-    const all = [];
-    for (const r of results) if (r.status === 'fulfilled') all.push(...r.value);
-    all.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-    if (all.length === 0) setError('Could not load headlines right now. Try refresh.');
-    setItems(all.slice(0, 40));
-    setLoading(false);
+    const fresh = [];
+    for (const r of results) if (r.status === 'fulfilled') fresh.push(...r.value);
+
+    // Merge fresh headlines with existing ones, de-duplicated by link (or title),
+    // newest first. On a category switch / manual refresh we start clean.
+    setItems((prev) => {
+      const base = initial ? [] : prev;
+      const seen = new Set();
+      const out = [];
+      for (const it of [...fresh, ...base]) {
+        const key = it.link || it.title;
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(it);
+      }
+      out.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+      return out.slice(0, 60);
+    });
+
+    if (initial) {
+      setLoading(false);
+      if (fresh.length === 0) setError('Could not load headlines right now. Try refresh.');
+    }
   }, []);
 
   useEffect(() => {
-    load(category);
-    // Auto-refresh every 5 seconds while the page is open.
-    const id = setInterval(() => load(category), 5 * 1000);
+    load(category, true);
+    // Auto-refresh every 5 seconds; new unique stories merge in (no duplicates, no flash).
+    const id = setInterval(() => load(category, false), 5 * 1000);
     return () => clearInterval(id);
   }, [category, load]);
 
@@ -122,7 +141,7 @@ export default function News() {
             </button>
           ))}
         </div>
-        <button className={styles.refreshBtn} onClick={() => load(category)} title="Refresh">↻</button>
+        <button className={styles.refreshBtn} onClick={() => load(category, true)} title="Refresh">↻</button>
       </div>
 
       <div className={styles.newsList}>
@@ -130,7 +149,7 @@ export default function News() {
         {error && !loading && <div className={styles.newsMsg}>{error}</div>}
         {!loading && !error &&
           items.map((it, i) => (
-            <a key={i} className={styles.newsItem} href={it.link} target="_blank" rel="noreferrer">
+            <a key={it.link || it.title || i} className={styles.newsItem} href={it.link} target="_blank" rel="noreferrer">
               <div className={styles.newsMeta}>
                 <span className={styles.newsSource}>{it.source}</span>
                 <span className={styles.newsTime}>{timeAgo(it.pubDate)}</span>
