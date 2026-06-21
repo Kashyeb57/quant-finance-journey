@@ -103,6 +103,9 @@ export default function News() {
 
   useEffect(() => {
     load(category);
+    // Auto-refresh every 5 minutes while the page is open.
+    const id = setInterval(() => load(category), 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, [category, load]);
 
   return (
