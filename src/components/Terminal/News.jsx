@@ -135,6 +135,13 @@ export default function News() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Re-render every second so the relative timestamps tick up live.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const load = useCallback(async (c, initial) => {
     if (initial) { setLoading(true); setError(null); }
     const feeds = FEEDS.filter((f) => c === 'ALL' || f.cat === c);
