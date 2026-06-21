@@ -116,9 +116,12 @@ function parseFeed(xmlText, feed) {
 }
 
 async function fetchFeed(feed) {
+  // Cache-bust the TARGET url so neither the browser nor the proxy serves a stale copy.
+  const bust = (feed.url.includes('?') ? '&' : '?') + '_=' + Date.now();
+  const target = feed.url + bust;
   for (const proxy of PROXIES) {
     try {
-      const res = await fetch(proxy(feed.url));
+      const res = await fetch(proxy(target), { cache: 'no-store' });
       if (!res.ok) continue;
       const items = parseFeed(await res.text(), feed);
       if (items.length) return items;
