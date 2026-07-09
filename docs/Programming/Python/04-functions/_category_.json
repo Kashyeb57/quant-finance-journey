@@ -1,4 +1,9 @@
 {
   "label": "4. Functions",
-  "position": 4
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "title": "4. Functions",
+    "description": "Functions, lambda, map and filter."
+  }
 }
