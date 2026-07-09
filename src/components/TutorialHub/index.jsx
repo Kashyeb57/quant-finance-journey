@@ -78,7 +78,7 @@ const FIELDS = [
     color: '#0891b2',
     blurb: 'Building it — Python, algorithms & systems.',
     topics: [
-      { label: 'Python', to: '/docs/Programming/python' },
+      { label: 'Python', to: '/docs/Programming/Python' },
       { label: 'Data Structures & Algorithms', to: '/docs/Programming/data-structures-and-algorithms' },
       { label: 'Time & Space Complexity', to: '/docs/Programming/complexity' },
       { label: 'APIs & Systems', to: '/docs/Programming/apis-and-systems' },
