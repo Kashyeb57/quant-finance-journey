@@ -60,7 +60,7 @@ print(type(height))
 
 ```python
 ## string datatype example
-name="Krish"
+name="Joyeb"
 print(name)
 print(type(name))
 ```
@@ -68,7 +68,7 @@ print(type(name))
 *Output:*
 
 ```text
-Krish
+Joyeb
 <class 'str'>
 ```
 

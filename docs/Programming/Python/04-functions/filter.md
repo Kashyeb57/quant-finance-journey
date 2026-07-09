@@ -63,7 +63,7 @@ print(even_and_greater_than_five)
 ```python
 ## Filter() to check if the age is greate than 25 in dictionaries
 people=[
-    {'name':'Krish','age':32},
+    {'name':'Joyeb','age':32},
     {'name':'Jack','age':33},
     {'name':'John','age':25}
 ]
@@ -77,7 +77,7 @@ list(filter(age_greater_than_25,people))
 *Output:*
 
 ```text
-[{'name': 'Krish', 'age': 32}, {'name': 'Jack', 'age': 33}]
+[{'name': 'Joyeb', 'age': 32}, {'name': 'Jack', 'age': 33}]
 ```
 
 ##### Conclusion

@@ -44,7 +44,7 @@ empty_dict
 ```
 
 ```python
-student={"name":"Krish","age":32,"grade":24}
+student={"name":"Joyeb","age":32,"grade":24}
 print(student)
 print(type(student))
 ```
@@ -52,13 +52,13 @@ print(type(student))
 *Output:*
 
 ```text
-{'name': 'Krish', 'age': 32, 'grade': 24}
+{'name': 'Joyeb', 'age': 32, 'grade': 24}
 <class 'dict'>
 ```
 
 ```python
 # Single key is slways used
-student={"name":"Krish","age":32,"name":24}
+student={"name":"Joyeb","age":32,"name":24}
 print(student)
 ```
 
@@ -70,14 +70,14 @@ print(student)
 
 ```python
 ## accessing Dictionary Elements
-student={"name":"Krish","age":32,"grade":'A'}
+student={"name":"Joyeb","age":32,"grade":'A'}
 print(student)
 ```
 
 *Output:*
 
 ```text
-{'name': 'Krish', 'age': 32, 'grade': 'A'}
+{'name': 'Joyeb', 'age': 32, 'grade': 'A'}
 ```
 
 ```python
@@ -110,7 +110,7 @@ print(student)
 *Output:*
 
 ```text
-{'name': 'Krish', 'age': 32, 'grade': 'A'}
+{'name': 'Joyeb', 'age': 32, 'grade': 'A'}
 ```
 
 ```python
@@ -123,8 +123,8 @@ print(student)
 *Output:*
 
 ```text
-{'name': 'Krish', 'age': 33, 'grade': 'A'}
-{'name': 'Krish', 'age': 33, 'grade': 'A', 'address': 'India'}
+{'name': 'Joyeb', 'age': 33, 'grade': 'A'}
+{'name': 'Joyeb', 'age': 33, 'grade': 'A', 'address': 'India'}
 ```
 
 ```python
@@ -136,7 +136,7 @@ print(student)
 *Output:*
 
 ```text
-{'name': 'Krish', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb', 'age': 33, 'address': 'India'}
 ```
 
 ```python
@@ -155,8 +155,8 @@ print(items)
 
 ```text
 dict_keys(['name', 'age', 'address'])
-dict_values(['Krish', 33, 'India'])
-dict_items([('name', 'Krish'), ('age', 33), ('address', 'India')])
+dict_values(['Joyeb', 33, 'India'])
+dict_items([('name', 'Joyeb'), ('age', 33), ('address', 'India')])
 ```
 
 ```python
@@ -169,12 +169,12 @@ print(student_copy)
 *Output:*
 
 ```text
-{'name': 'Krish1', 'age': 33, 'address': 'India'}
-{'name': 'Krish1', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb1', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb1', 'age': 33, 'address': 'India'}
 ```
 
 ```python
-student["name"]="Krish2"
+student["name"]="Joyeb2"
 print(student)
 print(student_copy)
 ```
@@ -182,8 +182,8 @@ print(student_copy)
 *Output:*
 
 ```text
-{'name': 'Krish2', 'age': 33, 'address': 'India'}
-{'name': 'Krish2', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb2', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb2', 'age': 33, 'address': 'India'}
 ```
 
 ```python
@@ -195,12 +195,12 @@ print(student)
 *Output:*
 
 ```text
-{'name': 'Krish2', 'age': 33, 'address': 'India'}
-{'name': 'Krish2', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb2', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb2', 'age': 33, 'address': 'India'}
 ```
 
 ```python
-student["name"]="KRish3"
+student["name"]="Joyeb3"
 print(student_copy1)
 print(student)
 ```
@@ -208,8 +208,8 @@ print(student)
 *Output:*
 
 ```text
-{'name': 'Krish2', 'age': 33, 'address': 'India'}
-{'name': 'KRish3', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb2', 'age': 33, 'address': 'India'}
+{'name': 'Joyeb3', 'age': 33, 'address': 'India'}
 ```
 
 ```python
@@ -238,7 +238,7 @@ for value in student.values():
 *Output:*
 
 ```text
-KRish3
+Joyeb3
 33
 India
 ```
@@ -252,7 +252,7 @@ for key,value in student.items():
 *Output:*
 
 ```text
-name:KRish3
+name:Joyeb3
 age:33
 address:India
 ```
@@ -260,7 +260,7 @@ address:India
 ```python
 ## Nested Disctionaries
 students={
-    "student1":{"name":"Krish","age":32},
+    "student1":{"name":"Joyeb","age":32},
     "student2":{"name":"Peter","age":35}
 }
 print(students)
@@ -269,7 +269,7 @@ print(students)
 *Output:*
 
 ```text
-{'student1': {'name': 'Krish', 'age': 32}, 'student2': {'name': 'Peter', 'age': 35}}
+{'student1': {'name': 'Joyeb', 'age': 32}, 'student2': {'name': 'Peter', 'age': 35}}
 ```
 
 ```python
@@ -292,7 +292,7 @@ students.items()
 *Output:*
 
 ```text
-dict_items([('student1', {'name': 'Krish', 'age': 32}), ('student2', {'name': 'Peter', 'age': 35})])
+dict_items([('student1', {'name': 'Joyeb', 'age': 32}), ('student2', {'name': 'Peter', 'age': 35})])
 ```
 
 ```python
@@ -306,8 +306,8 @@ for student_id,student_info in students.items():
 *Output:*
 
 ```text
-student1:{'name': 'Krish', 'age': 32}
-name:Krish
+student1:{'name': 'Joyeb', 'age': 32}
+name:Joyeb
 age:32
 student2:{'name': 'Peter', 'age': 35}
 name:Peter

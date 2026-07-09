@@ -112,7 +112,7 @@ for i in range(10,1,-2):
 ```python
 ## strings
 
-str="Krish Naik"
+str="Joyeb Kashyeb"
 
 for i in str:
     print(i)

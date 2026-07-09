@@ -148,7 +148,7 @@ print(word_frequency)
 *Output:*
 
 ```text
-{'hello': 1, 'world': 1, 'how': 1, 'are': 1, 'you': 1, 'my': 1, 'name': 1, 'is': 1, 'krish': 2}
+{'hello': 1, 'world': 1, 'how': 1, 'are': 1, 'you': 1, 'my': 1, 'name': 1, 'is': 1, 'Joyeb': 2}
 ```
 
 ##### Example 7: Validate Email Address

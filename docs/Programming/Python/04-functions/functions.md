@@ -85,39 +85,39 @@ print(result)
 def greet(name):
     print(f"Hello {name} Welcome To the paradise")
 
-greet("Krish")
+greet("Joyeb")
 ```
 
 *Output:*
 
 ```text
-Hello Krish Welcome To the paradise
+Hello Joyeb Welcome To the paradise
 ```
 
 ```python
 def greet(name="Guest"):
     print(f"Hello {name} Welcome To the paradise")
 
-greet("Krish")
+greet("Joyeb")
 ```
 
 *Output:*
 
 ```text
-Hello Krish Welcome To the paradise
+Hello Joyeb Welcome To the paradise
 ```
 
 ```python
 ### Variable Length Arguments
 ## Positional And Keywords arguments
 
-def print_numbers(*krish):
-    for number in krish:
+def print_numbers(*Joyeb):
+    for number in Joyeb:
         print(number)
 ```
 
 ```python
-print_numbers(1,2,3,4,5,6,7,8,"Krish")
+print_numbers(1,2,3,4,5,6,7,8,"Joyeb")
 ```
 
 *Output:*
@@ -131,7 +131,7 @@ print_numbers(1,2,3,4,5,6,7,8,"Krish")
 6
 7
 8
-Krish
+Joyeb
 ```
 
 ```python
@@ -142,7 +142,7 @@ def print_numbers(*args):
 ```
 
 ```python
-print_numbers(1,2,3,4,5,6,7,8,"Krish")
+print_numbers(1,2,3,4,5,6,7,8,"Joyeb")
 ```
 
 *Output:*
@@ -156,7 +156,7 @@ print_numbers(1,2,3,4,5,6,7,8,"Krish")
 6
 7
 8
-Krish
+Joyeb
 ```
 
 ```python
@@ -168,13 +168,13 @@ def print_details(**kwargs):
 ```
 
 ```python
-print_details(name="Krish",age="32",country="India")
+print_details(name="Joyeb",age="32",country="India")
 ```
 
 *Output:*
 
 ```text
-name:Krish
+name:Joyeb
 age:32
 country:India
 ```
@@ -189,7 +189,7 @@ def print_details(*args,**kwargs):
 ```
 
 ```python
-print_details(1,2,3,4,"Krish",name="Krish",age="32",country="India")
+print_details(1,2,3,4,"Joyeb",name="Joyeb",age="32",country="India")
 ```
 
 *Output:*
@@ -199,8 +199,8 @@ print_details(1,2,3,4,"Krish",name="Krish",age="32",country="India")
  Positional arument :2
  Positional arument :3
  Positional arument :4
- Positional arument :Krish
-name:Krish
+ Positional arument :Joyeb
+name:Joyeb
 age:32
 country:India
 ```

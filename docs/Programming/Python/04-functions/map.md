@@ -91,7 +91,7 @@ def get_name(person):
     return person['name']
 
 people=[
-    {'name':'Krish','age':32},
+    {'name':'Joyeb','age':32},
     {'name':'Jack','age':33}
 ]
 list(map(get_name,people))
@@ -100,7 +100,7 @@ list(map(get_name,people))
 *Output:*
 
 ```text
-['Krish', 'Jack']
+['Joyeb', 'Jack']
 ```
 
 #### Conclusion

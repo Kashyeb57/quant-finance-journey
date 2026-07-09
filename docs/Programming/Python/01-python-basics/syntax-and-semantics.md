@@ -20,8 +20,8 @@ Semantics refers to the meaning or the interpretation of the symbols, characters
 ## Basic Syntax Rules In Python
 ## Case sensitivity- Python is case sensitive
 
-name="Krish"
-Name="Naik"
+name="Joyeb"
+Name="Kashyeb"
 
 print(name)
 print(Name)
@@ -30,8 +30,8 @@ print(Name)
 *Output:*
 
 ```text
-Krish
-Naik
+Joyeb
+Kashyeb
 ```
 
 ### Indentation
@@ -99,7 +99,7 @@ print(z)
 ##Understand  Semnatics In Python
 # variable assignment
 age=32 ##age is an integer
-name="Krish" ##name is a string
+name="Joyeb" ##name is a string
 ```
 
 ```python
@@ -128,7 +128,7 @@ str
 ## Type Inference
 variable=10
 print(type(variable))
-variable="Krish"
+variable="Joyeb"
 print(type(variable))
 ```
 

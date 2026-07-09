@@ -113,8 +113,8 @@ True
 ```
 
 ```python
-str1="Krish"
-str2="Krish"
+str1="Joyeb"
+str2="Joyeb"
 
 str1==str2
 ```
@@ -137,8 +137,8 @@ False
 ```
 
 ```python
-str3="Krish"
-str4="krish"
+str3="Joyeb"
+str4="Joyeb"
 
 str3!=str4
 ```

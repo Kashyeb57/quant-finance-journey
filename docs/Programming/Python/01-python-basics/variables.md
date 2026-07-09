@@ -24,7 +24,7 @@ a=100
 
 age=32
 height=6.1
-name="Krish"
+name="Joyeb"
 is_student=True
 
 ## printing the variables
@@ -39,7 +39,7 @@ print("Name:",name)
 ```text
 age : 32
 Height: 6.1
-Name: Krish
+Name: Joyeb
 ```
 
 ```python
@@ -50,15 +50,15 @@ Name: Krish
 
 #valid variable names
 
-first_name="KRish"
-last_name="Naik"
+first_name="Joyeb"
+last_name="Kashyeb"
 ```
 
 ```python
 # Invalid variable names
 #2age=30
-#first-name="Krish"
-##@name="Krish"
+#first-name="Joyeb"
+##@name="Joyeb"
 ```
 
 *Output:*
@@ -69,8 +69,8 @@ SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='? (17109
 
 ```python
 ## case sensitivity
-name="Krish"
-Name="Naik"
+name="Joyeb"
+Name="Kashyeb"
 ```
 
 *Output:*
@@ -84,7 +84,7 @@ False
 ## Python is dynamically typed,type of a variable is determined at runtime
 age=25 #int
 height=6.1 #float
-name="KRish" #str
+name="Joyeb" #str
 is_student=True #bool
 
 print(type(name))
@@ -138,14 +138,14 @@ print(type(int(age)))
 ```
 
 ```python
-name="Krish"
+name="Joyeb"
 int(name)
 ```
 
 *Output:*
 
 ```text
-ValueError: invalid literal for int() with base 10: 'Krish'
+ValueError: invalid literal for int() with base 10: 'Joyeb'
 ```
 
 ```python

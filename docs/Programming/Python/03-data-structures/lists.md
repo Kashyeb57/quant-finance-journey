@@ -31,14 +31,14 @@ print(type(lst))
 ```
 
 ```python
-names=["Krish","Jack","Jacob",1,2,3,4,5]
+names=["Joyeb","Jack","Jacob",1,2,3,4,5]
 print(names)
 ```
 
 *Output:*
 
 ```text
-['Krish', 'Jack', 'Jacob', 1, 2, 3, 4, 5]
+['Joyeb', 'Jack', 'Jacob', 1, 2, 3, 4, 5]
 ```
 
 ```python

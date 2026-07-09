@@ -177,7 +177,7 @@ numbers *3
 lst=[1,2,3,4,5]
 print(lst)
 
-lst[1]="Krish"
+lst[1]="Joyeb"
 print(lst)
 ```
 
@@ -185,11 +185,11 @@ print(lst)
 
 ```text
 [1, 2, 3, 4, 5]
-[1, 'Krish', 3, 4, 5]
+[1, 'Joyeb', 3, 4, 5]
 ```
 
 ```python
-numbers[1]="Krish"
+numbers[1]="Joyeb"
 ```
 
 *Output:*
