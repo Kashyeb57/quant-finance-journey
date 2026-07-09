@@ -27,6 +27,13 @@ print(name)
 print(Name)
 ```
 
+*Output:*
+
+```text
+Krish
+Naik
+```
+
 ### Indentation
 Indentation in Python is used to define the structure and hierarchy of the code. Unlike many other programming languages that use braces {} to delimit blocks of code, Python uses indentation to determine the grouping of statements. This means that all the statements within a block must be indented at the same level.
 
@@ -42,9 +49,22 @@ if age>30:
 print(age)
 ```
 
+*Output:*
+
+```text
+32
+32
+```
+
 ```python
 ## This is a single line comment
 print("Hello World")
+```
+
+*Output:*
+
+```text
+Hello World
 ```
 
 ```python
@@ -57,10 +77,22 @@ total=1+2+3+4+5+6+7+\
 print(total)
 ```
 
+*Output:*
+
+```text
+43
+```
+
 ```python
 ## Multiple Statements on a single line
 x=5;y=10;z=x+y
 print(z)
+```
+
+*Output:*
+
+```text
+15
 ```
 
 ```python
@@ -76,8 +108,20 @@ name="Krish" ##name is a string
 type(age)
 ```
 
+*Output:*
+
+```text
+int
+```
+
 ```python
 type(name)
+```
+
+*Output:*
+
+```text
+str
 ```
 
 ```python
@@ -88,15 +132,34 @@ variable="Krish"
 print(type(variable))
 ```
 
+*Output:*
+
+```text
+<class 'int'>
+<class 'str'>
+```
+
 ```python
 age=32
 if age>30:
     print(age)
 ```
 
+*Output:*
+
+```text
+32
+```
+
 ```python
 ## Name Error
 a=b
+```
+
+*Output:*
+
+```text
+NameError: name 'b' is not defined
 ```
 
 ```python
@@ -107,6 +170,14 @@ if True:
         print("This ont print")
     print("This will print")
 print("Outside the if block")
+```
+
+*Output:*
+
+```text
+Correct Indentation
+This will print
+Outside the if block
 ```
 
 ### Conclusion:

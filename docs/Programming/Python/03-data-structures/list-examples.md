@@ -28,6 +28,17 @@ for task in to_do_list:
     print(f"-{task}")
 ```
 
+*Output:*
+
+```text
+Don't forgrt to pay the utility bills
+To Do List remaining
+-Buy Groceries
+-Pay bills
+-Schedule meeting
+-Go For a Run
+```
+
 ##### Example 2: Organizing Student Grades
 - Create a list to store and calculate average grades for students
 
@@ -47,6 +58,14 @@ highest_grade = max(grades)
 lowest_grade = min(grades)
 print(f"Highest Grade: {highest_grade}")
 print(f"Lowest Grade: {lowest_grade}")
+```
+
+*Output:*
+
+```text
+Average Grade: 88.00
+Highest Grade: 95
+Lowest Grade: 78
 ```
 
 ##### Example 3: Managing An Inventory
@@ -75,6 +94,17 @@ for item in inventory:
     print(f"- {item}")
 ```
 
+*Output:*
+
+```text
+oranges are in stock.
+Inventory List:
+- apples
+- oranges
+- grapes
+- strawberries
+```
+
 ##### Example 4:Collecting User Feedback
 - Use a list to collect and analyze user feedback.
 
@@ -93,4 +123,16 @@ print(f"Positive Feedback Count: {positive_feedback_count}")
 print("User Feedback:")
 for comment in feedback:
     print(f"- {comment}")
+```
+
+*Output:*
+
+```text
+Positive Feedback Count: 2
+User Feedback:
+- Great service!
+- Very satisfied
+- Could be better
+- Excellent experience
+- Not happy with the service
 ```

@@ -34,6 +34,14 @@ print("Height:",height)
 print("Name:",name)
 ```
 
+*Output:*
+
+```text
+age : 32
+Height: 6.1
+Name: Krish
+```
+
 ```python
 ## Naming Conventions
 ## Variable names should be descriptive
@@ -53,10 +61,22 @@ last_name="Naik"
 ##@name="Krish"
 ```
 
+*Output:*
+
+```text
+SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='? (1710987940.py, line 4)
+```
+
 ```python
 ## case sensitivity
 name="Krish"
 Name="Naik"
+```
+
+*Output:*
+
+```text
+False
 ```
 
 ```python
@@ -70,10 +90,22 @@ is_student=True #bool
 print(type(name))
 ```
 
+*Output:*
+
+```text
+<class 'str'>
+```
+
 ```python
 ## Type Checking and Conversion
 
 type(height)
+```
+
+*Output:*
+
+```text
+float
 ```
 
 ```python
@@ -86,9 +118,23 @@ print(age_str)
 print(type(age_str))
 ```
 
+*Output:*
+
+```text
+<class 'int'>
+25
+<class 'str'>
+```
+
 ```python
 age='25'
 print(type(int(age)))
+```
+
+*Output:*
+
+```text
+<class 'int'>
 ```
 
 ```python
@@ -96,13 +142,31 @@ name="Krish"
 int(name)
 ```
 
+*Output:*
+
+```text
+ValueError: invalid literal for int() with base 10: 'Krish'
+```
+
 ```python
 height=5.11
 type(height)
 ```
 
+*Output:*
+
+```text
+float
+```
+
 ```python
 float(int(height))
+```
+
+*Output:*
+
+```text
+5.0
 ```
 
 ```python
@@ -118,11 +182,25 @@ var=3.14
 print(var,type(var))
 ```
 
+*Output:*
+
+```text
+10 <class 'int'>
+Hello <class 'str'>
+3.14 <class 'float'>
+```
+
 ```python
 ## input
 
 age=int(input("What is the age"))
 print(age,type(age))
+```
+
+*Output:*
+
+```text
+23 <class 'int'>
 ```
 
 ```python
@@ -139,6 +217,15 @@ print("Sum:", sum)
 print("Difference:", difference)
 print("Product:", product)
 print("Quotient:", quotient)
+```
+
+*Output:*
+
+```text
+Sum: 66.0
+Difference: 46.0
+Product: 560.0
+Quotient: 5.6
 ```
 
 ### Conclusion:

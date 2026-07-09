@@ -13,16 +13,34 @@ def square(x):
 square(10)
 ```
 
+*Output:*
+
+```text
+100
+```
+
 ```python
 numbers=[1,2,3,4,5,6,7,8]
 
 list(map(square,numbers))
 ```
 
+*Output:*
+
+```text
+[1, 4, 9, 16, 25, 36, 49, 64]
+```
+
 ```python
 ## Lambda function with map
 numbers=[1,2,3,4,5,6,7,8]
 list(map(lambda x:x*x,numbers))
+```
+
+*Output:*
+
+```text
+[1, 4, 9, 16, 25, 36, 49, 64]
 ```
 
 ```python
@@ -35,6 +53,12 @@ added_numbers=list(map(lambda x,y:x+y,numbers1,numbers2))
 print(added_numbers)
 ```
 
+*Output:*
+
+```text
+[5, 7, 9]
+```
+
 ```python
 ## map() to convert a list of strings to integers
 # Use map to convert strings to integers
@@ -44,10 +68,22 @@ int_numbers = list(map(int, str_numbers))
 print(int_numbers)  # Output: [1, 2, 3, 4, 5]
 ```
 
+*Output:*
+
+```text
+[1, 2, 3, 4, 5]
+```
+
 ```python
 words=['apple','banana','cherry']
 upper_word=list(map(str.upper,words))
 print(upper_word)
+```
+
+*Output:*
+
+```text
+['APPLE', 'BANANA', 'CHERRY']
 ```
 
 ```python
@@ -59,6 +95,12 @@ people=[
     {'name':'Jack','age':33}
 ]
 list(map(get_name,people))
+```
+
+*Output:*
+
+```text
+['Krish', 'Jack']
 ```
 
 #### Conclusion

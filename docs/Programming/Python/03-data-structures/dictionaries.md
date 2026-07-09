@@ -26,9 +26,21 @@ empty_dict={}
 print(type(empty_dict))
 ```
 
+*Output:*
+
+```text
+<class 'dict'>
+```
+
 ```python
 empty_dict=dict()
 empty_dict
+```
+
+*Output:*
+
+```text
+{}
 ```
 
 ```python
@@ -37,16 +49,35 @@ print(student)
 print(type(student))
 ```
 
+*Output:*
+
+```text
+{'name': 'Krish', 'age': 32, 'grade': 24}
+<class 'dict'>
+```
+
 ```python
 # Single key is slways used
 student={"name":"Krish","age":32,"name":24}
 print(student)
 ```
 
+*Output:*
+
+```text
+{'name': 24, 'age': 32}
+```
+
 ```python
 ## accessing Dictionary Elements
 student={"name":"Krish","age":32,"grade":'A'}
 print(student)
+```
+
+*Output:*
+
+```text
+{'name': 'Krish', 'age': 32, 'grade': 'A'}
 ```
 
 ```python
@@ -60,10 +91,26 @@ print(student.get('last_name'))
 print(student.get('last_name',"Not Available"))
 ```
 
+*Output:*
+
+```text
+A
+32
+A
+None
+Not Available
+```
+
 ```python
 ## Modifying Dicitonary Elements
 ## Dictionary are mutable,so you can add, update or delete elements
 print(student)
+```
+
+*Output:*
+
+```text
+{'name': 'Krish', 'age': 32, 'grade': 'A'}
 ```
 
 ```python
@@ -73,10 +120,23 @@ student["address"]="India" ## added a new key and value
 print(student)
 ```
 
+*Output:*
+
+```text
+{'name': 'Krish', 'age': 33, 'grade': 'A'}
+{'name': 'Krish', 'age': 33, 'grade': 'A', 'address': 'India'}
+```
+
 ```python
 del student['grade'] ## delete key and value pair
 
 print(student)
+```
+
+*Output:*
+
+```text
+{'name': 'Krish', 'age': 33, 'address': 'India'}
 ```
 
 ```python
@@ -91,11 +151,26 @@ items=student.items() ##get all key value pairs
 print(items)
 ```
 
+*Output:*
+
+```text
+dict_keys(['name', 'age', 'address'])
+dict_values(['Krish', 33, 'India'])
+dict_items([('name', 'Krish'), ('age', 33), ('address', 'India')])
+```
+
 ```python
 ## shallow copy
 student_copy=student
 print(student)
 print(student_copy)
+```
+
+*Output:*
+
+```text
+{'name': 'Krish1', 'age': 33, 'address': 'India'}
+{'name': 'Krish1', 'age': 33, 'address': 'India'}
 ```
 
 ```python
@@ -104,16 +179,37 @@ print(student)
 print(student_copy)
 ```
 
+*Output:*
+
+```text
+{'name': 'Krish2', 'age': 33, 'address': 'India'}
+{'name': 'Krish2', 'age': 33, 'address': 'India'}
+```
+
 ```python
 student_copy1=student.copy() ## shallow copy
 print(student_copy1)
 print(student)
 ```
 
+*Output:*
+
+```text
+{'name': 'Krish2', 'age': 33, 'address': 'India'}
+{'name': 'Krish2', 'age': 33, 'address': 'India'}
+```
+
 ```python
 student["name"]="KRish3"
 print(student_copy1)
 print(student)
+```
+
+*Output:*
+
+```text
+{'name': 'Krish2', 'age': 33, 'address': 'India'}
+{'name': 'KRish3', 'age': 33, 'address': 'India'}
 ```
 
 ```python
@@ -125,16 +221,40 @@ for keys in student.keys():
     print(keys)
 ```
 
+*Output:*
+
+```text
+name
+age
+address
+```
+
 ```python
 ## Iterate over values
 for value in student.values():
     print(value)
 ```
 
+*Output:*
+
+```text
+KRish3
+33
+India
+```
+
 ```python
 ## Iterate over key value pairs
 for key,value in student.items():
     print(f"{key}:{value}")
+```
+
+*Output:*
+
+```text
+name:KRish3
+age:33
+address:India
 ```
 
 ```python
@@ -146,14 +266,33 @@ students={
 print(students)
 ```
 
+*Output:*
+
+```text
+{'student1': {'name': 'Krish', 'age': 32}, 'student2': {'name': 'Peter', 'age': 35}}
+```
+
 ```python
 ## Access nested dictionaries elementss
 print(students["student2"]["name"])
 print(students["student2"]["age"])
 ```
 
+*Output:*
+
+```text
+Peter
+35
+```
+
 ```python
 students.items()
+```
+
+*Output:*
+
+```text
+dict_items([('student1', {'name': 'Krish', 'age': 32}), ('student2', {'name': 'Peter', 'age': 35})])
 ```
 
 ```python
@@ -164,16 +303,39 @@ for student_id,student_info in students.items():
         print(f"{key}:{value}")
 ```
 
+*Output:*
+
+```text
+student1:{'name': 'Krish', 'age': 32}
+name:Krish
+age:32
+student2:{'name': 'Peter', 'age': 35}
+name:Peter
+age:35
+```
+
 ```python
 ## Dictionary Comphrehension
 squares={x:x**2 for x in range(5)}
 print(squares)
 ```
 
+*Output:*
+
+```text
+{0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
+```
+
 ```python
 ## Condition dictionary comprehension
 evens={x:x**2 for x in range(10) if x%2==0}
 print(evens)
+```
+
+*Output:*
+
+```text
+{0: 0, 2: 4, 4: 16, 6: 36, 8: 64}
 ```
 
 ```python
@@ -192,6 +354,12 @@ for number in numbers:
 print(frequency)
 ```
 
+*Output:*
+
+```text
+{1: 1, 2: 2, 3: 3, 4: 4}
+```
+
 ```python
 ## Merge 2 dictionaries into one
 
@@ -199,6 +367,12 @@ dict1={"a":1,"b":2}
 dict2={"b":3,"c":4}
 merged_dict={**dict1,**dict2}
 print(merged_dict)
+```
+
+*Output:*
+
+```text
+{'a': 1, 'b': 3, 'c': 4}
 ```
 
 #### Conclusion

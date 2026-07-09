@@ -21,6 +21,13 @@ print(convert_temperature(25,'C'))
 print(convert_temperature(77,'F'))
 ```
 
+*Output:*
+
+```text
+77.0
+25.0
+```
+
 ##### Example 2: Password Strength Checker
 
 ```python
@@ -43,6 +50,13 @@ print(is_strong_password("WeakPwd"))
 print(is_strong_password("Str0ngPwd!"))
     
     
+```
+
+*Output:*
+
+```text
+False
+True
 ```
 
 ##### Example 3: Calculate the Total Cost Of Items In a Shopping Cart
@@ -70,6 +84,12 @@ total_cost=calculate_total_cost(cart)
 print(total_cost)
 ```
 
+*Output:*
+
+```text
+5.8999999999999995
+```
+
 ##### Example 4: Check IF a String Is Palindrome
 
 ```python
@@ -79,6 +99,13 @@ def is_palindrome(s):
 
 print(is_palindrome("A man a plan a canal Panama"))
 print(is_palindrome("Hello"))
+```
+
+*Output:*
+
+```text
+True
+False
 ```
 
 ##### Example 5: Calculate the factorials of a number using recursion
@@ -91,6 +118,12 @@ def factorial(n):
         return n * factorial(n-1)
     
 print(factorial(6))
+```
+
+*Output:*
+
+```text
+720
 ```
 
 ##### Example 6: A Function To Read A File and count the frequency of each word
@@ -112,6 +145,12 @@ word_frequency=count_word_frequency(filepath)
 print(word_frequency)
 ```
 
+*Output:*
+
+```text
+{'hello': 1, 'world': 1, 'how': 1, 'are': 1, 'you': 1, 'my': 1, 'name': 1, 'is': 1, 'krish': 2}
+```
+
 ##### Example 7: Validate Email Address
 
 ```python
@@ -126,4 +165,11 @@ def is_valid_email(email):
 # Calling the function
 print(is_valid_email("test@example.com"))  # Output: True
 print(is_valid_email("invalid-email"))  # Output: False
+```
+
+*Output:*
+
+```text
+True
+False
 ```

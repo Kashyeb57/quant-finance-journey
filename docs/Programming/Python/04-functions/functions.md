@@ -36,6 +36,12 @@ else:
     print("the number is odd")
 ```
 
+*Output:*
+
+```text
+the number is even
+```
+
 ```python
 def even_or_odd(num):
     """This function finds even or odd"""
@@ -50,6 +56,12 @@ def even_or_odd(num):
 even_or_odd(24)
 ```
 
+*Output:*
+
+```text
+the number is even
+```
+
 ```python
 ## function with multiple parameters
 
@@ -61,6 +73,12 @@ print(result)
     
 ```
 
+*Output:*
+
+```text
+6
+```
+
 ```python
 ## Default Parameters
 
@@ -70,11 +88,23 @@ def greet(name):
 greet("Krish")
 ```
 
+*Output:*
+
+```text
+Hello Krish Welcome To the paradise
+```
+
 ```python
 def greet(name="Guest"):
     print(f"Hello {name} Welcome To the paradise")
 
 greet("Krish")
+```
+
+*Output:*
+
+```text
+Hello Krish Welcome To the paradise
 ```
 
 ```python
@@ -90,6 +120,20 @@ def print_numbers(*krish):
 print_numbers(1,2,3,4,5,6,7,8,"Krish")
 ```
 
+*Output:*
+
+```text
+1
+2
+3
+4
+5
+6
+7
+8
+Krish
+```
+
 ```python
 ## Positional arguments
 def print_numbers(*args):
@@ -99,6 +143,20 @@ def print_numbers(*args):
 
 ```python
 print_numbers(1,2,3,4,5,6,7,8,"Krish")
+```
+
+*Output:*
+
+```text
+1
+2
+3
+4
+5
+6
+7
+8
+Krish
 ```
 
 ```python
@@ -111,6 +169,14 @@ def print_details(**kwargs):
 
 ```python
 print_details(name="Krish",age="32",country="India")
+```
+
+*Output:*
+
+```text
+name:Krish
+age:32
+country:India
 ```
 
 ```python
@@ -126,6 +192,19 @@ def print_details(*args,**kwargs):
 print_details(1,2,3,4,"Krish",name="Krish",age="32",country="India")
 ```
 
+*Output:*
+
+```text
+ Positional arument :1
+ Positional arument :2
+ Positional arument :3
+ Positional arument :4
+ Positional arument :Krish
+name:Krish
+age:32
+country:India
+```
+
 ```python
 ### Return statements
 def multiply(a,b):
@@ -134,10 +213,22 @@ def multiply(a,b):
 multiply(2,3)
 ```
 
+*Output:*
+
+```text
+6
+```
+
 ```python
 ### Return multiple parameters
 def multiply(a,b):
     return a*b,a
 
 multiply(2,3)
+```
+
+*Output:*
+
+```text
+(6, 2)
 ```

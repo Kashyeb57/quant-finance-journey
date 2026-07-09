@@ -16,10 +16,22 @@ def even(num):
 even(24)
 ```
 
+*Output:*
+
+```text
+True
+```
+
 ```python
 lst=[1,2,3,4,5,6,7,8,9,10,11,12]
 
 list(filter(even,lst))
+```
+
+*Output:*
+
+```text
+[2, 4, 6, 8, 10, 12]
 ```
 
 ```python
@@ -29,11 +41,23 @@ greater_than_five=list(filter(lambda x:x>5,numbers))
 print(greater_than_five)
 ```
 
+*Output:*
+
+```text
+[6, 7, 8, 9]
+```
+
 ```python
 ## Filter with a lambda function and multiple conditions
 numbers=[1,2,3,4,5,6,7,8,9]
 even_and_greater_than_five=list(filter(lambda x:x>5 and x%2==0,numbers))
 print(even_and_greater_than_five)
+```
+
+*Output:*
+
+```text
+[6, 8]
 ```
 
 ```python
@@ -48,6 +72,12 @@ def age_greater_than_25(person):
     return person['age']>25
 
 list(filter(age_greater_than_25,people))
+```
+
+*Output:*
+
+```text
+[{'name': 'Krish', 'age': 32}, {'name': 'Jack', 'age': 33}]
 ```
 
 ##### Conclusion

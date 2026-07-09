@@ -21,8 +21,20 @@ if age>=18:
     print("You are allowed to vote in the elections")
 ```
 
+*Output:*
+
+```text
+You are allowed to vote in the elections
+```
+
 ```python
 age>=18
+```
+
+*Output:*
+
+```text
+True
 ```
 
 ```python
@@ -37,6 +49,12 @@ else:
     print("You are a minor")
 ```
 
+*Output:*
+
+```text
+You are a minor
+```
+
 ```python
 ## elif
 ## The elif statement allows you to check multiple conditions. It stands for "else if"
@@ -49,6 +67,12 @@ elif age<18:
     print("You are a teenager")
 else:
     print("You are an adult")
+```
+
+*Output:*
+
+```text
+You are a teenager
 ```
 
 ```python
@@ -71,6 +95,12 @@ else:
     print("The number is zero or negative")
 ```
 
+*Output:*
+
+```text
+The number is zero or negative
+```
+
 ```python
 ## Practical Examples
 
@@ -89,6 +119,12 @@ if year%4==0:
 
 else:
     print(year,"is not a leap year")
+```
+
+*Output:*
+
+```text
+2024 is a leap year
 ```
 
 ```python
@@ -115,6 +151,12 @@ else:
     result = "Invalid operation."
 
 print("Result:", result)
+```
+
+*Output:*
+
+```text
+Result: 36.0
 ```
 
 ```python
@@ -204,4 +246,10 @@ if username == stored_username:
         print("Incorrect password.")
 else:
     print("Username not found.")
+```
+
+*Output:*
+
+```text
+Username not found.
 ```

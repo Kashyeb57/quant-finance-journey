@@ -53,16 +53,46 @@ print(modulus_result)
 print(exponent_result)
 ```
 
+*Output:*
+
+```text
+15
+5
+50
+2.0
+2
+0
+100000
+```
+
 ```python
 10/5
+```
+
+*Output:*
+
+```text
+2.0
 ```
 
 ```python
 21/5
 ```
 
+*Output:*
+
+```text
+4.2
+```
+
 ```python
 21//5
+```
+
+*Output:*
+
+```text
+4
 ```
 
 #### Comparison Operators
@@ -76,6 +106,12 @@ b=10
 a==b
 ```
 
+*Output:*
+
+```text
+True
+```
+
 ```python
 str1="Krish"
 str2="Krish"
@@ -83,9 +119,21 @@ str2="Krish"
 str1==str2
 ```
 
+*Output:*
+
+```text
+True
+```
+
 ```python
 ## Not Equal to !=
 str1!=str2
+```
+
+*Output:*
+
+```text
+False
 ```
 
 ```python
@@ -93,6 +141,12 @@ str3="Krish"
 str4="krish"
 
 str3!=str4
+```
+
+*Output:*
+
+```text
+True
 ```
 
 ```python
@@ -104,10 +158,22 @@ num2=55
 num1>num2
 ```
 
+*Output:*
+
+```text
+False
+```
+
 ```python
 ## less than <
 
 print(num1<num2)
+```
+
+*Output:*
+
+```text
+True
 ```
 
 ```python
@@ -118,12 +184,24 @@ number2=45
 print(number1>=number2)
 ```
 
+*Output:*
+
+```text
+True
+```
+
 ```python
 #less than or equal to
 number1=44
 number2=45
 
 print(number1<=number2)
+```
+
+*Output:*
+
+```text
+True
 ```
 
 #### Logical Operators
@@ -137,12 +215,24 @@ result =X and Y
 print(result)
 ```
 
+*Output:*
+
+```text
+True
+```
+
 ```python
 X=False
 Y=True
 
 result =X and Y
 print(result)
+```
+
+*Output:*
+
+```text
+False
 ```
 
 ```python
@@ -154,10 +244,22 @@ result =X or Y
 print(result)
 ```
 
+*Output:*
+
+```text
+False
+```
+
 ```python
 # Not operator
 X=False
 not X
+```
+
+*Output:*
+
+```text
+True
 ```
 
 ```python
@@ -184,4 +286,16 @@ print("Division:", division)
 print("Floor Division:", floor_division)
 print("Modulus:", modulus)
 print("Exponentiation:", exponentiation)
+```
+
+*Output:*
+
+```text
+Addition: 16.0
+Subtraction: 8.0
+Multiplication: 48.0
+Division: 3.0
+Floor Division: 3.0
+Modulus: 0.0
+Exponentiation: 20736.0
 ```

@@ -13,9 +13,22 @@ print(my_set)
 print(type(my_set))
 ```
 
+*Output:*
+
+```text
+{1, 2, 3, 4, 5}
+<class 'set'>
+```
+
 ```python
 my_empty_set=set()
 print(type(my_empty_set))
+```
+
+*Output:*
+
+```text
+<class 'set'>
 ```
 
 ```python
@@ -23,9 +36,21 @@ my_set=set([1,2,3,4,5,6])
 print(my_set)
 ```
 
+*Output:*
+
+```text
+{1, 2, 3, 4, 5, 6}
+```
+
 ```python
 my_empty_set=set([1,2,3,6,5,4,5,6])
 print(my_empty_set)
+```
+
+*Output:*
+
+```text
+{1, 2, 3, 4, 5, 6}
 ```
 
 ```python
@@ -37,19 +62,44 @@ my_set.add(7)
 print(my_set)
 ```
 
+*Output:*
+
+```text
+{1, 2, 3, 4, 5, 6, 7}
+{1, 2, 3, 4, 5, 6, 7}
+```
+
 ```python
 ## Remove the elements from a set
 my_set.remove(3)
 print(my_set)
 ```
 
+*Output:*
+
+```text
+{1, 2, 4, 5, 6, 7}
+```
+
 ```python
 my_set.remove(10)
+```
+
+*Output:*
+
+```text
+KeyError: 10
 ```
 
 ```python
 my_set.discard(11)
 print(my_set)
+```
+
+*Output:*
+
+```text
+{1, 2, 4, 5, 6, 7}
 ```
 
 ```python
@@ -59,10 +109,23 @@ print(removed_element)
 print(my_set)
 ```
 
+*Output:*
+
+```text
+1
+{2, 4, 5, 6, 7}
+```
+
 ```python
 ## clear all the elements
 my_set.clear()
 print(my_set)
+```
+
+*Output:*
+
+```text
+set()
 ```
 
 ```python
@@ -70,6 +133,13 @@ print(my_set)
 my_set={1,2,3,4,5}
 print(3 in my_set)
 print(10 in my_set)
+```
+
+*Output:*
+
+```text
+True
+False
 ```
 
 ```python
@@ -89,6 +159,14 @@ set1.intersection_update(set2)
 print(set1)
 ```
 
+*Output:*
+
+```text
+{1, 2, 3, 4, 5, 6, 7, 8, 9}
+{4, 5, 6}
+{4, 5, 6}
+```
+
 ```python
 set1={1,2,3,4,5,6}
 set2={4,5,6,7,8,9}
@@ -97,17 +175,41 @@ set2={4,5,6,7,8,9}
 print(set1.difference(set2))
 ```
 
+*Output:*
+
+```text
+{1, 2, 3}
+```
+
 ```python
 set1
+```
+
+*Output:*
+
+```text
+{1, 2, 3, 4, 5, 6}
 ```
 
 ```python
 set2.difference(set1)
 ```
 
+*Output:*
+
+```text
+{7, 8, 9}
+```
+
 ```python
 ## Symmetric Difference
 set1.symmetric_difference(set2)
+```
+
+*Output:*
+
+```text
+{1, 2, 3, 7, 8, 9}
 ```
 
 ```python
@@ -121,10 +223,23 @@ print(set1.issubset(set2))
 print(set1.issuperset(set2))
 ```
 
+*Output:*
+
+```text
+False
+True
+```
+
 ```python
 lst=[1,2,2,3,4,4,5]
 
 set(lst)
+```
+
+*Output:*
+
+```text
+{1, 2, 3, 4, 5}
 ```
 
 ```python
@@ -138,6 +253,13 @@ words=text.split()
 unique_words=set(words)
 print(unique_words)
 print(len(unique_words))
+```
+
+*Output:*
+
+```text
+{'tutorial', 'we', 'discussing', 'this', 'In', 'about', 'sets', 'are'}
+8
 ```
 
 #### Conclusion

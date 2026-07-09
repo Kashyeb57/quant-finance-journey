@@ -22,6 +22,12 @@ Video Outline:
 range(5)
 ```
 
+*Output:*
+
+```text
+range(0, 5)
+```
+
 ```python
 ## for loop
 
@@ -29,9 +35,29 @@ for i in range(5):
     print(i)
 ```
 
+*Output:*
+
+```text
+0
+1
+2
+3
+4
+```
+
 ```python
 for i in range(1,6):
     print(i)
+```
+
+*Output:*
+
+```text
+1
+2
+3
+4
+5
 ```
 
 ```python
@@ -39,14 +65,48 @@ for i in range(1,10,2):
     print(i)
 ```
 
+*Output:*
+
+```text
+1
+3
+5
+7
+9
+```
+
 ```python
 for i in range(10,1,-1):
     print(i)
 ```
 
+*Output:*
+
+```text
+10
+9
+8
+7
+6
+5
+4
+3
+2
+```
+
 ```python
 for i in range(10,1,-2):
     print(i)
+```
+
+*Output:*
+
+```text
+10
+8
+6
+4
+2
 ```
 
 ```python
@@ -56,6 +116,21 @@ str="Krish Naik"
 
 for i in str:
     print(i)
+```
+
+*Output:*
+
+```text
+K
+r
+i
+s
+h
+ 
+N
+a
+i
+k
 ```
 
 ```python
@@ -68,6 +143,16 @@ count=0
 while count<5:
     print(count)
     count=count+1
+```
+
+*Output:*
+
+```text
+0
+1
+2
+3
+4
 ```
 
 ```python
@@ -85,6 +170,16 @@ for i in range(10):
    
 ```
 
+*Output:*
+
+```text
+0
+1
+2
+3
+4
+```
+
 ```python
 ## continue
 
@@ -94,6 +189,16 @@ for i in range(10):
     if i%2==0:
         continue
     print(i)
+```
+
+*Output:*
+
+```text
+1
+3
+5
+7
+9
 ```
 
 ```python
@@ -106,6 +211,16 @@ for i in range(5):
     print(i)
 ```
 
+*Output:*
+
+```text
+0
+1
+2
+3
+4
+```
+
 ```python
 ## Nested loopss
 ## a loop inside a loop
@@ -113,6 +228,17 @@ for i in range(5):
 for i in range(3):
     for j in range(2):
         print(f"i:{i} and j:{j}")
+```
+
+*Output:*
+
+```text
+i:0 and j:0
+i:0 and j:1
+i:1 and j:0
+i:1 and j:1
+i:2 and j:0
+i:2 and j:1
 ```
 
 ```python
@@ -131,6 +257,12 @@ while count<=n:
 print("Sum of first 10 natural number:",sum)
 ```
 
+*Output:*
+
+```text
+Sum of first 10 natural number: 55
+```
+
 ```python
 n=10   
 sum=0
@@ -138,6 +270,12 @@ for i in range(11):
     sum=sum+i
 
 print(sum)
+```
+
+*Output:*
+
+```text
+55
 ```
 
 ```python
@@ -150,6 +288,36 @@ for num in range(1,101):
                 break
         else:
             print(num)
+```
+
+*Output:*
+
+```text
+2
+3
+5
+7
+11
+13
+17
+19
+23
+29
+31
+37
+41
+43
+47
+53
+59
+61
+67
+71
+73
+79
+83
+89
+97
 ```
 
 #### Conclusion:

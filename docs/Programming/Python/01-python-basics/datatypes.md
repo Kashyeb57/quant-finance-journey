@@ -38,11 +38,24 @@ age=35
 type(age)
 ```
 
+*Output:*
+
+```text
+int
+```
+
 ```python
 ##floating point datatype
 height=5.11
 print(height)
 print(type(height))
+```
+
+*Output:*
+
+```text
+5.11
+<class 'float'>
 ```
 
 ```python
@@ -52,10 +65,23 @@ print(name)
 print(type(name))
 ```
 
+*Output:*
+
+```text
+Krish
+<class 'str'>
+```
+
 ```python
 ## boolean datatype
 is_true=True
 type(is_true)
+```
+
+*Output:*
+
+```text
+bool
 ```
 
 ```python
@@ -65,6 +91,12 @@ b=10
 type(a==b)
 ```
 
+*Output:*
+
+```text
+bool
+```
+
 ```python
 ## common errors
 
@@ -72,7 +104,19 @@ result="Hello" + 5
  
 ```
 
+*Output:*
+
+```text
+TypeError: can only concatenate str (not "int") to str
+```
+
 ```python
 result="Hello" + str(5)
 print(result)
+```
+
+*Output:*
+
+```text
+Hello5
 ```

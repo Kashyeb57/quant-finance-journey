@@ -24,14 +24,32 @@ lst=[]
 print(type(lst))
 ```
 
+*Output:*
+
+```text
+<class 'list'>
+```
+
 ```python
 names=["Krish","Jack","Jacob",1,2,3,4,5]
 print(names)
 ```
 
+*Output:*
+
+```text
+['Krish', 'Jack', 'Jacob', 1, 2, 3, 4, 5]
+```
+
 ```python
 mixed_list=[1,"Hello",3.14,True]
 print(mixed_list)
+```
+
+*Output:*
+
+```text
+[1, 'Hello', 3.14, True]
 ```
 
 ```python
@@ -47,9 +65,25 @@ print(fruits[4])
 print(fruits[-1])
 ```
 
+*Output:*
+
+```text
+apple
+cherry
+gauva
+gauva
+```
+
 ```python
 print(fruits[1:])
 print(fruits[1:3])
+```
+
+*Output:*
+
+```text
+['banana', 'cherry', 'kiwi', 'gauva']
+['banana', 'cherry']
 ```
 
 ```python
@@ -57,9 +91,21 @@ print(fruits[1:3])
 fruits
 ```
 
+*Output:*
+
+```text
+['apple', 'banana', 'cherry', 'kiwi', 'gauva']
+```
+
 ```python
 fruits[1]="watermelon"
 print(fruits)
+```
+
+*Output:*
+
+```text
+['apple', 'watermelon', 'cherry', 'kiwi', 'gauva']
 ```
 
 ```python
@@ -68,6 +114,12 @@ fruits[1:]="watermelon"
 
 ```python
 fruits
+```
+
+*Output:*
+
+```text
+['apple', 'w', 'a', 't', 'e', 'r', 'm', 'e', 'l', 'o', 'n']
 ```
 
 ```python
@@ -81,14 +133,32 @@ fruits.append("orange") ## Add an item to the end
 print(fruits)
 ```
 
+*Output:*
+
+```text
+['apple', 'banana', 'cherry', 'kiwi', 'gauva', 'orange']
+```
+
 ```python
 fruits.insert(1,"watermelon")
 print(fruits)
 ```
 
+*Output:*
+
+```text
+['apple', 'watermelon', 'banana', 'banana', 'cherry', 'kiwi', 'gauva', 'orange']
+```
+
 ```python
 fruits.remove("banana") ## Removing the first occurance of an item
 print(fruits)
+```
+
+*Output:*
+
+```text
+['apple', 'watermelon', 'banana', 'cherry', 'kiwi', 'gauva', 'orange']
 ```
 
 ```python
@@ -98,9 +168,22 @@ print(popped_fruits)
 print(fruits)
 ```
 
+*Output:*
+
+```text
+orange
+['apple', 'watermelon', 'banana', 'cherry', 'kiwi', 'gauva']
+```
+
 ```python
 index=fruits.index("cherry")
 print(index)
+```
+
+*Output:*
+
+```text
+3
 ```
 
 ```python
@@ -108,8 +191,20 @@ fruits.insert(2,"banana")
 print(fruits.count("banana"))
 ```
 
+*Output:*
+
+```text
+2
+```
+
 ```python
 fruits
+```
+
+*Output:*
+
+```text
+['apple', 'watermelon', 'banana', 'banana', 'cherry', 'kiwi', 'gauva']
 ```
 
 ```python
@@ -120,6 +215,12 @@ fruits.sort() ## SSorts the list in ascending order
 fruits
 ```
 
+*Output:*
+
+```text
+['apple', 'banana', 'banana', 'cherry', 'gauva', 'kiwi', 'watermelon']
+```
+
 ```python
 fruits.reverse() ## REverse the list
 ```
@@ -128,10 +229,22 @@ fruits.reverse() ## REverse the list
 fruits
 ```
 
+*Output:*
+
+```text
+['watermelon', 'kiwi', 'gauva', 'cherry', 'banana', 'banana', 'apple']
+```
+
 ```python
 fruits.clear() ## Remove all items from the list
 
 print(fruits)
+```
+
+*Output:*
+
+```text
+[]
 ```
 
 ```python
@@ -144,12 +257,34 @@ print(numbers[::2])
 print(numbers[::-1])
 ```
 
+*Output:*
+
+```text
+[3, 4, 5]
+[1, 2, 3, 4, 5]
+[6, 7, 8, 9, 10]
+[1, 3, 5, 7, 9]
+[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+```
+
 ```python
 numbers[::3]
 ```
 
+*Output:*
+
+```text
+[1, 4, 7, 10]
+```
+
 ```python
 numbers[::-2]
+```
+
+*Output:*
+
+```text
+[10, 8, 6, 4, 2]
 ```
 
 ```python
@@ -159,10 +294,40 @@ for number in numbers:
     print(number)
 ```
 
+*Output:*
+
+```text
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+```
+
 ```python
 ## Iterating with index
 for index,number in enumerate(numbers):
     print(index,number)
+```
+
+*Output:*
+
+```text
+0 1
+1 2
+2 3
+3 4
+4 5
+5 6
+6 7
+7 8
+8 9
+9 10
 ```
 
 ```python
@@ -174,8 +339,20 @@ for x in range(10):
 print(lst)
 ```
 
+*Output:*
+
+```text
+[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+```
+
 ```python
 [x**2 for x in range(10)]
+```
+
+*Output:*
+
+```text
+[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
 ```
 
 ##### List Comprehension
@@ -193,6 +370,12 @@ sqaure=[num**2 for num in range(10)]
 print(sqaure)
 ```
 
+*Output:*
+
+```text
+[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+```
+
 ```python
 ### List Comprehension with Condition
 lst=[]
@@ -204,9 +387,21 @@ print(lst)
         
 ```
 
+*Output:*
+
+```text
+[0, 2, 4, 6, 8]
+```
+
 ```python
 even_numbers=[num for num in range(10) if num%2==0]
 print(even_numbers)
+```
+
+*Output:*
+
+```text
+[0, 2, 4, 6, 8]
 ```
 
 ```python
@@ -220,11 +415,23 @@ pair=[[i,j] for i in lst1 for j in lst2]
 print(pair)
 ```
 
+*Output:*
+
+```text
+[[1, 'a'], [1, 'b'], [1, 'c'], [1, 'd'], [2, 'a'], [2, 'b'], [2, 'c'], [2, 'd'], [3, 'a'], [3, 'b'], [3, 'c'], [3, 'd'], [4, 'a'], [4, 'b'], [4, 'c'], [4, 'd']]
+```
+
 ```python
 ## List Comprehension with function calls
 words = ["hello", "world", "python", "list", "comprehension"]
 lengths = [len(word) for word in words]
 print(lengths)  # Output: [5, 5, 6, 4, 13]
+```
+
+*Output:*
+
+```text
+[5, 5, 6, 4, 13]
 ```
 
 #### Conclusion
