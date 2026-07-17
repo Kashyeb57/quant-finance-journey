@@ -25,6 +25,8 @@ function loadPdfjs() {
   return _pdfjsPromise;
 }
 
+const clampScale = (v) => Math.max(0.4, Math.min(4, +(+v).toFixed(3)));
+
 // One page — renders its canvas only when scrolled near the viewport.
 function PdfPage({ pdf, pageNumber, scale, registerObserver }) {
   const holderRef = useRef(null);
@@ -50,7 +52,6 @@ function PdfPage({ pdf, pageNumber, scale, registerObserver }) {
       el.appendChild(canvas);
       setRendered(true);
     });
-    // re-render on scale change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scale]);
 
@@ -67,12 +68,15 @@ export default function PdfReader({ url, title }) {
   const [pdf, setPdf] = useState(null);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.2);
-  const [progress, setProgress] = useState(0); // 0..100 while downloading
+  const [progress, setProgress] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const baseSize = useRef(null); // { w, h } of page 1 at scale 1
+  const rootRef = useRef(null);
   const scrollRef = useRef(null);
   const observerRef = useRef(null);
   const jobsRef = useRef(new Map());
 
-  // Set up a shared IntersectionObserver for lazy page rendering.
+  // Shared IntersectionObserver for lazy page rendering.
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
@@ -101,32 +105,63 @@ export default function PdfReader({ url, title }) {
     };
   };
 
+  const fitScale = (mode) => {
+    const el = scrollRef.current;
+    const base = baseSize.current;
+    if (!el || !base) return scale;
+    const availW = el.clientWidth - 28;
+    const availH = el.clientHeight - 28;
+    return clampScale(mode === 'page' ? Math.min(availW / base.w, availH / base.h) : availW / base.w);
+  };
+
   useEffect(() => {
     let cancelled = false;
-    setStatus('loading');
-    loadPdfjs()
-      .then((pdfjsLib) => {
+    (async () => {
+      setStatus('loading');
+      setProgress(0);
+      try {
+        const pdfjsLib = await loadPdfjs();
         const task = pdfjsLib.getDocument({ url, disableAutoFetch: true });
         task.onProgress = ({ loaded, total }) => {
           if (total) setProgress(Math.min(100, Math.round((loaded / total) * 100)));
         };
-        return task.promise;
-      })
-      .then((doc) => {
+        const doc = await task.promise;
         if (cancelled) return;
+        const p1 = await doc.getPage(1);
+        const vp = p1.getViewport({ scale: 1 });
+        baseSize.current = { w: vp.width, h: vp.height };
+        // default: fit width, but capped so narrow pages don't blow up huge
+        const el = scrollRef.current;
+        if (el) setScale(clampScale(Math.min((el.clientWidth - 28) / vp.width, 1.6)));
         setPdf(doc);
         setNumPages(doc.numPages);
         setStatus('ready');
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setErrorMsg(String(err && err.message ? err.message : err));
-        setStatus('error');
-      });
+      } catch (err) {
+        if (!cancelled) {
+          setErrorMsg(String(err && err.message ? err.message : err));
+          setStatus('error');
+        }
+      }
+    })();
     return () => {
       cancelled = true;
     };
   }, [url]);
+
+  // Track fullscreen state.
+  useEffect(() => {
+    const onFs = () => setIsFullscreen(document.fullscreenElement === rootRef.current);
+    document.addEventListener('fullscreenchange', onFs);
+    return () => document.removeEventListener('fullscreenchange', onFs);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen && document.exitFullscreen();
+    } else if (rootRef.current && rootRef.current.requestFullscreen) {
+      rootRef.current.requestFullscreen();
+    }
+  };
 
   if (status === 'error') {
     return (
@@ -141,20 +176,28 @@ export default function PdfReader({ url, title }) {
   }
 
   return (
-    <div className={styles.reader}>
+    <div className={styles.reader} ref={rootRef}>
       <div className={styles.controls}>
-        <span className={styles.pages}>
-          {status === 'ready' ? `${numPages} pages` : 'Loading…'}
+        <span className={styles.pages}>{status === 'ready' ? `${numPages} pages` : 'Loading…'}</span>
+
+        <span className={styles.group}>
+          <button onClick={() => setScale(fitScale('width'))} disabled={status !== 'ready'}>
+            Fit width
+          </button>
+          <button onClick={() => setScale(fitScale('page'))} disabled={status !== 'ready'}>
+            Fit page
+          </button>
         </span>
+
         <span className={styles.zoom}>
-          <button onClick={() => setScale((s) => Math.max(0.6, +(s - 0.2).toFixed(2)))} aria-label="Zoom out">
-            −
-          </button>
+          <button onClick={() => setScale((s) => clampScale(s - 0.2))} aria-label="Zoom out">−</button>
           <span className={styles.zoomVal}>{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale((s) => Math.min(3, +(s + 0.2).toFixed(2)))} aria-label="Zoom in">
-            +
-          </button>
+          <button onClick={() => setScale((s) => clampScale(s + 0.2))} aria-label="Zoom in">+</button>
         </span>
+
+        <button className={styles.fsBtn} onClick={toggleFullscreen}>
+          {isFullscreen ? '✕ Exit full screen' : '⛶ Full screen'}
+        </button>
       </div>
 
       <div className={styles.scroll} ref={scrollRef}>

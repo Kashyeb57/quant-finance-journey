@@ -37,7 +37,6 @@ function Reader() {
         <Link to="/books" className={styles.back}>← Library</Link>
         <span className={styles.title} title={title}>{title}</span>
         <span className={styles.actions}>
-          <a href={file} target="_blank" rel="noreferrer">Open PDF ↗</a>
           <a href={file} download>Download ↓</a>
         </span>
       </div>
