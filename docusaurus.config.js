@@ -145,7 +145,7 @@ const config = {
             ],
           },
         ],
-        copyright: `© ${new Date().getFullYear()} Joyeb Kashyeb · Quantitative finance, learned in public — from Nepal 🇳🇵`,
+        copyright: `© ${new Date().getFullYear()} Joyeb Kashyeb · Quantitative finance`,
       },
       prism: {
         theme: prismThemes.oneLight,
