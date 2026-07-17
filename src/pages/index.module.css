@@ -4,13 +4,13 @@
 .hero {
   padding: 4.5rem 0 3.5rem;
   background:
-    radial-gradient(ellipse 70% 90% at 85% 10%, rgba(36, 87, 208, 0.1), transparent),
-    linear-gradient(180deg, rgba(36, 87, 208, 0.05), transparent 65%);
+    radial-gradient(ellipse 70% 90% at 85% 10%, rgba(46, 133, 85, 0.1), transparent),
+    linear-gradient(180deg, rgba(46, 133, 85, 0.05), transparent 65%);
   border-bottom: 1px solid var(--ifm-toc-border-color);
 }
 
 :global([data-theme='dark']) .hero {
-  background: radial-gradient(ellipse 70% 90% at 85% 10%, rgba(126, 163, 245, 0.07), transparent);
+  background: radial-gradient(ellipse 70% 90% at 85% 10%, rgba(37, 194, 160, 0.07), transparent);
 }
 
 .heroInner {
@@ -217,14 +217,14 @@
   width: 2.3rem;
   height: 2.3rem;
   border-radius: 10px;
-  background: rgba(36, 87, 208, 0.1);
+  background: rgba(46, 133, 85, 0.1);
   color: var(--ifm-color-primary);
   font-size: 1.1rem;
   margin-bottom: 0.3rem;
 }
 
 :global([data-theme='dark']) .featureIcon {
-  background: rgba(126, 163, 245, 0.14);
+  background: rgba(37, 194, 160, 0.14);
 }
 
 .featureTitle {

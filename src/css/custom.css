@@ -4,17 +4,17 @@
  */
 
 :root {
-  /* Brand: refined blue (finance, trust, focus) */
-  --ifm-color-primary: #2457d0;
-  --ifm-color-primary-dark: #204ebb;
-  --ifm-color-primary-darker: #1e4ab0;
-  --ifm-color-primary-darkest: #193d91;
-  --ifm-color-primary-light: #2f62e0;
-  --ifm-color-primary-lighter: #3c6ce2;
-  --ifm-color-primary-lightest: #6690ea;
+  /* Brand: the site's signature green — fresh, calm, and its own */
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
 
   --ifm-code-font-size: 92%;
-  --docusaurus-highlighted-code-line-bg: rgba(36, 87, 208, 0.08);
+  --docusaurus-highlighted-code-line-bg: rgba(46, 133, 85, 0.08);
 
   /* Typography */
   --ifm-font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -27,18 +27,18 @@
   --ifm-toc-border-color: rgba(15, 23, 42, 0.08);
 }
 
-/* Dark mode: neutral charcoal background, blue used only as the accent */
+/* Dark mode: neutral charcoal background, light teal-green as the accent */
 [data-theme='dark'] {
-  --ifm-color-primary: #7ea3f5;
-  --ifm-color-primary-dark: #6390f3;
-  --ifm-color-primary-darker: #5586f2;
-  --ifm-color-primary-darkest: #2c66ee;
-  --ifm-color-primary-light: #99b6f7;
-  --ifm-color-primary-lighter: #a7c0f8;
-  --ifm-color-primary-lightest: #d0defb;
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
 
   --ifm-navbar-background-color: rgba(27, 27, 29, 0.85);
-  --docusaurus-highlighted-code-line-bg: rgba(126, 163, 245, 0.12);
+  --docusaurus-highlighted-code-line-bg: rgba(37, 194, 160, 0.12);
   --ifm-toc-border-color: rgba(160, 160, 160, 0.16);
 }
 
