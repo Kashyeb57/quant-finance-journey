@@ -4,11 +4,11 @@ import Heading from '@theme/Heading';
 import ResourceCards from '@site/src/components/ResourceCards';
 import BookShelf from '@site/src/components/BookShelf';
 
-// My own library — PDFs living in my GitHub repos, served as application/pdf
-// through jsDelivr's CDN so they can be embedded in the on-site reader
-// (/read) and opened without ever leaving this site.
-const QIP = 'https://cdn.jsdelivr.net/gh/Kashyeb57/Quant-Interview-Prep-Resources@main';
-const QR = 'https://cdn.jsdelivr.net/gh/Kashyeb57/Quant_resources@main';
+// My own library — PDFs living in my GitHub repos. The on-site reader
+// (/read) renders them with PDF.js straight from GitHub raw (CORS-enabled,
+// no file-size limit), so books open on this site regardless of size.
+const QIP = 'https://raw.githubusercontent.com/Kashyeb57/Quant-Interview-Prep-Resources/main';
+const QR = 'https://raw.githubusercontent.com/Kashyeb57/Quant_resources/main';
 
 const LIBRARY = [
   // ── Core textbooks ────────────────────────────────────────────────

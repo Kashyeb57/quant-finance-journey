@@ -2,11 +2,12 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import BrowserOnly from '@docusaurus/BrowserOnly';
+import PdfReader from '@site/src/components/PdfReader';
 import styles from './read.module.css';
 
-// Only books served from my own jsDelivr-backed repos may be embedded —
-// this keeps /read from being turned into an open embedder for any URL.
-const ALLOWED_PREFIX = 'https://cdn.jsdelivr.net/gh/Kashyeb57/';
+// Only books from my own repos may be opened — this keeps /read from being
+// turned into an open renderer for any URL.
+const ALLOWED_PREFIX = 'https://raw.githubusercontent.com/Kashyeb57/';
 
 function Reader() {
   const params = new URLSearchParams(window.location.search);
@@ -36,20 +37,13 @@ function Reader() {
         <Link to="/books" className={styles.back}>← Library</Link>
         <span className={styles.title} title={title}>{title}</span>
         <span className={styles.actions}>
-          <a href={file} target="_blank" rel="noreferrer">Full screen ↗</a>
+          <a href={file} target="_blank" rel="noreferrer">Open PDF ↗</a>
           <a href={file} download>Download ↓</a>
         </span>
       </div>
-      <object data={file} type="application/pdf" className={styles.frame} aria-label={title}>
-        {/* Fallback if the browser can't display PDFs inline */}
-        <iframe title={title} src={file} className={styles.frame} />
-        <div className={styles.msg}>
-          <p>Your browser can't show this PDF inline.</p>
-          <a className="button button--primary" href={file} target="_blank" rel="noreferrer">
-            Open the book ↗
-          </a>
-        </div>
-      </object>
+      <div className={styles.frame}>
+        <PdfReader url={file} title={title} />
+      </div>
     </div>
   );
 }

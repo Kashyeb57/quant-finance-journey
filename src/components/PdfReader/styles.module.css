@@ -1,0 +1,143 @@
+.reader {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--ifm-color-emphasis-200);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.35rem 1rem;
+  background: var(--ifm-background-surface-color);
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  flex: 0 0 auto;
+}
+
+.pages {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.zoom {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.zoom button {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: var(--ifm-background-color);
+  color: var(--ifm-color-emphasis-800);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.zoom button:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.zoomVal {
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-width: 3rem;
+  text-align: center;
+  color: var(--ifm-color-emphasis-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 1.25rem 0.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.28);
+  background: #fff;
+  border-radius: 2px;
+}
+
+.page canvas {
+  display: block;
+  border-radius: 2px;
+}
+
+.pagePlaceholder {
+  width: min(90vw, 720px);
+  aspect-ratio: 1 / 1.414;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ifm-color-emphasis-500);
+  font-size: 0.85rem;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--ifm-color-emphasis-100),
+    var(--ifm-color-emphasis-100) 12px,
+    var(--ifm-color-emphasis-200) 12px,
+    var(--ifm-color-emphasis-200) 24px
+  );
+}
+
+.center {
+  margin: auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--ifm-color-emphasis-700);
+  padding: 3rem 1.5rem;
+}
+
+.dim {
+  font-size: 0.8rem;
+  color: var(--ifm-color-emphasis-600);
+  max-width: 32rem;
+  word-break: break-word;
+}
+
+.spinner {
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 3px solid var(--ifm-color-emphasis-300);
+  border-top-color: var(--ifm-color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.progressWrap {
+  width: min(70vw, 320px);
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ifm-color-emphasis-300);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--ifm-color-primary);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
