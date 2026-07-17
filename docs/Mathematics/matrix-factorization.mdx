@@ -1,0 +1,93 @@
+---
+title: Matrix Factorization (PCA / SVD)
+---
+
+# Matrix Factorization (PCA / SVD)
+
+Eigenvalue decomposition, PCA, and SVD for dimensionality reduction and risk factors.
+
+## Key topics
+
+- **Eigenvalue decomposition** — $\Sigma = Q \Lambda Q^\top$ for symmetric matrices
+- **Principal Component Analysis (PCA)** — rank risk factors by explained variance
+- **Singular Value Decomposition (SVD)** — $A = U \Sigma V^\top$, works for *any* matrix
+
+## Why quants care
+
+- **Dimensionality reduction:** a universe of 500 stocks doesn't have 500 independent
+  risks — a handful of components usually explain most of the variance.
+- **Risk factor identification:** in rates, the first three principal components of yield
+  curve moves are famously *level*, *slope*, and *curvature* — together explaining ~95%+
+  of variation.
+- PCA is also the workhorse for cleaning noisy covariance matrices before
+  [portfolio optimization](./optimization).
+
+## Try it — PCA on simulated returns
+
+<PySandbox title="Find the market factor with numpy" code={`import numpy as np
+
+rng = np.random.default_rng(7)
+
+# Simulate 500 days of returns for 5 stocks driven by ONE common market factor
+market = rng.normal(0, 0.01, 500)                 # the hidden factor
+betas  = np.array([1.2, 1.0, 0.8, 1.5, 0.6])      # each stock's exposure
+noise  = rng.normal(0, 0.005, (500, 5))
+returns = np.outer(market, betas) + noise
+
+# PCA = eigen-decomposition of the covariance matrix
+Sigma = np.cov(returns.T)
+eigvals, eigvecs = np.linalg.eigh(Sigma)
+eigvals, eigvecs = eigvals[::-1], eigvecs[:, ::-1]   # sort descending
+
+explained = eigvals / eigvals.sum()
+print("variance explained by each component:", np.round(explained, 3))
+print("PC1 loadings:", np.round(eigvecs[:, 0], 2))
+print("true betas (rescaled):", np.round(betas / np.linalg.norm(betas), 2))`} />
+
+The first component explains most of the variance, and its loadings recover the betas we
+secretly used to build the data — PCA *found the market factor* without being told it
+existed.
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'In PCA, the first principal component is the direction that…',
+    options: [
+      'has the smallest variance',
+      'maximizes the variance of the projected data',
+      'is always the market index',
+      'makes all correlations zero',
+    ],
+    answer: 1,
+    explain: 'PC1 is the single axis capturing the most variance; each next component maximizes what remains, orthogonal to the previous ones. In equities PC1 usually *turns out* to look like the market — but that is discovered, not assumed.',
+  },
+  {
+    q: 'What advantage does SVD have over eigen-decomposition?',
+    options: [
+      'It is only defined for square matrices',
+      'It works for any rectangular matrix, not just square symmetric ones',
+      'It always produces integer factors',
+      'It requires no computation',
+    ],
+    answer: 1,
+    explain: 'Eigen-decomposition needs a square matrix; SVD factorizes any n×m matrix (e.g., days × assets returns panel) directly — which is also numerically nicer than forming the covariance matrix first.',
+  },
+  {
+    q: 'The first 3 principal components of yield-curve movements are commonly interpreted as…',
+    options: [
+      'GDP, inflation, unemployment',
+      'level, slope, curvature',
+      'bid, ask, spread',
+      'alpha, beta, gamma',
+    ],
+    answer: 1,
+    explain: 'A parallel shift (level), a steepening/flattening (slope), and a bowing (curvature) — typically ~95%+ of all curve variation. Rates desks hedge these three rather than every maturity separately.',
+  },
+]} />
+
+## Study resources
+
+- **Book:** *Introduction to Linear Algebra* — Gilbert Strang
+- **Practice:** PCA and SVD with Python — `numpy.linalg` and scikit-learn's `PCA`
+- Try the sandbox above in the [Notebook](/notebook) with more stocks and two factors!

@@ -73,6 +73,39 @@ const PROJECTS = [
       { label: 'GitHub Repository', url: 'https://github.com/Kashyeb57/Time-and-Attendance-System-CS-310' },
     ],
   },
+  {
+    title: 'Stock Ledger — FIFO Capital Gains Calculator',
+    status: 'Completed',
+    overview: [
+      'A data-structures course project (November 2025) that computes the capital gain on a stock sale under FIFO (First-In, First-Out) accounting — the standard cost-basis rule. Purchases enqueue at the back of a queue; sales consume batches from the front, correctly splitting a batch when only part of it is sold.',
+      'The write-up on this site is fully interactive: the complete program runs in your browser, and you can edit the trades and re-run it.',
+    ],
+    sections: [
+      {
+        heading: 'Design',
+        items: [
+          'StockPurchase — one buy transaction holding shares and cost basis',
+          'StockLedger — a collections.deque of purchases, oldest at the front',
+          'Whole-batch sales pop from the queue in O(1) via popleft()',
+          'Partial sales peek at the front batch and decrement it in place',
+          'Capital gain accumulated per batch against its own cost basis',
+        ],
+      },
+      {
+        heading: 'Example from the assignment',
+        items: [
+          'Buy 20 @ $45, buy 20 @ $75, then sell 30 @ $65',
+          'First 20 shares: 20 × (65 − 45) = +$400 gain',
+          'Next 10 shares: 10 × (65 − 75) = −$100 loss',
+          'Total capital gain: $300, with 10 shares @ $75 left in the queue',
+        ],
+      },
+    ],
+    tags: ['Python', 'collections.deque', 'Queues (FIFO)', 'Data Structures'],
+    links: [
+      { label: '▶ Interactive write-up — run it in your browser', url: '/docs/Programming/Python/projects/stock-ledger-fifo' },
+    ],
+  },
 ];
 
 function toParagraphs(overview) {

@@ -1,0 +1,140 @@
+---
+title: "Project: Stock Ledger — FIFO Capital Gains"
+sidebar_position: 1
+---
+
+# Stock Ledger — Computing Capital Gains with a Queue
+
+*My data-structures course project (November 2025): a `StockLedger` that computes the
+capital gain when you sell shares, using a **FIFO queue** — exactly how tax authorities
+usually assume your shares are sold.*
+
+## The problem
+
+Say last year you bought 20 shares at **$45**, and last month 20 more at **$75**.
+Today you sell 30 shares at **$65**. What's your capital gain?
+
+You can't just use an average — under **FIFO (First-In, First-Out)** accounting, the
+*oldest* shares sell first:
+
+- First 20 shares sold come from the $45 batch → gain = 20 × (65 − 45) = **+$400**
+- The other 10 come from the $75 batch → gain = 10 × (65 − 75) = **−$100**
+- Total capital gain = **$300**
+
+The tricky part is the *partial sale*: the second batch is only half-consumed, and the
+remaining 10 shares must stay at the front of the queue for the next sale. That maps
+perfectly onto a **queue** (`collections.deque`): buys `append` at the back, sells
+`popleft` from the front.
+
+## The code — run it right here
+
+Press **▶ Run** below (or edit the numbers first — try selling 50 shares!):
+
+```python
+from collections import deque
+
+class StockPurchase:
+    """Represents a single purchase transaction of stock."""
+    def __init__(self, shares, cost_per_share):
+        self.shares = shares
+        self.cost_per_share = cost_per_share
+
+    def get_cost(self):
+        return self.cost_per_share
+
+    def get_shares(self):
+        return self.shares
+
+    def decrement_shares(self, amount):
+        """Reduce shares in this batch when only part of it is sold."""
+        self.shares -= amount
+
+class StockLedger:
+    """Manages buying and selling of stocks using a FIFO queue."""
+    def __init__(self):
+        self.ledger = deque()  # optimized for adding/removing at both ends
+
+    def buy(self, shares_bought, price_per_share):
+        self.ledger.append(StockPurchase(shares_bought, price_per_share))
+        print(f"Bought {shares_bought} shares at ${price_per_share}")
+
+    def sell(self, shares_sold, price_per_share):
+        if shares_sold <= 0:
+            return 0.0
+        total_capital_gain = 0.0
+        remaining = shares_sold
+        print(f"\nSelling {shares_sold} shares at ${price_per_share}...")
+
+        while remaining > 0:
+            if not self.ledger:
+                print("Error: Not enough shares in stock to sell!")
+                break
+            batch = self.ledger[0]              # peek at the OLDEST batch
+            if batch.get_shares() <= remaining: # consume the whole batch
+                gain = batch.get_shares() * (price_per_share - batch.get_cost())
+                total_capital_gain += gain
+                remaining -= batch.get_shares()
+                self.ledger.popleft()
+                print(f"  -> Sold all {batch.get_shares()} shares from batch bought at ${batch.get_cost()}")
+            else:                               # consume PART of the batch
+                gain = remaining * (price_per_share - batch.get_cost())
+                total_capital_gain += gain
+                batch.decrement_shares(remaining)
+                print(f"  -> Sold {remaining} shares from batch bought at ${batch.get_cost()} "
+                      f"(leaving {batch.get_shares()} in queue)")
+                remaining = 0
+        return total_capital_gain
+
+# --- The assignment example ---
+my_stocks = StockLedger()
+my_stocks.buy(20, 45)   # last year: 20 shares at $45
+my_stocks.buy(20, 75)   # last month: 20 more at $75
+cap_gain = my_stocks.sell(30, 65)  # today: sell 30 at $65
+print(f"\nTotal Capital Gain: ${cap_gain:.2f}")
+```
+
+## Why this design works
+
+| Design choice | Why |
+|---|---|
+| `deque` instead of `list` | `popleft()` is O(1); popping the front of a list is O(n) |
+| Peek (`ledger[0]`) before popping | A partial sale must *modify* the front batch, not remove it |
+| Two cases in the loop | Batch smaller than the sale → consume all of it; bigger → split it |
+| Gain computed per batch | Each batch has its own cost basis — that's the whole point of FIFO |
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'Why must the ledger be a queue (FIFO) and not a stack (LIFO)?',
+    options: [
+      'Stacks are slower than queues',
+      'FIFO sells the oldest shares first, which is the standard cost-basis rule',
+      'Python has no stack type',
+      'It makes the code shorter',
+    ],
+    answer: 1,
+    explain: 'The data structure encodes the accounting rule: first shares bought are first sold. (LIFO accounting exists too — implementing it would just swap the deque for a stack: pop from the same end you push.)',
+  },
+  {
+    q: 'You buy 10 @ $50 and 10 @ $60, then sell 15 @ $70. What is the FIFO capital gain?',
+    options: ['$250', '$300', '$150', '$200'],
+    answer: 0,
+    explain: 'FIFO: the full first batch sells for 10 × (70−50) = $200, then 5 shares from the second batch add 5 × (70−60) = $50. Total = $250, and 5 shares at cost $60 remain in the queue.',
+  },
+  {
+    q: 'Why is deque.popleft() preferred over list.pop(0) here?',
+    options: [
+      'popleft() also updates the cost basis',
+      'list.pop(0) is O(n) because every element shifts; deque.popleft() is O(1)',
+      'They are identical in speed',
+      'Lists cannot store objects',
+    ],
+    answer: 1,
+    explain: 'A Python list stores elements contiguously, so removing the head shifts everything left — O(n). A deque is a doubly-linked block structure with O(1) operations at both ends.',
+  },
+]} />
+
+**Extensions to try** (edit the code above and re-run): sell more shares than you own to
+trigger the error path · add a `holdings()` method that reports total shares and average
+cost · implement LIFO and compare the gain on the same trades.

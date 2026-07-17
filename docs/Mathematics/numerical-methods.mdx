@@ -1,0 +1,82 @@
+---
+title: Numerical Methods
+---
+
+# Numerical Methods
+
+Root-finding, numerical integration, Monte Carlo, and finite difference methods.
+
+## Key topics
+
+- **Root-finding** — Newton–Raphson, bisection
+- **Numerical integration** — quadrature and Monte Carlo methods
+- **Finite difference methods** — turning PDEs into solvable grids
+
+## Why quants care
+
+Most models **have no closed-form answer** — numerics is how they get solved anyway:
+
+- **Newton–Raphson** is how *implied volatility* is backed out of option prices, millions
+  of times a day: find the σ that makes the Black–Scholes price match the market.
+- **Monte Carlo** prices path-dependent derivatives by simulating thousands of futures —
+  you've already used it in the [GBM simulator](./stochastic-calculus).
+- **Finite differences** solve the Black–Scholes PDE on a grid when payoffs get exotic
+  (barriers, American exercise).
+
+## Try it — Newton–Raphson root finding
+
+<PySandbox title="Solve x² = 2 the way pricers solve implied vol" code={`# Newton-Raphson: x_new = x - f(x)/f'(x)
+# Solve f(x) = x^2 - 2 = 0  (i.e. compute sqrt(2) by hand)
+
+def f(x):  return x*x - 2
+def fp(x): return 2*x
+
+x = 1.0                      # initial guess
+for i in range(6):
+    x = x - f(x) / fp(x)
+    print(f"iter {i+1}: x = {x:.10f}")
+
+print("true sqrt(2) =", 2 ** 0.5)
+
+# Notice the DOUBLING of correct digits each step - quadratic convergence.
+# Implied-vol solvers do exactly this with f(σ) = BS_price(σ) − market_price.`} />
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'Implied volatility is computed with a root-finder because…',
+    options: [
+      'volatility is random',
+      'Black–Scholes gives price from σ, but there is no closed formula for σ from price',
+      'markets do not quote option prices',
+      'Newton–Raphson is the only algorithm quants know',
+    ],
+    answer: 1,
+    explain: 'The BS formula maps σ → price but cannot be inverted algebraically. So you solve BS(σ) − market price = 0 numerically — Newton–Raphson converges in a handful of iterations because vega (the derivative) is known.',
+  },
+  {
+    q: 'The error of a plain Monte Carlo estimate with N samples shrinks like…',
+    options: ['1/N', '1/√N', 'log N', 'it does not shrink'],
+    answer: 1,
+    explain: 'Standard error ∝ 1/√N: to get one extra digit of accuracy you need 100× more paths. That is why variance-reduction tricks (antithetic paths, control variates) matter so much in practice.',
+  },
+  {
+    q: 'Finite difference methods price options by…',
+    options: [
+      'simulating random paths',
+      'replacing derivatives in the PDE with differences on a grid of S and t',
+      'looking up prices in a table',
+      'averaging bid and ask',
+    ],
+    answer: 1,
+    explain: '∂V/∂S ≈ (V(S+ΔS) − V(S−ΔS)) / 2ΔS and so on — the PDE becomes a system of equations stepped backwards from the payoff at expiry to today.',
+  },
+]} />
+
+## Study resources
+
+- **Newton–Raphson, MC, finite differences** in action: Paul Wilmott's *Quantitative Finance* chapters on numerics
+- **Practice:** re-implement the Newton solver in the [Notebook](/notebook) for
+  f(σ) = BS(σ) − price, using the pricer from the [derivatives lab](/docs/Finance/derivatives)
+- Related: [Monte Carlo GBM simulator](./stochastic-calculus) · [Differential equations](./differential-equations)

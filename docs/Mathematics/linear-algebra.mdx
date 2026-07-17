@@ -1,0 +1,91 @@
+---
+title: Linear Algebra
+---
+
+# Linear Algebra
+
+Vectors, matrices, eigenvalues, and SVD — used in portfolio variance and PCA.
+
+## Key topics
+
+- **Vectors and matrices** — the language of multi-asset portfolios
+- **Matrix operations** — multiplication, inversion, solving $Ax = b$
+- **Eigenvalues and eigenvectors** — directions a matrix only stretches
+- **Singular Value Decomposition (SVD)** — the master factorization behind PCA
+
+## Why quants care
+
+The single most-used formula in portfolio theory is pure linear algebra — the variance
+of a portfolio with weights $w$ and covariance matrix $\Sigma$:
+
+$$
+\sigma_p^2 = w^\top \Sigma\, w
+$$
+
+Eigen-decomposition of that same $\Sigma$ gives **Principal Component Analysis**: the top
+eigenvectors are the market's dominant risk factors (level, slope, curvature in rates;
+market/sector factors in equities). See [Matrix Factorization](./matrix-factorization) for
+the deep dive.
+
+## Try it — portfolio variance in numpy
+
+<PySandbox title="Portfolio risk is a matrix product" code={`import numpy as np
+
+# Three assets: vols 20%, 15%, 10%, with correlations
+vols = np.array([0.20, 0.15, 0.10])
+corr = np.array([
+    [1.0, 0.6, 0.2],
+    [0.6, 1.0, 0.4],
+    [0.2, 0.4, 1.0],
+])
+Sigma = np.outer(vols, vols) * corr   # covariance matrix
+
+w = np.array([0.5, 0.3, 0.2])         # portfolio weights
+
+var_p = w @ Sigma @ w                 # the famous w'Σw
+print("portfolio vol:", round(float(np.sqrt(var_p)) * 100, 2), "%")
+
+# Diversification check: weighted-average vol vs portfolio vol
+print("naive avg vol:", round(float(w @ vols) * 100, 2), "%")
+
+# Eigenvalues of Σ = variance carried by each principal risk factor
+eigvals = np.linalg.eigvalsh(Sigma)[::-1]
+print("risk factor shares:", np.round(eigvals / eigvals.sum(), 3))`} />
+
+Notice the portfolio vol comes out *lower* than the weighted average of the individual
+vols — that gap **is** diversification, and it lives entirely in the off-diagonal
+covariance terms.
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'For weights w and covariance matrix Σ, the portfolio variance is…',
+    options: ['w + Σw', 'wᵀΣw', 'Σ⁻¹w', 'det(Σ)'],
+    answer: 1,
+    explain: 'wᵀΣw is a scalar: it sums every pairwise covariance weighted by both positions. The cross terms are why diversification works.',
+  },
+  {
+    q: 'An eigenvector v of matrix A satisfies…',
+    options: ['Av = 0 always', 'Av = λv for some scalar λ', 'vᵀA = det(A)', 'A⁻¹v does not exist'],
+    answer: 1,
+    explain: 'A only stretches (by λ) its eigenvectors, never rotates them. For a covariance matrix, those directions are the uncorrelated risk factors PCA finds.',
+  },
+  {
+    q: 'Why do quants prefer solving Ax = b directly over computing A⁻¹ then A⁻¹b?',
+    options: [
+      'Inverses do not exist for covariance matrices',
+      'Direct solving is faster and numerically more stable',
+      'The results are mathematically different',
+      'Python cannot invert matrices',
+    ],
+    answer: 1,
+    explain: 'Factorize-and-solve (LU/Cholesky — np.linalg.solve) avoids the extra work and the amplified rounding error of forming an explicit inverse. It matters when Σ is large or nearly singular.',
+  },
+]} />
+
+## Study resources
+
+- **Book:** *Linear Algebra and Its Applications* — Gilbert Strang
+- **Video:** [MIT OpenCourseWare 18.06 — Strang's legendary lectures](https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/)
+- **Intuition:** [3Blue1Brown — Essence of Linear Algebra](https://www.youtube.com/@3blue1brown)

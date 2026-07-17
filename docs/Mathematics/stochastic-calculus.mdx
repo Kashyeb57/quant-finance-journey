@@ -68,3 +68,194 @@ Things to notice while you play:
     explain: 'E[X_t | information at s] = X_s for s < t. "Fair game" — no free lunch from waiting. Under the risk-neutral measure, discounted asset prices are martingales, which is the foundation of pricing.',
   },
 ]} />
+
+## The full study roadmap — 17 topics
+
+My complete stochastic-calculus study plan, based on the excellent roadmap by
+[Quantify Your Career](https://youtu.be/whdFQLP4kO4) (watch the video for the study
+sequence). Each topic lists what it covers and what it unlocks — expand as you go:
+
+<details>
+<summary><b>0 · Foundational concepts</b> — measures P vs Q, numéraire, Greeks</summary>
+
+ODE vs PDE vs SDE and how they map into each other (SDE → generator → PDE via
+Feynman–Kac). Price vs value function. **P vs Q**: the real-world measure for
+forecasting/risk, the risk-neutral measure for pricing. Numéraire choice. Greeks as local
+sensitivities, with pathwise vs likelihood-ratio estimators in Monte Carlo.
+
+*Needs:* calculus, linear algebra, probability, Python. *Unlocks:* everything below.
+
+</details>
+
+<details>
+<summary><b>1 · Brownian motion, filtrations & martingales</b></summary>
+
+The canonical noise $W_t$: quadratic variation $[W]_t = t$ (the foundation of Itô
+calculus), correlated Brownians with $d\langle W^1, W^2\rangle_t = \rho\,dt$.
+Adaptedness — no peeking ahead. Martingales as fair games, the engine of no-arbitrage.
+
+*Needs:* probability, normal distribution, conditional expectation.
+
+</details>
+
+<details>
+<summary><b>2 · Itô calculus</b> — integral, lemma, local time</summary>
+
+The Itô integral (isometry, zero mean), Itô's lemma in 1-D and multi-D, Tanaka's formula
+and local time for kinked payoffs like $|x|$. Itô vs Stratonovich — finance uses Itô
+because it respects the information flow.
+
+*Needs:* (1). *Unlocks:* SDE solutions, pricing PDEs, Greeks.
+
+</details>
+
+<details>
+<summary><b>3 · SDE theory & canonical diffusions</b> — GBM, OU, CIR, CEV</summary>
+
+Existence/uniqueness (Lipschitz + linear growth), strong vs weak solutions. The model
+zoo: **GBM** (equities — the simulator above!), **OU/Vasicek** (mean reversion), **CIR**
+(positive rates/variance, Feller condition $2\kappa\theta \ge \xi^2$), **CEV**, local vol.
+
+*Needs:* (1)(2). *Unlocks:* risk-neutral pricing, PDEs, Monte Carlo.
+
+</details>
+
+<details>
+<summary><b>4 · Measure change & risk-neutral pricing</b> — Girsanov</summary>
+
+Radon–Nikodym densities as exponential martingales, **Girsanov's theorem** (drift shifts,
+volatility doesn't), bank-account vs forward measures, change-of-numéraire consistency.
+
+*Needs:* (1)(2)(3). *Unlocks:* Feynman–Kac pricing, rates modeling.
+
+</details>
+
+<details>
+<summary><b>5 · Generators, Feynman–Kac & Kolmogorov</b> — the PDE link</summary>
+
+The generator $\mathcal{L}f = f_t + \mu f_x + \tfrac{1}{2}\sigma^2 f_{xx}$ drives the
+backward pricing PDE and the forward Fokker–Planck density PDE. Boundary conditions
+(absorbing/reflecting), discounting terms, HJB preview.
+
+*Needs:* (2)(3)(4). *Unlocks:* PDE solvers, American options, control.
+
+</details>
+
+<details>
+<summary><b>6 · Greeks, replication & hedging</b></summary>
+
+Delta, Gamma, Theta, Vega, Rho; self-financing replication; discrete-hedging slippage
+proportional to $\sqrt{\Delta t}$; pathwise vs likelihood-ratio Greeks; anatomy of hedging
+error (model, discretization, costs).
+
+*Needs:* (2)(4)(5). *Unlocks:* calibration validation, risk P&L.
+
+</details>
+
+<details>
+<summary><b>7 · Jumps & Lévy models</b> — Merton, Bates, VG/NIG</summary>
+
+Compound Poisson jumps, the Lévy triplet, Itô with jumps, and Fourier/COS pricing via
+characteristic functions — how models capture crash risk and fat tails.
+
+*Needs:* (2)(3)(4).
+
+</details>
+
+<details>
+<summary><b>8 · Stochastic vol, local vol & hybrids</b> — Heston, SABR, SLV</summary>
+
+**Heston** (CIR variance, correlation, Feller condition), **SABR** (the swaption-desk
+standard with its closed-form smile approximation), and **SLV** hybrids that calibrate a
+leverage function to the surface while keeping realistic dynamics.
+
+*Needs:* (3)(4)(5)(14).
+
+</details>
+
+<details>
+<summary><b>9 · Rough volatility</b> — optional depth</summary>
+
+Volterra SDEs with memory kernels, rough Bergomi reproducing steep short-maturity skews,
+simulation via circulant embedding/Cholesky, and why hedges get twitchier.
+
+*Needs:* (8) + fractional-calculus awareness.
+
+</details>
+
+<details>
+<summary><b>10 · Optimal stopping & American options</b></summary>
+
+The Snell envelope (smallest supermartingale dominating the payoff), Longstaff–Schwartz
+least-squares Monte Carlo, obstacle-problem PDEs with PSOR/penalty methods.
+
+*Needs:* (5)(6)(14).
+
+</details>
+
+<details>
+<summary><b>11 · Stochastic control, HJB, BSDEs & FBSDEs</b></summary>
+
+Controlled SDEs and the Hamilton–Jacobi–Bellman equation, verification theorems,
+Pontryagin's principle, backward SDEs solved by regression or deep learning.
+
+*Needs:* (5)(6). *Unlocks:* portfolio/consumption problems, execution, xVA.
+
+</details>
+
+<details>
+<summary><b>12 · Term structure of rates</b> — short-rate, HJM, LMM</summary>
+
+Vasicek/CIR/Hull–White with exponential-affine bond prices (Riccati ODEs), the HJM
+no-arbitrage drift condition, and the Libor Market Model calibrated caplets-first with a
+SABR overlay for smiles.
+
+*Needs:* (3)(4)(5).
+
+</details>
+
+<details>
+<summary><b>13 · Filtering & latent states</b> — Kalman, particle filters</summary>
+
+Kalman filtering (linear-Gaussian), EKF/UKF for nonlinear models,
+Kushner–Stratonovich nonlinear filtering, particle filters with resampling — inferring
+hidden vol/rates/intensity from noisy prices.
+
+*Needs:* (3) + time-series inference.
+
+</details>
+
+<details>
+<summary><b>14 · Numerics & engines</b> — SDE, PDE, MC, Fourier</summary>
+
+Euler–Maruyama vs Milstein discretization, variance reduction (antithetic, control
+variates, MLMC), Crank–Nicolson and ADI PDE schemes, Fourier/COS pricing with cumulant
+truncation. See [Numerical Methods](./numerical-methods) for the fundamentals.
+
+*Needs:* (2)(3)(5). *Unlocks:* everything computational.
+
+</details>
+
+<details>
+<summary><b>15 · Calibration, identifiability & model risk</b></summary>
+
+The P vs Q calibration split, positivity/Feller/no-arbitrage constraints, regularization
+and priors, out-of-sample validation and stress tests — how a model earns risk sign-off.
+
+*Needs:* (6)(8)(12)(14).
+
+</details>
+
+<details>
+<summary><b>16 · Risk, exposures & xVA</b></summary>
+
+Exposure profiles (EE, EPE, PFE), netting and collateral, wrong-way risk, and the xVA
+stack — CVA, DVA, FVA, KVA, MVA — where pricing meets counterparty credit and capital.
+
+*Needs:* (4)(6)(7)(12)(14).
+
+</details>
+
+> 📌 Suggested path: master 0→6 in order (they build directly on each other), then branch
+> by interest — equities-vol people go 7→8→9, rates people go 12, and everyone eventually
+> needs 14 and 15.

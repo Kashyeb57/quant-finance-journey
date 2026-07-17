@@ -1,0 +1,99 @@
+---
+title: Differential Equations
+---
+
+# Differential Equations
+
+ODEs, PDEs, and boundary value problems — including the Black-Scholes PDE.
+
+## Key topics
+
+- **Ordinary Differential Equations (ODEs)** — one variable evolving in time
+- **Partial Differential Equations (PDEs)** — evolution across time *and* state
+- **Boundary value problems** — the payoff conditions that pin down a unique solution
+
+## Why quants care
+
+The most famous equation in finance **is a PDE**. The Black–Scholes equation says that a
+derivative's value $V(S,t)$ must satisfy
+
+$$
+\frac{\partial V}{\partial t}
++ \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2}
++ rS\frac{\partial V}{\partial S} - rV = 0
+$$
+
+with the *boundary condition* being the payoff at expiry (for a call:
+$V(S,T) = \max(S-K, 0)$). Solve it and you get the price surface you can explore in the
+[Black–Scholes lab](/docs/Finance/derivatives).
+
+Term-structure models are ODEs/PDEs too: **Vasicek** and **Hull–White** short-rate models
+produce bond prices through Riccati-type ODEs.
+
+The intuition ladder:
+
+| Equation type | Randomness? | Finance example |
+|---|---|---|
+| ODE | none | compound interest: $dB = rB\,dt$ |
+| PDE | averaged out | Black–Scholes value surface |
+| SDE | explicit $dW_t$ | the stock price itself — see [Stochastic Calculus](./stochastic-calculus) |
+
+## Try it — solve the money-market ODE
+
+<PySandbox title="Euler's method vs the exact solution" code={`import numpy as np
+
+# The simplest finance ODE: dB/dt = r·B  (continuous compounding)
+r, B0, T, n = 0.05, 100.0, 10.0, 50
+dt = T / n
+
+# Numerical solution: Euler steps
+B = B0
+for _ in range(n):
+    B = B + r * B * dt
+
+exact = B0 * np.exp(r * T)
+print(f"Euler ({n} steps): {B:.4f}")
+print(f"Exact  B0·e^(rT):  {exact:.4f}")
+print(f"error: {abs(B - exact):.4f}")
+
+# Challenge: raise n and watch the error shrink -> that is convergence,
+# the core idea behind every PDE pricing engine.`} />
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'What distinguishes a PDE from an ODE?',
+    options: [
+      'PDEs have no solutions',
+      'PDEs involve derivatives with respect to more than one variable',
+      'ODEs are only used in physics',
+      'PDEs never appear in finance',
+    ],
+    answer: 1,
+    explain: 'Black–Scholes involves ∂V/∂t AND ∂V/∂S — value changes across both time and the underlying price, so it is a PDE.',
+  },
+  {
+    q: 'In option pricing, the "boundary condition" of the Black–Scholes PDE is…',
+    options: [
+      'the risk-free rate',
+      'the payoff at expiry, e.g. max(S−K, 0)',
+      'the volatility surface',
+      'the initial stock price',
+    ],
+    answer: 1,
+    explain: 'The PDE describes how value evolves; the terminal payoff pins down WHICH solution you want. Same PDE + different payoff = different derivative.',
+  },
+  {
+    q: 'The ODE dB/dt = rB with B(0)=B₀ has solution…',
+    options: ['B₀(1+rt)', 'B₀e^{rt}', 'B₀ + rt', 'B₀t^r'],
+    answer: 1,
+    explain: 'Growth proportional to current size gives the exponential — continuous compounding. You verified this numerically in the sandbox above.',
+  },
+]} />
+
+## Study resources
+
+- **Course:** MIT OCW 18.03 Differential Equations
+- **Applications:** the [Derivatives lab](/docs/Finance/derivatives) (Black–Scholes) and
+  [Stochastic Calculus](./stochastic-calculus) (adding the randomness back in)

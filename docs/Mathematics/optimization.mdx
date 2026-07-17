@@ -1,0 +1,98 @@
+---
+title: Optimization
+---
+
+# Optimization
+
+Linear, nonlinear, constrained, and convex optimization — Markowitz portfolios and beyond.
+
+## Key topics
+
+- **Linear & nonlinear optimization** — maximize/minimize an objective
+- **Constrained optimization** — Lagrange multipliers, KKT conditions
+- **Convex optimization** — the "nice" class where local = global optimum
+- **Quadratic programming** — quadratic objective + linear constraints
+
+## Why quants care
+
+The founding problem of modern portfolio theory is a **quadratic program**. Markowitz
+(1952): among all portfolios hitting a target return, hold the one with minimum variance:
+
+$$
+\min_w \; w^\top \Sigma w
+\quad \text{s.t.} \quad w^\top \mu = \mu_{\text{target}}, \;\; \textstyle\sum_i w_i = 1
+$$
+
+Everything else you'll meet — risk-adjusted performance optimization, index tracking,
+option hedging under constraints, ML model training — is the same story with a different
+objective function.
+
+## Try it — find the minimum-variance portfolio
+
+<PySandbox title="Two assets: the classic closed form" code={`import numpy as np
+
+# Two assets
+vol = np.array([0.20, 0.10])
+rho = 0.3
+Sigma = np.array([
+    [vol[0]**2,            rho*vol[0]*vol[1]],
+    [rho*vol[0]*vol[1],    vol[1]**2       ],
+])
+
+# Minimum-variance weights (closed form: w ∝ Σ⁻¹·1)
+ones = np.ones(2)
+w = np.linalg.solve(Sigma, ones)
+w = w / w.sum()
+print("min-variance weights:", np.round(w, 3))
+print("portfolio vol:", round(float(np.sqrt(w @ Sigma @ w)) * 100, 2), "%")
+
+# Brute-force check: scan all weight combinations
+grid = np.linspace(0, 1, 101)
+vols = [np.sqrt(np.array([a, 1-a]) @ Sigma @ np.array([a, 1-a])) for a in grid]
+best = grid[int(np.argmin(vols))]
+print("grid search says w1 =", best, "-> matches!")
+
+# Challenge: set rho = -0.5 and watch the optimal mix change.`} />
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'Why is convexity such a prized property in optimization?',
+    options: [
+      'Convex problems have no constraints',
+      'Any local minimum is guaranteed to be the global minimum',
+      'Convex problems are always linear',
+      'It makes the answer an integer',
+    ],
+    answer: 1,
+    explain: 'A convex objective over a convex feasible set has no misleading valleys — whatever a solver converges to IS the best answer. Markowitz is convex because Σ is positive semi-definite.',
+  },
+  {
+    q: 'The Markowitz problem is specifically a…',
+    options: [
+      'linear program',
+      'quadratic program',
+      'integer program',
+      'unconstrained problem',
+    ],
+    answer: 1,
+    explain: 'Quadratic objective wᵀΣw with linear constraints (target return, weights sum to 1) — the definition of QP.',
+  },
+  {
+    q: 'Lagrange multipliers are the tool for…',
+    options: [
+      'removing randomness from a problem',
+      'turning constrained optimization into solvable equations',
+      'inverting matrices faster',
+      'guaranteeing integer solutions',
+    ],
+    answer: 1,
+    explain: 'They fold the constraints into the objective (L = f − λg), so setting gradients to zero handles the constraint and optimality simultaneously. The multiplier λ even has meaning: the marginal value of relaxing the constraint.',
+  },
+]} />
+
+## Study resources
+
+- **Book:** *Convex Optimization* — Boyd & Vandenberghe (free PDF from Stanford)
+- **Applied:** Markowitz portfolio construction with `scipy.optimize` or `cvxpy` — try it in the [Notebook](/notebook)

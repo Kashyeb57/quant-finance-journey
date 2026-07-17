@@ -1,0 +1,78 @@
+---
+title: Discrete Mathematics
+---
+
+# Discrete Mathematics
+
+Combinatorics, graph theory, and discrete optimization for algorithms and HFT.
+
+## Key topics
+
+- **Combinatorics** — counting arrangements, the backbone of probability
+- **Graph theory** — networks of nodes and edges
+- **Discrete optimization** — best choice from a finite (often huge) set
+
+## Why quants care
+
+- **Combinatorics feeds probability:** binomial option-pricing trees literally count
+  up-down path combinations; interview classics ("how many ways…") are combinatorics.
+- **Graph theory** models market structure: currency-arbitrage detection is a
+  negative-cycle search, settlement networks and contagion are graph problems.
+- **Discrete optimization** appears wherever positions come in whole units: order
+  routing, trade scheduling, and the algorithms behind **high-frequency trading** where
+  data structures and O(·) complexity decide profitability.
+
+## Try it — count binomial paths
+
+<PySandbox title="Pascal's triangle prices options" code={`from math import comb
+
+# In a binomial tree with n steps, how many paths end with k up-moves?
+n = 10
+print(f"paths through a {n}-step binomial tree:")
+for k in range(n + 1):
+    print(f"  {k:2d} up-moves: {comb(n, k):4d} paths  " + "#" * (comb(n, k) // 8))
+
+# Total paths = 2^n
+print("total:", sum(comb(n, k) for k in range(n + 1)), "= 2^10 =", 2**10)
+
+# This bell shape is no accident: as n grows it becomes the normal
+# distribution — and the binomial option price converges to Black-Scholes.`} />
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'How many distinct 5-stock portfolios can you form from a universe of 20 stocks?',
+    options: ['100', '15,504', '3,200,000', '20⁵'],
+    answer: 1,
+    explain: 'Order does not matter, so it is C(20,5) = 20!/(5!·15!) = 15,504. Combinations, not permutations — a portfolio {A,B,C,D,E} is the same in any order.',
+  },
+  {
+    q: 'Detecting a currency-arbitrage loop (USD→EUR→JPY→USD ending with more USD) maps to which graph problem?',
+    options: [
+      'Finding the shortest path',
+      'Finding a negative-weight cycle (on log exchange rates)',
+      'Counting the nodes',
+      'Coloring the graph',
+    ],
+    answer: 1,
+    explain: 'Take −log of each exchange rate as the edge weight: a product of rates > 1 becomes a cycle with negative total weight, which Bellman–Ford detects efficiently.',
+  },
+  {
+    q: 'Why does algorithmic complexity (O-notation) matter so much in HFT?',
+    options: [
+      'Interviewers like it',
+      'At microsecond timescales, an O(n²) step on a large order book is the difference between filling and missing',
+      'It changes the math of the strategy',
+      'It does not — hardware handles everything',
+    ],
+    answer: 1,
+    explain: 'Latency budgets are microseconds. The right data structure (heap for the book, hash for lookups, queue for FIFO fills — like your Stock Ledger project) is what makes a strategy physically executable.',
+  },
+]} />
+
+## Study resources
+
+- **Data structures practice:** your own [Stock Ledger project](/docs/Programming/Python/projects/stock-ledger-fifo) — a FIFO queue doing real accounting
+- **Book:** *Data Structures & Algorithms in Python* — Goodrich et al.
+- Related: [Combinatorics in Probability](/docs/Probability/combinatorics)
