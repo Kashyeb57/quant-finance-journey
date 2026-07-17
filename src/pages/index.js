@@ -45,6 +45,12 @@ const SUBJECTS = [
 
 const FEATURES = [
   {
+    icon: '📓',
+    title: 'A real Python notebook',
+    blurb: 'Jupyter-style cells with numpy, pandas and matplotlib — running fully in your browser.',
+    to: '/notebook',
+  },
+  {
     icon: '▶',
     title: 'Runnable Python',
     blurb: 'Every Python snippet on the site has a Run button. Edit it, break it, learn from it.',

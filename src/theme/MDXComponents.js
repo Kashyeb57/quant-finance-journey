@@ -7,6 +7,7 @@ import NormalExplorer from '@site/src/components/Interactive/NormalExplorer';
 import GBMSimulator from '@site/src/components/Interactive/GBMSimulator';
 import CompoundInterestLab from '@site/src/components/Interactive/CompoundInterestLab';
 import PySandbox from '@site/src/components/Interactive/PySandbox';
+import Notebook from '@site/src/components/Interactive/Notebook';
 import CalcPlot from '@site/src/components/CalcPlot';
 
 // Every component listed here can be used in any .mdx file without an import.
@@ -20,5 +21,6 @@ export default {
   GBMSimulator,
   CompoundInterestLab,
   PySandbox,
+  Notebook,
   CalcPlot,
 };

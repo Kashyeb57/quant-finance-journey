@@ -1,0 +1,195 @@
+.nb {
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 14px;
+  background: var(--viz-card-bg);
+  overflow: hidden;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  background: var(--viz-panel-bg);
+  position: sticky;
+  top: var(--ifm-navbar-height);
+  z-index: 3;
+}
+
+.tbBtn {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  background: var(--viz-card-bg);
+  color: var(--viz-ink);
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.tbBtn:hover:not(:disabled) {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.tbBtn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.tbNote {
+  font-size: 0.72rem;
+  color: var(--viz-muted);
+  margin-left: auto;
+}
+
+/* ── Cells ───────────────────────────────────────────────────────── */
+.cell {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.cell:last-child {
+  border-bottom: none;
+}
+
+.gutter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 3rem;
+  padding-top: 0.2rem;
+}
+
+.runBtn {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--ifm-color-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runBtn:hover:not(:disabled) {
+  background: var(--ifm-color-primary-dark);
+}
+
+.runBtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.execCount {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.68rem;
+  color: var(--viz-muted);
+}
+
+.cellMain {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.editor {
+  width: 100%;
+  resize: vertical;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  background: var(--viz-panel-bg);
+  color: var(--viz-ink);
+  tab-size: 4;
+}
+
+.editor:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 0 2px var(--ifm-color-primary-lightest);
+}
+
+.cellActions {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.2rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.cellMain:hover .cellActions,
+.cellMain:focus-within .cellActions {
+  opacity: 1;
+}
+
+.cellActions button {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: var(--viz-card-bg);
+  color: var(--viz-muted);
+  font-size: 0.7rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cellActions button:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.status {
+  font-size: 0.75rem;
+  color: var(--viz-muted);
+  padding: 0.4rem 0.2rem 0;
+}
+
+/* ── Outputs ─────────────────────────────────────────────────────── */
+.outArea {
+  margin-top: 0.5rem;
+  border-left: 3px solid var(--ifm-color-primary-lightest);
+  padding-left: 0.75rem;
+}
+
+.out,
+.err {
+  margin: 0;
+  padding: 0.2rem 0;
+  background: transparent;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--viz-ink);
+}
+
+.err {
+  color: var(--viz-crit);
+}
+
+.plot {
+  display: block;
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 0.4rem 0;
+  background: #fff;
+  padding: 4px;
+}

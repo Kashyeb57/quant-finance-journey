@@ -92,6 +92,7 @@ const config = {
         items: [
           {to: '/tutorial', label: 'Learn', position: 'left'},
           {to: '/roadmap', label: 'Roadmap', position: 'left'},
+          {to: '/notebook', label: 'Notebook', position: 'left'},
           {to: '/terminal', label: 'Terminal', position: 'left'},
           {
             label: 'Library',

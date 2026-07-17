@@ -47,6 +47,13 @@ const SNIPPETS = [
     label: 'Python sandbox',
     code: `<PySandbox title="Try it yourself" code={\`print("hello quant")\`} />`,
   },
+  {
+    label: 'Jupyter-style notebook',
+    code: `<Notebook storageKey="my-lesson-1" initialCells={[
+  'print("cell 1")',
+  'print("cell 2")',
+]} />`,
+  },
   { label: 'Option payoff lab', code: `<PayoffDiagram />` },
   { label: 'Black–Scholes lab', code: `<BlackScholesLab />` },
   { label: 'Normal distribution lab', code: `<NormalExplorer />` },

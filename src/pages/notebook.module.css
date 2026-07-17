@@ -1,0 +1,43 @@
+.wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.head {
+  max-width: 48rem;
+  margin-bottom: 1.5rem;
+}
+
+.head h1 {
+  letter-spacing: -0.02em;
+}
+
+.head p {
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.65;
+}
+
+.note {
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-600);
+}
+
+.tips {
+  margin-top: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--ifm-color-emphasis-700);
+  line-height: 1.7;
+  border: 1px dashed var(--ifm-toc-border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+.tips kbd {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  font-size: 0.75rem;
+  background: var(--ifm-background-surface-color);
+}
