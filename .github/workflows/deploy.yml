@@ -1,0 +1,45 @@
+# Builds the site and publishes it to the gh-pages branch on every push to main.
+# This is what makes no-code publishing work: edit or upload a file on
+# github.com (web editor / drag-and-drop), commit, and ~3 minutes later the
+# change is live on joyebkashyeb.com.np. Only people with write access to this
+# repository (the owner) can trigger it.
+
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # full history so "Last updated" timestamps on docs are accurate
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build

@@ -1,23 +1,273 @@
-/**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
- */
+/* Homepage styles — hero, curriculum grid, feature tiles, CTA band */
 
-.heroBanner {
-  padding: 4rem 0;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
+/* ── Hero ─────────────────────────────────────────────────────────── */
+.hero {
+  padding: 4.5rem 0 3.5rem;
+  background:
+    radial-gradient(ellipse 70% 90% at 85% 10%, rgba(36, 87, 208, 0.1), transparent),
+    linear-gradient(180deg, rgba(36, 87, 208, 0.05), transparent 65%);
+  border-bottom: 1px solid var(--ifm-toc-border-color);
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+:global([data-theme='dark']) .hero {
+  background:
+    radial-gradient(ellipse 70% 90% at 85% 10%, rgba(126, 163, 245, 0.12), transparent),
+    linear-gradient(180deg, rgba(20, 27, 46, 0.9), transparent 70%);
 }
 
-.buttons {
+.heroInner {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ifm-color-primary);
+  margin-bottom: 0.9rem;
+}
+
+.heroTitle {
+  font-size: 3.1rem;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  margin-bottom: 1.1rem;
+}
+
+.accent {
+  color: var(--ifm-color-primary);
+}
+
+.heroSub {
+  font-size: 1.08rem;
+  line-height: 1.65;
+  color: var(--ifm-color-emphasis-700);
+  max-width: 34rem;
+  margin-bottom: 1.6rem;
+}
+
+.heroButtons {
   display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.heroChips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.heroChips span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ifm-color-emphasis-700);
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  background: var(--ifm-background-surface-color);
+}
+
+.heroVisual {
+  min-width: 0;
+}
+
+.heroChart {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 16px;
+  background: var(--ifm-background-surface-color);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+.heroGrid {
+  stroke: var(--ifm-toc-border-color);
+  stroke-width: 1;
+}
+
+.heroDot {
+  fill: var(--ifm-background-surface-color);
+  stroke: var(--ifm-color-primary);
+  stroke-width: 3;
+}
+
+.heroFormula rect {
+  fill: var(--ifm-background-color);
+  stroke: var(--ifm-toc-border-color);
+}
+
+.heroFormula text {
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 15px;
+  fill: var(--ifm-color-emphasis-700);
+}
+
+/* ── Sections ─────────────────────────────────────────────────────── */
+.section {
+  padding: 4rem 0;
+}
+
+.sectionAlt {
+  background: var(--ifm-background-surface-color);
+  border-top: 1px solid var(--ifm-toc-border-color);
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.sectionTitle {
+  font-size: 1.9rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+}
+
+.sectionSub {
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 2rem;
+}
+
+/* ── Curriculum cards ─────────────────────────────────────────────── */
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.subjectCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.4rem 1.4rem 1.2rem;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 14px;
+  background: var(--ifm-background-surface-color);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.subjectCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  border-color: var(--ifm-color-primary);
+  color: inherit;
+  text-decoration: none;
+}
+
+.subjectIcon {
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--ifm-color-primary);
+  font-weight: 800;
+}
+
+.subjectTitle {
+  font-size: 1.12rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.subjectBlurb {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--ifm-color-emphasis-700);
+  flex: 1;
+}
+
+.subjectCta {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ifm-color-primary);
+  margin-top: 0.4rem;
+}
+
+/* ── Feature tiles ────────────────────────────────────────────────── */
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.featureCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.25rem;
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 14px;
+  background: var(--ifm-background-color);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.featureCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--ifm-color-primary);
+  color: inherit;
+  text-decoration: none;
+}
+
+.featureIcon {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 10px;
+  background: rgba(36, 87, 208, 0.1);
+  color: var(--ifm-color-primary);
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+:global([data-theme='dark']) .featureIcon {
+  background: rgba(126, 163, 245, 0.14);
+}
+
+.featureTitle {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.featureBlurb {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ifm-color-emphasis-700);
+}
+
+/* ── CTA band ─────────────────────────────────────────────────────── */
+.ctaBand {
+  padding: 4rem 0;
+  text-align: center;
+}
+
+.ctaBand h2 {
+  font-size: 1.7rem;
+  letter-spacing: -0.02em;
+}
+
+.ctaBand p {
+  color: var(--ifm-color-emphasis-600);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 996px) {
+  .heroInner {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .heroTitle {
+    font-size: 2.4rem;
+  }
+
+  .hero {
+    padding: 3rem 0 2.5rem;
+  }
 }

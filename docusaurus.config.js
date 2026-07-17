@@ -6,9 +6,9 @@ import {themes as prismThemes} from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'Quantitative_Finance_Joyeb',
-  tagline: 'Welcome to my Quantitative Finance Journey',
-  favicon: 'img/favicon.ico',
+  title: 'Joyeb Kashyeb',
+  tagline: 'Math, markets & machine learning — a quantitative finance journey, learned in public.',
+  favicon: 'img/favicon.svg',
 
   future: {
     v4: true,
@@ -41,21 +41,13 @@ const config = {
           remarkPlugins: [remarkMath],
           rehypePlugins: [rehypeKatex],
           sidebarPath: './sidebars.js',
+          // "Edit this page" opens the GitHub editor on this repo —
+          // the one-click, no-code way to fix or extend any note.
           editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+            'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb/edit/main/',
+          showLastUpdateTime: true,
         },
-        blog: {
-          showReadingTime: true,
-          feedOptions: {
-            type: ['rss', 'atom'],
-            xslt: true,
-          },
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          onInlineTags: 'warn',
-          onInlineAuthors: 'warn',
-          onUntruncatedBlogPosts: 'warn',
-        },
+        blog: false,
         theme: {
           customCss: './src/css/custom.css',
         },
@@ -66,7 +58,21 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: 'img/docusaurus-social-card.jpg',
+      image: 'img/social-card.png',
+      metadata: [
+        {
+          name: 'description',
+          content:
+            'Quantitative finance notes by Joyeb Kashyeb — interactive lessons on mathematics, probability, statistics, finance, economics, machine learning and Python, with runnable code and hands-on pricing labs.',
+        },
+        {
+          name: 'keywords',
+          content:
+            'quantitative finance, quant, derivatives, black-scholes, probability, statistics, python, machine learning, Joyeb Kashyeb',
+        },
+        {name: 'twitter:card', content: 'summary_large_image'},
+        {name: 'author', content: 'Joyeb Kashyeb'},
+      ],
       colorMode: {
         respectPrefersColorScheme: true,
       },
@@ -77,20 +83,28 @@ const config = {
         },
       },
       navbar: {
-        title: 'My Site',
+        title: 'Joyeb Kashyeb',
+        hideOnScroll: true,
         logo: {
-          alt: 'My Site Logo',
+          alt: 'Joyeb Kashyeb — Quant Finance',
           src: 'img/logo.svg',
         },
         items: [
-          {to: '/tutorial', label: 'Tutorial', position: 'left'},
+          {to: '/tutorial', label: 'Learn', position: 'left'},
           {to: '/roadmap', label: 'Roadmap', position: 'left'},
-          {to: '/books', label: 'Books', position: 'left'},
-          {to: '/resources', label: 'Resources', position: 'left'},
-          {to: '/projects', label: 'Projects', position: 'left'},
-          {to: '/scope', label: 'Scope', position: 'left'},
-          {to: '/tools', label: 'Tools', position: 'left'},
           {to: '/terminal', label: 'Terminal', position: 'left'},
+          {
+            label: 'Library',
+            position: 'left',
+            items: [
+              {to: '/books', label: '📚 Books'},
+              {to: '/resources', label: '🔗 Resources'},
+              {to: '/projects', label: '🛠️ Projects'},
+              {to: '/tools', label: '⚙️ Tools'},
+              {to: '/scope', label: '🎯 Scope'},
+            ],
+          },
+          {to: '/admin', label: 'Publish', position: 'right'},
           {
             href: 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb',
             label: 'GitHub',
@@ -100,8 +114,37 @@ const config = {
       },
       footer: {
         style: 'dark',
-        links: [],
-        copyright: `© ${new Date().getFullYear()} Joyeb Kashyeb — Quantitative Finance Journey`,
+        links: [
+          {
+            title: 'Learn',
+            items: [
+              {label: 'Start here', to: '/docs/Introduction_and_Goals/overview'},
+              {label: 'Tutorial hub', to: '/tutorial'},
+              {label: 'Roadmap', to: '/roadmap'},
+              {label: 'Derivatives lab', to: '/docs/Finance/derivatives'},
+            ],
+          },
+          {
+            title: 'Explore',
+            items: [
+              {label: 'Market terminal', to: '/terminal'},
+              {label: 'Projects', to: '/projects'},
+              {label: 'Books', to: '/books'},
+              {label: 'Resources', to: '/resources'},
+            ],
+          },
+          {
+            title: 'Site',
+            items: [
+              {label: 'Publish (owner)', to: '/admin'},
+              {
+                label: 'GitHub',
+                href: 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb',
+              },
+            ],
+          },
+        ],
+        copyright: `© ${new Date().getFullYear()} Joyeb Kashyeb · Quantitative finance, learned in public — from Nepal 🇳🇵`,
       },
       prism: {
         theme: prismThemes.oneLight,
@@ -115,6 +158,10 @@ const config = {
       href: 'https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css',
       type: 'text/css',
       crossorigin: 'anonymous',
+    },
+    {
+      href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap',
+      type: 'text/css',
     },
   ],
 };
