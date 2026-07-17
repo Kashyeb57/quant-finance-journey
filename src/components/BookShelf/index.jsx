@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import Link from '@docusaurus/Link';
 import styles from './styles.module.css';
 
 /*
@@ -43,14 +44,12 @@ export default function BookShelf({ books }) {
 
       <div className={styles.grid}>
         {shown.map((b) => (
-          <a
+          <Link
             key={b.url}
             className={styles.book}
-            href={b.url}
-            target="_blank"
-            rel="noreferrer"
+            to={`/read?file=${encodeURIComponent(b.url)}&title=${encodeURIComponent(b.title)}`}
             data-cat={b.category}
-            title={`Open “${b.title}” in the reader`}
+            title={`Read “${b.title}” here on the site`}
           >
             <div className={styles.cover}>
               <span className={styles.spine} />
@@ -59,7 +58,7 @@ export default function BookShelf({ books }) {
               <span className={styles.coverAuthor}>{b.author}</span>
               <span className={styles.read}>Read →</span>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
     </div>

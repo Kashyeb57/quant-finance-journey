@@ -4,10 +4,11 @@ import Heading from '@theme/Heading';
 import ResourceCards from '@site/src/components/ResourceCards';
 import BookShelf from '@site/src/components/BookShelf';
 
-// My own library — PDFs living in my GitHub repos. Each URL opens GitHub's
-// inline PDF reader, so a click drops you straight into the book.
-const QIP = 'https://github.com/Kashyeb57/Quant-Interview-Prep-Resources/blob/main';
-const QR = 'https://github.com/Kashyeb57/Quant_resources/blob/main';
+// My own library — PDFs living in my GitHub repos, served as application/pdf
+// through jsDelivr's CDN so they can be embedded in the on-site reader
+// (/read) and opened without ever leaving this site.
+const QIP = 'https://cdn.jsdelivr.net/gh/Kashyeb57/Quant-Interview-Prep-Resources@main';
+const QR = 'https://cdn.jsdelivr.net/gh/Kashyeb57/Quant_resources@main';
 
 const LIBRARY = [
   // ── Core textbooks ────────────────────────────────────────────────
