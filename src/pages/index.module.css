@@ -10,9 +10,7 @@
 }
 
 :global([data-theme='dark']) .hero {
-  background:
-    radial-gradient(ellipse 70% 90% at 85% 10%, rgba(126, 163, 245, 0.12), transparent),
-    linear-gradient(180deg, rgba(20, 27, 46, 0.9), transparent 70%);
+  background: radial-gradient(ellipse 70% 90% at 85% 10%, rgba(126, 163, 245, 0.07), transparent);
 }
 
 .heroInner {

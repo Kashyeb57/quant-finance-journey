@@ -27,7 +27,7 @@
   --ifm-toc-border-color: rgba(15, 23, 42, 0.08);
 }
 
-/* Dark mode: deep slate-navy, lighter primary for contrast */
+/* Dark mode: neutral charcoal background, blue used only as the accent */
 [data-theme='dark'] {
   --ifm-color-primary: #7ea3f5;
   --ifm-color-primary-dark: #6390f3;
@@ -37,12 +37,9 @@
   --ifm-color-primary-lighter: #a7c0f8;
   --ifm-color-primary-lightest: #d0defb;
 
-  --ifm-background-color: #0e1320;
-  --ifm-background-surface-color: #141b2e;
-  --ifm-navbar-background-color: rgba(14, 19, 32, 0.85);
-  --ifm-footer-background-color: #0a0e18;
+  --ifm-navbar-background-color: rgba(27, 27, 29, 0.85);
   --docusaurus-highlighted-code-line-bg: rgba(126, 163, 245, 0.12);
-  --ifm-toc-border-color: rgba(148, 163, 184, 0.14);
+  --ifm-toc-border-color: rgba(160, 160, 160, 0.16);
 }
 
 /* ── Typography polish ─────────────────────────────────────────────── */
@@ -122,8 +119,8 @@ blockquote {
 
 /* ── Footer ────────────────────────────────────────────────────────── */
 .footer--dark {
-  --ifm-footer-background-color: #0a0e18;
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  --ifm-footer-background-color: #161617;
+  border-top: 1px solid rgba(160, 160, 160, 0.1);
 }
 
 .footer__title {
@@ -176,10 +173,10 @@ blockquote {
   --viz-s4: #e66767;
   --viz-good: #0ca30c;
   --viz-crit: #d03b3b;
-  --viz-grid: #232b3f;
-  --viz-axis: #33405c;
-  --viz-muted: #8a94a8;
-  --viz-ink: #e3e8f2;
-  --viz-card-bg: #141b2e;
-  --viz-panel-bg: #1a2338;
+  --viz-grid: #2c2c2a;
+  --viz-axis: #383835;
+  --viz-muted: #898781;
+  --viz-ink: #e3e3e3;
+  --viz-card-bg: #1b1b1d;
+  --viz-panel-bg: #242526;
 }
