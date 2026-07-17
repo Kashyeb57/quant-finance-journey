@@ -121,7 +121,7 @@ export default function Home() {
       <header className={styles.hero}>
         <div className={clsx('container', styles.heroInner)}>
           <div className={styles.heroText}>
-            <p className={styles.eyebrow}>Quantitative finance · self-study, in public</p>
+            <p className={styles.eyebrow}>Quantitative finance · self-study</p>
             <Heading as="h1" className={styles.heroTitle}>
               Learning to think
               <br />

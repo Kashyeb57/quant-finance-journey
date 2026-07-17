@@ -7,7 +7,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Joyeb Kashyeb',
-  tagline: 'Math, markets & machine learning — a quantitative finance journey, learned in public.',
+  tagline: 'Math, markets & machine learning — a quantitative finance journey.',
   favicon: 'img/favicon.svg',
 
   future: {
