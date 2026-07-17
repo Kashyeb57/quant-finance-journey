@@ -253,3 +253,48 @@ else:
 ```text
 Username not found.
 ```
+
+---
+
+## 🧪 Try it yourself
+
+<PySandbox title="Exercise: risk classifier" code={`# A tiny risk engine: classify a portfolio's daily move
+daily_return = -2.7   # percent — try changing this!
+
+if daily_return <= -3:
+    label = "SEVERE LOSS - risk limits breached"
+elif daily_return < 0:
+    label = "loss - within normal range"
+elif daily_return == 0:
+    label = "flat"
+elif daily_return < 3:
+    label = "gain - within normal range"
+else:
+    label = "EXCEPTIONAL GAIN - check the data twice"
+
+print(f"Return of {daily_return}% -> {label}")
+
+# Challenge: add a condition for exactly -3 vs less than -3`} />
+
+## ✅ Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'In an if / elif / elif / else chain, how many branches can execute?',
+    options: ['All whose conditions are True', 'Exactly one', 'At least one', 'At most two'],
+    answer: 1,
+    explain: 'Python evaluates conditions top-down and runs ONLY the first True branch (or else if none match), then skips the rest of the chain entirely.',
+  },
+  {
+    q: 'Which of these values is "falsy" in Python?',
+    options: ['"0"', '[0]', '0.0', '"False"'],
+    answer: 2,
+    explain: '0.0 (like 0, "", [], {}, None) is falsy. But "0" and "False" are non-empty strings, and [0] is a non-empty list — all truthy!',
+  },
+  {
+    q: 'What prints? x = 5; print("yes") if x > 3 else print("no")',
+    options: ['yes', 'no', 'SyntaxError', 'nothing'],
+    answer: 0,
+    explain: 'This is the ternary (conditional) expression: value_if_true if condition else value_if_false. Since 5 > 3, "yes" prints.',
+  },
+]} />

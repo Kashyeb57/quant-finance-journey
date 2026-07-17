@@ -120,3 +120,48 @@ print(result)
 ```text
 Hello5
 ```
+
+---
+
+## 🧪 Try it yourself
+
+<PySandbox title="Exercise: type detective" code={`# Predict the type of each expression BEFORE running!
+print(type(10))
+print(type(10.0))
+print(type(10 / 2))     # careful with this one...
+print(type(10 // 3))
+print(type("10"))
+print(type(True))
+print(type(int("42") + 8))
+
+# Challenge: why is this False?
+print(0.1 + 0.2 == 0.3)
+print(0.1 + 0.2)`} />
+
+## ✅ Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'What is the type of the result of 10 / 2 in Python 3?',
+    options: ['int', 'float', 'str', 'It depends on the values'],
+    answer: 1,
+    explain: 'True division (/) ALWAYS returns a float in Python 3 — even 10 / 2 gives 5.0. Use // if you want integer (floor) division.',
+  },
+  {
+    q: 'Why does 0.1 + 0.2 == 0.3 evaluate to False?',
+    options: [
+      'Python has a bug in addition',
+      'Floats are stored in binary and cannot represent 0.1 exactly',
+      '== does not work with floats',
+      'It is actually True',
+    ],
+    answer: 1,
+    explain: 'Floats are binary fractions; 0.1 has no exact binary representation, so tiny rounding errors accumulate (0.30000000000000004). In finance code, use decimal.Decimal or compare with a tolerance.',
+  },
+  {
+    q: 'What does int("7") + float("2.5") produce?',
+    options: ['9.5', '"72.5"', 'TypeError', '9'],
+    answer: 0,
+    explain: 'Both strings convert cleanly to numbers: 7 + 2.5 = 9.5 (int + float promotes to float). Without the conversions, "7" + "2.5" would concatenate to "72.5".',
+  },
+]} />

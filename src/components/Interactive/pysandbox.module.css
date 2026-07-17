@@ -1,0 +1,91 @@
+.editor {
+  width: 100%;
+  resize: vertical;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--viz-panel-bg);
+  color: var(--viz-ink);
+  tab-size: 4;
+}
+
+.editor:focus {
+  outline: none;
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 0 2px var(--ifm-color-primary-lightest);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.runBtn {
+  border: none;
+  border-radius: 8px;
+  background: var(--ifm-color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.4rem 1.1rem;
+  cursor: pointer;
+}
+
+.runBtn:hover:not(:disabled) {
+  background: var(--ifm-color-primary-dark);
+}
+
+.runBtn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.note {
+  font-size: 0.75rem;
+  color: var(--viz-muted);
+}
+
+.clearBtn {
+  margin-left: auto;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--viz-muted);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+
+.outWrap {
+  margin-top: 0.6rem;
+}
+
+.out,
+.err {
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.out {
+  background: var(--viz-panel-bg);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  color: var(--viz-ink);
+}
+
+.err {
+  background: rgba(208, 59, 59, 0.08);
+  border: 1px solid rgba(208, 59, 59, 0.35);
+  color: var(--viz-crit);
+  margin-top: 0.4rem;
+}

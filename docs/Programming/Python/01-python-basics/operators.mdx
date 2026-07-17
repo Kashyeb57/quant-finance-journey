@@ -299,3 +299,43 @@ Floor Division: 3.0
 Modulus: 0.0
 Exponentiation: 20736.0
 ```
+
+---
+
+## 🧪 Try it yourself
+
+<PySandbox title="Exercise: operator playground" code={`# Integer vs float vs floor division
+print(7 / 2)    # true division
+print(7 // 2)   # floor division
+print(7 % 2)    # remainder (modulus)
+print(2 ** 10)  # exponentiation
+
+# Floor division with negatives — surprising!
+print(-7 // 2)
+
+# Challenge: a quant one-liner.
+# 8% annual return, compounded yearly for 9 years — money roughly doubles (Rule of 72)
+print(1000 * (1 + 0.08) ** 9)`} />
+
+## ✅ Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'What does 7 // 2 return?',
+    options: ['3.5', '3', '4', '1'],
+    answer: 1,
+    explain: '// is floor division: it divides and rounds DOWN to the nearest whole number. 7 / 2 = 3.5 → floor → 3.',
+  },
+  {
+    q: 'What does -7 // 2 return?',
+    options: ['-3', '-3.5', '-4', '3'],
+    answer: 2,
+    explain: 'Floor division rounds toward NEGATIVE infinity, not toward zero: −3.5 floors to −4. A classic Python interview gotcha.',
+  },
+  {
+    q: 'What is the value of 2 ** 3 ** 2?',
+    options: ['64', '512', '36', '12'],
+    answer: 1,
+    explain: 'Exponentiation is right-associative: 2 ** (3 ** 2) = 2 ** 9 = 512, not (2 ** 3) ** 2 = 64.',
+  },
+]} />

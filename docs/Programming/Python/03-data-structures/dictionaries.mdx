@@ -377,3 +377,50 @@ print(merged_dict)
 
 #### Conclusion
 Dictionaries are powerful tools in Python for managing key-value pairs. They are used in a variety of real-world scenarios, such as counting word frequency, grouping data, storing configuration settings, managing phonebooks, tracking inventory, and caching results. Understanding how to leverage dictionaries effectively can greatly enhance the efficiency and readability of your code.
+
+---
+
+## 🧪 Try it yourself
+
+<PySandbox title="Exercise: build a tiny portfolio" code={`# Holdings: ticker -> number of shares
+portfolio = {"AAPL": 10, "MSFT": 5, "NVDA": 8}
+prices    = {"AAPL": 190.0, "MSFT": 420.0, "NVDA": 950.0}
+
+# Total value with a dict comprehension
+values = {t: shares * prices[t] for t, shares in portfolio.items()}
+print(values)
+print("Total: $", sum(values.values()))
+
+# Safe lookups: .get() never raises KeyError
+print(portfolio.get("TSLA", 0), "shares of TSLA")
+
+# Challenge: add a new position and find the LARGEST holding
+# hint: max(values, key=values.get)`} />
+
+## ✅ Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'd = {"a": 1}; print(d.get("b")) outputs…',
+    options: ['KeyError', 'None', '0', '"b"'],
+    answer: 1,
+    explain: '.get() returns None (or a default you provide) for missing keys instead of raising — that is exactly why it exists. d["b"] would raise KeyError.',
+  },
+  {
+    q: 'Which of these CANNOT be a dictionary key?',
+    options: ['"AAPL"', '(2024, 1)', '[1, 2]', '42'],
+    answer: 2,
+    explain: 'Keys must be hashable (immutable). Lists are mutable, so they cannot be keys — but tuples can, which is why (year, month) makes a fine composite key.',
+  },
+  {
+    q: 'What does {"a": 1, "b": 2} | {"b": 99} evaluate to (Python 3.9+)?',
+    options: [
+      '{"a": 1, "b": 2}',
+      '{"a": 1, "b": 99}',
+      '{"b": 99}',
+      'TypeError',
+    ],
+    answer: 1,
+    explain: 'The | merge operator combines dicts; when keys collide, the RIGHT side wins — so "b" becomes 99.',
+  },
+]} />

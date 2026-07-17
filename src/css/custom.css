@@ -28,3 +28,33 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* ── Interactive-lab chart palette (CVD-validated, one set per color mode) ── */
+:root {
+  --viz-s1: #2a78d6; /* blue   — series 1 */
+  --viz-s2: #1baf7a; /* aqua   — series 2 (direct-label in light mode) */
+  --viz-s3: #eda100; /* yellow — series 3 (direct-label in light mode) */
+  --viz-s4: #e34948; /* red    — series 4 */
+  --viz-good: #0ca30c;
+  --viz-crit: #d03b3b;
+  --viz-grid: #e1e0d9;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #898781;
+  --viz-ink: #1c1e21;
+  --viz-card-bg: #ffffff;
+  --viz-panel-bg: #f6f8fa;
+}
+[data-theme='dark'] {
+  --viz-s1: #3987e5;
+  --viz-s2: #199e70;
+  --viz-s3: #c98500;
+  --viz-s4: #e66767;
+  --viz-good: #0ca30c;
+  --viz-crit: #d03b3b;
+  --viz-grid: #2c2c2a;
+  --viz-axis: #383835;
+  --viz-muted: #898781;
+  --viz-ink: #e3e3e3;
+  --viz-card-bg: #1b1b1d;
+  --viz-panel-bg: #242526;
+}

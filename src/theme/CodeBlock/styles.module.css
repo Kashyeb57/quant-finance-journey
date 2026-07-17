@@ -1,0 +1,92 @@
+.runnable {
+  margin-bottom: var(--ifm-leading);
+}
+
+/* pull the code block and the run bar together */
+.runnable > :global(.theme-code-block) {
+  margin-bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.runBar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-top: none;
+  border-bottom-left-radius: var(--ifm-code-border-radius, 8px);
+  border-bottom-right-radius: var(--ifm-code-border-radius, 8px);
+  background: var(--viz-panel-bg);
+}
+
+.runBtn {
+  border: none;
+  border-radius: 6px;
+  background: var(--ifm-color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 0.28rem 0.85rem;
+  cursor: pointer;
+}
+
+.runBtn:hover:not(:disabled) {
+  background: var(--ifm-color-primary-dark);
+}
+
+.runBtn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.runNote {
+  font-size: 0.7rem;
+  color: var(--viz-muted);
+}
+
+.clearBtn {
+  margin-left: auto;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--viz-muted);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+}
+
+.result {
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  margin-top: -1px;
+  padding: 0.5rem 0.75rem 0.6rem;
+}
+
+.resultTag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--viz-muted);
+  margin-bottom: 0.25rem;
+}
+
+.out,
+.err {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--viz-ink);
+}
+
+.err {
+  color: var(--viz-crit);
+  margin-top: 0.3rem;
+}

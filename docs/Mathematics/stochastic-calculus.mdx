@@ -6,4 +6,65 @@ title: Stochastic Calculus
 
 Brownian motion, Ito's Lemma, SDEs, and martingales for modeling market randomness.
 
-> 📝 Notes coming soon — this page is part of my quant study roadmap.
+The single most important SDE in finance is **geometric Brownian motion** — the model behind
+Black–Scholes:
+
+$$
+dS_t = \mu S_t\,dt + \sigma S_t\,dW_t
+$$
+
+Its solution (via Itô's Lemma) is
+
+$$
+S_t = S_0 \exp\!\left[\left(\mu - \tfrac{\sigma^2}{2}\right)t + \sigma W_t\right]
+$$
+
+Reading that formula is one thing — *watching* it is another:
+
+## Simulate the market
+
+<GBMSimulator />
+
+Things to notice while you play:
+
+1. **The expected path is a lie you never live.** The dashed red curve is E[Sₜ] = S₀e^μᵗ, yet almost
+   no individual path tracks it. Averages hide the violence of randomness.
+2. **The −σ²/2 correction is real.** Set μ = 0% and σ = 60%: more than half the paths finish *below*
+   S₀ even though the drift is zero. That's the volatility drag term (μ − σ²/2) at work.
+3. **Volatility scales with √t.** The fan of paths widens like a square root, not a straight line —
+   double the horizon and uncertainty only grows by √2.
+4. **Paths are jagged everywhere.** Brownian motion is continuous but nowhere differentiable —
+   there's no slope to measure, which is precisely why ordinary calculus fails and Itô calculus exists.
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'In the GBM solution, why does the exponent contain μ − σ²/2 instead of just μ?',
+    options: [
+      'It is a typo carried through the literature',
+      'Itô’s Lemma applied to ln(S) produces the −σ²/2 correction',
+      'Interest rates must be subtracted',
+      'To keep the exponent dimensionless',
+    ],
+    answer: 1,
+    explain: 'd(ln S) = (μ − σ²/2)dt + σdW by Itô’s Lemma — the second-order term (dW)² = dt does not vanish like in ordinary calculus, and it drags the log-drift down by σ²/2.',
+  },
+  {
+    q: 'Over a horizon T, the standard deviation of Brownian motion W_T grows like…',
+    options: ['T', '√T', 'log T', 'e^T'],
+    answer: 1,
+    explain: 'Var(W_T) = T, so the standard deviation is √T. That is why the simulated fan of paths widens with a square-root shape rather than linearly.',
+  },
+  {
+    q: 'A martingale is a process whose…',
+    options: [
+      'paths always increase',
+      'expected future value equals its current value',
+      'variance is zero',
+      'drift is positive',
+    ],
+    answer: 1,
+    explain: 'E[X_t | information at s] = X_s for s < t. "Fair game" — no free lunch from waiting. Under the risk-neutral measure, discounted asset prices are martingales, which is the foundation of pricing.',
+  },
+]} />

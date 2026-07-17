@@ -6,4 +6,62 @@ title: Interest Rates
 
 How rates are set, the yield curve, and their effect on markets.
 
-> 📝 Notes coming soon — this page is part of my quant study roadmap.
+Einstein (allegedly) called compound interest the eighth wonder of the world. Whether he said it
+or not, the math earns the title — a small rate difference, given enough time, becomes an enormous
+outcome difference:
+
+$$
+FV = P\left(1 + \frac{r}{m}\right)^{mt}
+$$
+
+## Feel the compounding
+
+<CompoundInterestLab />
+
+Experiments to run:
+
+1. **The time lever.** Set 8% for 10 years, note the interest earned — now drag to 40 years.
+   Quadrupling the time multiplies the interest by far more than 4×. Compounding is nonlinear.
+2. **The rate lever.** At 30 years, compare 4% vs 8%. Doubling the rate roughly *quadruples* the
+   final interest. This is why the level of interest rates moves entire markets.
+3. **Compounding frequency.** Switch annual → daily. The gain is real but modest — frequency
+   matters much less than rate and time. (The limit is continuous compounding, FV = Pe^rt.)
+4. **Zero deposit test.** Set the monthly deposit to $0 — pure compounding on the initial amount.
+   That curve *is* discounting in reverse: it is exactly how bond prices relate to yields.
+
+## Why quants care
+
+- **Discounting:** every future cash flow is worth less today by exactly this math run backwards —
+  present value = FV / (1 + r)ᵗ. All of fixed income sits on this.
+- **The yield curve** plots the rate r for each maturity t. Its slope (steep, flat, inverted) is one
+  of the most watched recession signals in macro.
+- **Policy rates** (Fed, ECB, NRB) anchor the short end of the curve; expectations and term premia
+  shape the rest.
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'At 8% compounded annually, roughly how long does money take to double? (Rule of 72)',
+    options: ['6 years', '9 years', '12 years', '18 years'],
+    answer: 1,
+    explain: '72 / 8 = 9 years. The Rule of 72 is a first-order approximation of ln(2)/ln(1+r) — handy for mental math on any compounding question.',
+  },
+  {
+    q: 'Doubling the investment horizon (with everything else fixed) does what to total interest earned?',
+    options: [
+      'Exactly doubles it',
+      'Less than doubles it',
+      'More than doubles it',
+      'No effect',
+    ],
+    answer: 2,
+    explain: 'Growth is exponential, not linear: (1+r)^2t = [(1+r)^t]². The second half of the horizon earns interest on all the interest from the first half — you saw the curve bend upward in the lab.',
+  },
+  {
+    q: 'If market interest rates rise, the present value of a fixed future cash flow…',
+    options: ['rises', 'falls', 'is unchanged', 'depends on inflation only'],
+    answer: 1,
+    explain: 'PV = FV / (1+r)ᵗ — a bigger denominator means a smaller present value. This inverse relationship is why bond prices fall when rates rise.',
+  },
+]} />

@@ -232,3 +232,59 @@ multiply(2,3)
 ```text
 (6, 2)
 ```
+
+---
+
+## 🧪 Try it yourself
+
+<PySandbox title="Exercise: write a compound-interest function" code={`def future_value(principal, rate, years, m=1):
+    """Future value with compounding m times per year."""
+    return principal * (1 + rate / m) ** (m * years)
+
+# $1,000 at 8% for 9 years — Rule of 72 says this should roughly double
+print(round(future_value(1000, 0.08, 9), 2))
+
+# Keyword arguments make calls self-documenting
+print(round(future_value(principal=5000, rate=0.05, years=10, m=12), 2))
+
+# *args in action: average of any number of returns
+def average(*returns):
+    return sum(returns) / len(returns)
+
+print(average(0.05, 0.08, -0.02, 0.11))
+
+# Challenge: add a docstring test — call help(future_value)`} />
+
+## ✅ Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'What does a function without a return statement give back?',
+    options: ['0', 'The last computed value', 'None', 'An error'],
+    answer: 2,
+    explain: 'Every Python function returns something; with no explicit return (or a bare return), that something is None.',
+  },
+  {
+    q: 'def f(x, y=10): … — what is f(5)?',
+    options: ['An error — y is missing', 'Uses y = 10', 'Uses y = None', 'Returns 5'],
+    answer: 1,
+    explain: 'y=10 is a DEFAULT argument: callers may omit it. Required parameters must come before defaulted ones in the signature.',
+  },
+  {
+    q: 'In def g(*args), what type is args inside the function?',
+    options: ['list', 'tuple', 'dict', 'set'],
+    answer: 1,
+    explain: '*args collects extra positional arguments into a TUPLE. (**kwargs collects keyword arguments into a dict.)',
+  },
+  {
+    q: 'Why is def f(x, items=[]) a famous Python pitfall?',
+    options: [
+      'Lists cannot be default values',
+      'The same list object is shared across ALL calls',
+      'It raises a SyntaxError',
+      'items becomes a tuple',
+    ],
+    answer: 1,
+    explain: 'Default values are evaluated ONCE at definition time. Every call that appends to items mutates the same shared list. The idiom: default to None, then items = items or [] inside.',
+  },
+]} />

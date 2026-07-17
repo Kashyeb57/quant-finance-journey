@@ -1,0 +1,110 @@
+.scene {
+  perspective: 1200px;
+  cursor: pointer;
+  outline: none;
+}
+
+.scene:focus-visible .card {
+  box-shadow: 0 0 0 3px var(--ifm-color-primary-lightest);
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  transform-style: preserve-3d;
+  transition: transform 0.45s ease;
+  border-radius: 12px;
+}
+
+.isFlipped {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.front {
+  background: var(--viz-panel-bg);
+}
+
+.back {
+  transform: rotateY(180deg);
+  background: var(--viz-card-bg);
+  border-color: var(--ifm-color-primary);
+}
+
+.sideTag {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.8rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--viz-muted);
+}
+
+.faceText {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 90%;
+}
+
+.front .faceText {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.tapHint {
+  position: absolute;
+  bottom: 0.6rem;
+  font-size: 0.7rem;
+  color: var(--viz-muted);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.navBtn {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--viz-ink);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.8rem;
+  cursor: pointer;
+}
+
+.navBtn:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.counter {
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--viz-muted);
+}

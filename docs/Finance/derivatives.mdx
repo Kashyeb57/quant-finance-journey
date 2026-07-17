@@ -6,4 +6,68 @@ title: Derivatives
 
 Forwards, futures, options, and swaps — the core derivative instruments and how they are priced and used.
 
-> 📝 Notes coming soon — this page is part of my quant study roadmap.
+A **derivative** is a contract whose value *derives* from something else (a stock, an index, a rate).
+The fastest way to build intuition is to play with payoffs — so play:
+
+## 1. Option payoffs, hands-on
+
+Pick a strategy, drag the strike and premium, and watch how the profit/loss profile changes.
+Green is where you make money at expiry, red is where you lose it.
+
+<PayoffDiagram />
+
+A few things to try:
+
+- **Long Call** — slide the premium up. Notice the breakeven moves right: the stock must rally *further* just to cover what you paid.
+- **Short Put** — this is how "picking up pennies in front of a steamroller" looks: small capped profit, big downside.
+- **Long Straddle** — you don't care about direction, only *movement*. Both tails are green.
+- **Bull Call Spread** — selling the higher strike finances the lower one, but caps your upside.
+
+## 2. Pricing: the Black–Scholes lab
+
+Payoff diagrams show value *at expiry*. Before expiry an option is worth more than its intrinsic
+value — that extra is **time value**, and Black–Scholes tells you how much:
+
+$$
+C = S\,N(d_1) - K e^{-rT} N(d_2)
+$$
+
+<BlackScholesLab />
+
+Try these experiments:
+
+1. Slide **T → 0** and watch the blue curve collapse onto the dashed hockey stick — time value melting is *theta decay*.
+2. Double **σ** — the option gets more valuable even though the spot never moved. Options are long volatility.
+3. Set the spot deep in-the-money and check **Delta** — it approaches 1: the option starts behaving like the stock itself.
+
+## 3. Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'You buy a call with strike $100 for a $8 premium. At expiry the stock is at $105. What is your P/L?',
+    options: ['+$5', '−$3', '+$8', '−$8'],
+    answer: 1,
+    explain: 'The option pays max(105 − 100, 0) = $5, but you paid $8 for it, so the net is 5 − 8 = −$3. Breakeven is $108.',
+  },
+  {
+    q: 'Which position has theoretically unlimited losses?',
+    options: ['Long call', 'Long put', 'Short call', 'Long straddle'],
+    answer: 2,
+    explain: 'A short call loses money as the stock rises, and a stock has no upper bound. A long put’s gain (and a short put’s loss) is capped because a stock can only fall to zero.',
+  },
+  {
+    q: 'All else equal, an increase in volatility σ makes a vanilla option…',
+    options: ['cheaper', 'more expensive', 'worthless', 'unchanged'],
+    answer: 1,
+    explain: 'More volatility means more chance of finishing far in-the-money, while the downside stays capped at the premium. That asymmetry is worth money — options are long volatility.',
+  },
+  {
+    q: 'The difference between an option’s market price and its intrinsic value is called…',
+    options: ['premium', 'moneyness', 'time value', 'carry'],
+    answer: 2,
+    explain: 'Price = intrinsic value + time value. Time value shrinks to zero at expiry (theta decay), which is exactly the gap you saw closing in the lab above.',
+  },
+]} />
+
+> 📝 Detailed notes on forwards, futures and swaps live in the
+> [Quant Finance Bootcamp](/docs/Forwards-and-Futures) section.

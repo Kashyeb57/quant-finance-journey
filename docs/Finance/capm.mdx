@@ -6,4 +6,69 @@ title: CAPM & Asset Pricing
 
 The Capital Asset Pricing Model and the theory of risk and return.
 
-> 📝 Notes coming soon — this page is part of my quant study roadmap.
+CAPM's one-line claim: **you only get paid for the risk you can't diversify away.**
+
+$$
+E[R_i] = R_f + \beta_i\,(E[R_m] - R_f)
+$$
+
+- $R_f$ — the risk-free rate (what you earn for taking no risk)
+- $\beta_i$ — how much the asset moves when the market moves
+- $E[R_m] - R_f$ — the market risk premium
+
+## Key terms — drill them
+
+<Flashcards title="CAPM vocabulary" cards={[
+  { front: 'Beta (β)', back: 'Sensitivity of an asset’s return to the market’s return: β = Cov(Rᵢ, Rₘ) / Var(Rₘ). β = 1 moves with the market, β > 1 amplifies it, β < 1 dampens it, β < 0 hedges it.' },
+  { front: 'Systematic risk', back: 'Market-wide risk (recessions, rate shocks) that diversification cannot remove. CAPM says this is the ONLY risk that earns a premium.' },
+  { front: 'Idiosyncratic risk', back: 'Company-specific risk (a CEO scandal, a failed product). Diversification washes it out — so the market pays you nothing for carrying it.' },
+  { front: 'Security Market Line (SML)', back: 'The line E[R] = R_f + β(E[R_m] − R_f). Assets above it are cheap (positive alpha), assets below it are expensive (negative alpha).' },
+  { front: 'Alpha (α)', back: 'Return above what CAPM predicts for the asset’s beta. Persistent positive alpha is the holy grail of active management — and extremely hard to find.' },
+  { front: 'Market risk premium', back: 'E[R_m] − R_f: the extra return investors demand to hold the risky market portfolio instead of the risk-free asset. Historically ~4–6%/yr for equities.' },
+  { front: 'Risk-free rate (R_f)', back: 'The return on an asset with zero default risk — in practice, short-dated government bills. The anchor every risky return is measured against.' },
+]} />
+
+## Worked example
+
+A stock has β = 1.4. With a risk-free rate of 3% and an expected market return of 8%:
+
+$$
+E[R] = 3\% + 1.4 \times (8\% - 3\%) = 10\%
+$$
+
+If your research says the stock will actually return 13%, CAPM says it offers **+3% alpha** — either
+you've found a bargain, or your forecast (or CAPM itself) is wrong. Quant careers are built on
+telling those two apart.
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'A stock has β = 1.4, the risk-free rate is 3%, and the expected market return is 8%. CAPM expected return?',
+    options: ['8%', '10%', '11.2%', '14%'],
+    answer: 1,
+    explain: 'E[R] = 3% + 1.4 × (8% − 3%) = 3% + 7% = 10%. Note the premium multiplies the *excess* market return, not the total.',
+  },
+  {
+    q: 'According to CAPM, which risk earns you a return premium?',
+    options: [
+      'Total volatility of the stock',
+      'Idiosyncratic (company-specific) risk',
+      'Systematic (market) risk only',
+      'Any risk, as long as it is large',
+    ],
+    answer: 2,
+    explain: 'Idiosyncratic risk can be diversified away for free, so no rational market pays for it. Only exposure to the undiversifiable market factor — beta — is compensated.',
+  },
+  {
+    q: 'A negative-beta asset (β < 0) should, per CAPM, offer an expected return…',
+    options: [
+      'higher than the market',
+      'equal to the risk-free rate',
+      'below the risk-free rate',
+      'of exactly zero',
+    ],
+    answer: 2,
+    explain: 'A negative-beta asset pays off when the market crashes — it is insurance. Investors accept below-risk-free expected returns for insurance, exactly like paying a premium for a put.',
+  },
+]} />

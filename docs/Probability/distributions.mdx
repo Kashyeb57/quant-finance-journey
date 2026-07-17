@@ -6,4 +6,58 @@ title: Random Variables & Distributions
 
 Discrete and continuous distributions and their properties.
 
-> 📝 Notes coming soon — this page is part of my quant study roadmap.
+The **normal (Gaussian) distribution** is the workhorse of quantitative finance — returns models,
+option pricing, and confidence intervals all lean on it. Its density is
+
+$$
+f(x) = \frac{1}{\sigma\sqrt{2\pi}}\, e^{-\frac{(x-\mu)^2}{2\sigma^2}}
+$$
+
+but formulas don't build intuition. Sliders do:
+
+## Explore the bell curve
+
+<NormalExplorer />
+
+Experiments worth running:
+
+1. **Verify the 68–95–99.7 rule.** With μ=0, σ=1 set a=−1, b=1 → ≈68.3%. Then a=−2, b=2 → ≈95.4%.
+2. **Slide μ around** — the whole curve shifts but never changes shape. The mean is pure *location*.
+3. **Crank σ up** — the curve flattens and spreads. Probability mass leaks into the tails, which is
+   exactly what "more risk" means for a return distribution.
+4. **Tail risk:** set a=−8, b=−3 with μ=0, σ=1. That tiny sliver is a "3-sigma event" — rarer than
+   0.2%. Markets produce them far more often than the Gaussian says they should (fat tails!).
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'For a standard normal distribution, roughly what fraction of outcomes falls within ±1σ of the mean?',
+    options: ['50%', '68%', '95%', '99.7%'],
+    answer: 1,
+    explain: 'The 68–95–99.7 rule: ±1σ ≈ 68.3%, ±2σ ≈ 95.4%, ±3σ ≈ 99.7%. You can verify each one with the sliders above.',
+  },
+  {
+    q: 'Increasing σ while holding μ fixed does what to the density curve?',
+    options: [
+      'Shifts it to the right',
+      'Makes it taller and narrower',
+      'Makes it flatter and wider',
+      'Nothing — σ only matters for discrete distributions',
+    ],
+    answer: 2,
+    explain: 'σ is the scale parameter. Bigger σ spreads the same total probability (area = 1) over a wider range, so the peak must drop.',
+  },
+  {
+    q: 'P(X = 2.5) for a continuous random variable X is…',
+    options: ['f(2.5), the density at 2.5', 'always 0', '0.5', 'impossible to know'],
+    answer: 1,
+    explain: 'For continuous distributions, probability lives in *areas*, not points. A single point has zero width, hence zero area, hence zero probability — that is why the lab shades a region between a and b.',
+  },
+  {
+    q: 'Daily stock returns showing more extreme moves than a fitted normal predicts is evidence of…',
+    options: ['fat tails', 'zero mean', 'perfect efficiency', 'low volatility'],
+    answer: 0,
+    explain: 'Empirical return distributions have excess kurtosis — "fat tails". Crashes and melt-ups happen far more often than the Gaussian model implies, which is why quants also study Student-t and jump models.',
+  },
+]} />

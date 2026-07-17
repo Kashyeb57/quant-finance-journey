@@ -230,3 +230,54 @@ Quotient: 5.6
 
 ### Conclusion:
 Variables are essential in Python programming for storing and manipulating data. Understanding how to declare, assign, and use variables effectively is crucial for writing functional and efficient code. Following proper naming conventions and understanding variable types will help in maintaining readability and consistency in your code.
+
+---
+
+## 🧪 Try it yourself
+
+Edit the code and hit **Run** — it executes right here in your browser.
+
+<PySandbox title="Exercise: your own variables" code={`# 1. Create variables about yourself
+name = "Joyeb"
+age = 25
+height = 5.9
+is_learning_quant = True
+
+# 2. Print each one with its type
+print(name, type(name))
+print(age, type(age))
+print(height, type(height))
+print(is_learning_quant, type(is_learning_quant))
+
+# 3. Challenge: swap two variables without a temp variable
+a, b = 10, 20
+a, b = b, a
+print("a =", a, "b =", b)`} />
+
+## ✅ Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'Which of these is a valid Python variable name?',
+    options: ['2nd_price', 'first-name', '_portfolio_value', 'class'],
+    answer: 2,
+    explain: 'Names must start with a letter or underscore (so 2nd_price fails), cannot contain hyphens (first-name fails), and cannot be reserved keywords (class fails). _portfolio_value is perfectly legal.',
+  },
+  {
+    q: 'What happens when you run: x = 10, then x = "hello"?',
+    options: [
+      'TypeError — x is locked to int',
+      'x becomes the string "hello"',
+      'x holds both values',
+      'Python crashes',
+    ],
+    answer: 1,
+    explain: 'Python is dynamically typed — a variable is just a name pointing at an object, and it can point at a different type at any time.',
+  },
+  {
+    q: 'After a = 5 and b = float(a), what is type(b)?',
+    options: ['int', 'float', 'str', 'bool'],
+    answer: 1,
+    explain: 'float(5) converts the integer to 5.0. Explicit conversion functions like int(), float(), and str() are called type casting.',
+  },
+]} />

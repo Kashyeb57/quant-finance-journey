@@ -322,3 +322,51 @@ for num in range(1,101):
 
 #### Conclusion:
 Loops are powerful constructs in Python that allow you to execute a block of code multiple times. By understanding and using for and while loops, along with loop control statements like break, continue, and pass, you can handle a wide range of programming tasks efficiently.
+
+---
+
+## 🧪 Try it yourself
+
+<PySandbox title="Exercise: FizzBuzz, quant edition" code={`# Print numbers 1-20, but:
+#   multiples of 3  -> "Buy"
+#   multiples of 5  -> "Sell"
+#   multiples of 15 -> "Hold"
+for i in range(1, 21):
+    if i % 15 == 0:
+        print(i, "Hold")
+    elif i % 3 == 0:
+        print(i, "Buy")
+    elif i % 5 == 0:
+        print(i, "Sell")
+    else:
+        print(i)
+
+# Challenge: rewrite it with a while loop`} />
+
+## ✅ Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'What does range(2, 10, 3) produce?',
+    options: ['2, 5, 8', '2, 5, 8, 10', '3, 6, 9', '2, 3, 4, …, 10'],
+    answer: 0,
+    explain: 'range(start, stop, step) starts at 2, steps by 3, and STOPS BEFORE 10: 2, 5, 8. The stop value is always exclusive.',
+  },
+  {
+    q: 'Inside a loop, what does continue do?',
+    options: [
+      'Exits the loop entirely',
+      'Skips the rest of this iteration and starts the next one',
+      'Pauses the loop',
+      'Restarts the loop from the beginning',
+    ],
+    answer: 1,
+    explain: 'continue jumps straight to the next iteration; break exits the whole loop; pass does nothing at all (placeholder).',
+  },
+  {
+    q: 'How many times does this print? for i in range(3): for j in range(4): print(i, j)',
+    options: ['3', '4', '7', '12'],
+    answer: 3,
+    explain: 'Nested loops multiply: the inner loop runs 4 times for EACH of the 3 outer iterations — 3 × 4 = 12 prints.',
+  },
+]} />
