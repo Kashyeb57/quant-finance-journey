@@ -1,0 +1,28 @@
+# Cloudflare Worker: owner-only visitor analytics for joyebkashyeb.com.np
+#
+# Deploy steps live in README.md. Short version:
+#   1) npm i -g wrangler && wrangler login
+#   2) wrangler d1 create site_analytics          # paste the printed database_id below
+#   3) wrangler d1 execute site_analytics --file=./schema.sql --remote
+#   4) wrangler secret put VIEW_TOKEN             # your private dashboard password
+#   5) wrangler deploy
+
+name = "site-analytics"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+# The Worker only handles /_a/* — every other path on the domain still goes
+# to GitHub Pages. `zone_name` must match your Cloudflare zone.
+routes = [
+  { pattern = "joyebkashyeb.com.np/_a/*", zone_name = "joyebkashyeb.com.np" }
+]
+
+# D1 database binding. Fill database_id with the value printed by
+# `wrangler d1 create site_analytics`.
+[[d1_databases]]
+binding = "DB"
+database_name = "site_analytics"
+database_id = "REPLACE_WITH_DATABASE_ID_FROM_WRANGLER"
+
+# VIEW_TOKEN (the dashboard password) is NOT stored here — it is set as a
+# secret with `wrangler secret put VIEW_TOKEN` so it never lands in git.

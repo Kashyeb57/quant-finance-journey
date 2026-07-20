@@ -32,6 +32,10 @@ const config = {
     locales: ['en'],
   },
 
+  // Owner-only visitor beacon → Cloudflare Worker at /_a/collect.
+  // No-ops until the Worker in ./analytics is deployed; never breaks the site.
+  clientModules: ['./src/clientModules/analytics.js'],
+
   presets: [
     [
       'classic',
