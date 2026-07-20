@@ -82,3 +82,7 @@ list(filter(age_greater_than_25,people))
 
 ##### Conclusion
 The filter() function is a powerful tool for creating iterators that filter items out of an iterable based on a function. It is commonly used for data cleaning, filtering objects, and removing unwanted elements from lists. By mastering filter(), you can write more concise and efficient code for processing and manipulating collections in Python.
+
+:::tip Open scratchpad
+Want to experiment freely beyond these exercises? [Open the Python Notebook →](/notebook) — numpy, pandas, matplotlib, a full Jupyter-style environment that runs entirely in your browser and saves between sessions.
+:::

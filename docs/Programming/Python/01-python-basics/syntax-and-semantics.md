@@ -182,3 +182,7 @@ Outside the if block
 
 ### Conclusion:
 Understanding the syntax and semantics of Python is crucial for writing correct and meaningful programs. Syntax ensures the code is properly structured, while semantics ensures the code behaves as expected. Mastering these concepts will help in writing efficient and error-free Python code.
+
+:::tip Open scratchpad
+Want to experiment freely beyond these exercises? [Open the Python Notebook →](/notebook) — numpy, pandas, matplotlib, a full Jupyter-style environment that runs entirely in your browser and saves between sessions.
+:::

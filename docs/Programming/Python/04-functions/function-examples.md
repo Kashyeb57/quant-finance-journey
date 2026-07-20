@@ -173,3 +173,7 @@ print(is_valid_email("invalid-email"))  # Output: False
 True
 False
 ```
+
+:::tip Open scratchpad
+Want to experiment freely beyond these exercises? [Open the Python Notebook →](/notebook) — numpy, pandas, matplotlib, a full Jupyter-style environment that runs entirely in your browser and saves between sessions.
+:::

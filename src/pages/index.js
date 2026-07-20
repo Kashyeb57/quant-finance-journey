@@ -9,36 +9,48 @@ const SUBJECTS = [
     icon: '∑',
     title: 'Mathematics',
     blurb: 'Calculus, linear algebra, and the stochastic calculus behind every pricing model.',
+    teaser: 'Inside: live GBM simulator, runnable Python on every topic, quizzes.',
+    status: 'live',
     to: '/docs/Mathematics/stochastic-calculus',
   },
   {
     icon: '🎲',
     title: 'Probability & Statistics',
     blurb: 'Distributions, inference and time series — the language uncertainty is written in.',
+    teaser: 'Inside: interactive bell-curve lab and quiz; inference notes in progress.',
+    status: 'progress',
     to: '/docs/Probability/distributions',
   },
   {
     icon: '📈',
     title: 'Finance & Derivatives',
     blurb: 'Options, payoffs and Black–Scholes, with live labs you can drag and explore.',
+    teaser: 'Inside: Black–Scholes pricer with Greeks, payoff explorer, CAPM flashcards.',
+    status: 'live',
     to: '/docs/Finance/derivatives',
   },
   {
     icon: '🐍',
     title: 'Python',
     blurb: 'A full course where every code block runs in your browser — no setup at all.',
+    teaser: 'Inside: five modules of runnable code plus a FIFO stock-ledger project.',
+    status: 'live',
     to: '/docs/Programming/Python',
   },
   {
     icon: '🤖',
     title: 'Machine Learning',
     blurb: 'From regression to deep learning, aimed squarely at financial applications.',
+    teaser: 'Notes in progress — the outline and starting points are up.',
+    status: 'progress',
     to: '/docs/Machine_Learning/overview',
   },
   {
     icon: '🏦',
     title: 'Economics',
     blurb: 'Rates, macro and policy — the forces that move the markets quants model.',
+    teaser: 'Inside: compound-interest lab and quiz; macro & policy notes in progress.',
+    status: 'progress',
     to: '/docs/Economics/interest-rates',
   },
 ];
@@ -64,8 +76,8 @@ const FEATURES = [
   },
   {
     icon: '✅',
-    title: 'Quizzes everywhere',
-    blurb: 'Instant-feedback questions with explanations at the end of each lesson.',
+    title: 'Quizzes on completed topics',
+    blurb: 'Instant-feedback questions with explanations at the end of every finished lesson.',
     to: '/tutorial',
   },
   {
@@ -141,7 +153,7 @@ export default function Home() {
               </Link>
             </div>
             <div className={styles.heroChips}>
-              <span>9 subject areas</span>
+              <span>7 subject areas</span>
               <span>Python runs in your browser</span>
               <span>Hands-on pricing labs</span>
             </div>
@@ -159,14 +171,24 @@ export default function Home() {
               The curriculum
             </Heading>
             <p className={styles.sectionSub}>
-              Six pillars, one goal: the skill set of a working quant.
+              Seven subject areas, one goal: the skill set of a working quant.
             </p>
             <div className={styles.grid3}>
               {SUBJECTS.map((s) => (
                 <Link key={s.title} to={s.to} className={styles.subjectCard}>
-                  <span className={styles.subjectIcon}>{s.icon}</span>
+                  <span className={styles.subjectTop}>
+                    <span className={styles.subjectIcon}>{s.icon}</span>
+                    <span
+                      className={clsx(
+                        styles.subjectStatus,
+                        s.status === 'live' ? styles.statusLive : styles.statusProgress,
+                      )}>
+                      {s.status === 'live' ? '● Live' : '◐ In progress'}
+                    </span>
+                  </span>
                   <span className={styles.subjectTitle}>{s.title}</span>
                   <span className={styles.subjectBlurb}>{s.blurb}</span>
+                  <span className={styles.subjectTeaser}>{s.teaser}</span>
                   <span className={styles.subjectCta}>Open notes →</span>
                 </Link>
               ))}

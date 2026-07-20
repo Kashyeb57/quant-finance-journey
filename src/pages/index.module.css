@@ -156,11 +156,47 @@
   text-decoration: none;
 }
 
+.subjectTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .subjectIcon {
   font-size: 1.6rem;
   line-height: 1;
   color: var(--ifm-color-primary);
   font-weight: 800;
+}
+
+.subjectStatus {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
+  white-space: nowrap;
+}
+
+.statusLive {
+  color: #15803d;
+  background: rgba(22, 163, 74, 0.12);
+}
+
+.statusProgress {
+  color: #b45309;
+  background: rgba(217, 119, 6, 0.12);
+}
+
+:global([data-theme='dark']) .statusLive {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.14);
+}
+
+:global([data-theme='dark']) .statusProgress {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.14);
 }
 
 .subjectTitle {
@@ -174,6 +210,14 @@
   line-height: 1.55;
   color: var(--ifm-color-emphasis-700);
   flex: 1;
+}
+
+.subjectTeaser {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ifm-color-emphasis-600);
+  border-top: 1px dashed var(--ifm-toc-border-color);
+  padding-top: 0.55rem;
 }
 
 .subjectCta {

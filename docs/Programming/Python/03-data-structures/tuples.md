@@ -325,3 +325,7 @@ True False
 
 #### Conclusion
 Tuples are versatile and useful in many real-world scenarios where an immutable and ordered collection of items is required. They are commonly used in data structures, function arguments and return values, and as dictionary keys. Understanding how to leverage tuples effectively can improve the efficiency and readability of your Python code.
+
+:::tip Open scratchpad
+Want to experiment freely beyond these exercises? [Open the Python Notebook →](/notebook) — numpy, pandas, matplotlib, a full Jupyter-style environment that runs entirely in your browser and saves between sessions.
+:::

@@ -264,3 +264,7 @@ print(len(unique_words))
 
 #### Conclusion
 Sets are a powerful and flexible data type in Python that provide a way to store collections of unique elements. They support various operations such as union, intersection, difference, and symmetric difference, which are useful for mathematical computations. Understanding how to use sets and their associated methods can help you write more efficient and clean Python code, especially when dealing with unique collections and membership tests.
+
+:::tip Open scratchpad
+Want to experiment freely beyond these exercises? [Open the Python Notebook →](/notebook) — numpy, pandas, matplotlib, a full Jupyter-style environment that runs entirely in your browser and saves between sessions.
+:::

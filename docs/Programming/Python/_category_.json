@@ -5,6 +5,6 @@
     "type": "generated-index",
     "title": "Python",
     "slug": "/Programming/Python",
-    "description": "My Python notes, reproduced from the Complete Python Bootcamp notebooks (basics through functions)."
+    "description": "Python from first principles — every code block runs directly in your browser. Five modules covering basics, control flow, data structures, functions, and financial projects. No install needed: edit any cell and hit Run. (Study reference: Complete Python Bootcamp on Udemy — all code and explanations are my own.)"
   }
 }

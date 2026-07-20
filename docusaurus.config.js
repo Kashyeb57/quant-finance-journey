@@ -105,6 +105,7 @@ const config = {
               {to: '/scope', label: '🎯 Scope'},
             ],
           },
+          {to: '/about', label: 'About', position: 'right'},
           {to: '/admin', label: 'Publish', position: 'right'},
           {
             href: 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb',
@@ -137,6 +138,7 @@ const config = {
           {
             title: 'Site',
             items: [
+              {label: 'About', to: '/about'},
               {label: 'Publish (owner)', to: '/admin'},
               {
                 label: 'GitHub',

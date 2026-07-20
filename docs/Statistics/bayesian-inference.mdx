@@ -1,0 +1,101 @@
+---
+title: Bayesian Inference
+description: Priors, likelihoods, and posteriors — how a quant updates beliefs when new market data arrives, with an interactive prior-to-posterior lab.
+---
+
+# Bayesian Inference
+
+Priors, likelihoods, and posteriors for probabilistic modeling.
+
+## The core idea in one formula
+
+$$
+P(\theta \mid \text{data}) \;\propto\; P(\text{data} \mid \theta)\, P(\theta)
+$$
+
+The **prior** $P(\theta)$ is what you believed before seeing evidence. The **likelihood** $P(\text{data} \mid \theta)$ measures how well each candidate value of $\theta$ explains what you observed. Multiply them and you get the **posterior** — your updated belief. This is precisely how a quant updates a model when new market data arrives: yesterday's posterior becomes today's prior, and the market never stops handing you new evidence.
+
+## A concrete finance example: estimating drift
+
+Suppose you want to estimate the mean daily return $\mu$ of a stock. You start with a prior belief — say, from history or from a sector average:
+
+$$
+\mu \sim \mathcal{N}(\mu_0, \tau^2)
+$$
+
+Then you observe $n$ days of returns with sample mean $\bar{x}$, assuming a known daily volatility $\sigma$. Because a normal prior and a normal likelihood are *conjugate*, the posterior is again normal, and its mean is a precision-weighted average of what you believed and what you saw:
+
+$$
+\mu_{\text{post}} = \frac{\frac{\mu_0}{\tau^2} + \frac{n\bar{x}}{\sigma^2}}{\frac{1}{\tau^2} + \frac{n}{\sigma^2}},
+\qquad
+\sigma_{\text{post}}^2 = \left(\frac{1}{\tau^2} + \frac{n}{\sigma^2}\right)^{-1}
+$$
+
+Two things fall out of this formula that every quant should internalize:
+
+1. **Evidence accumulates.** As $n$ grows, the data term dominates and the posterior collapses onto $\bar{x}$. With little data, the prior does the heavy lifting.
+2. **Uncertainty shrinks monotonically.** The posterior variance is always smaller than both the prior variance and the data-only variance — combining information never makes you less certain.
+
+## Watch it happen
+
+<BayesianUpdaterLab />
+
+Experiments worth running:
+
+1. **Set n = 0.** The posterior sits exactly on the prior — no evidence, no update.
+2. **Drag n from 0 to 250** (one trading year). Watch the posterior slide toward x̄ and sharpen. Note how slowly the "weight on data" grows — daily returns are so noisy (σ ≈ 1%) that even a year of data doesn't fully overrule a confident prior. Estimating drift is *hard*; this is why.
+3. **Make the prior vague** (τ = 0.5) and repeat. Now a handful of observations dominate. A vague prior means "let the data speak."
+4. **Make the prior dogmatic** (τ = 0.03). Even 250 days barely move it. Priors are levers — choose them consciously.
+
+## When there's no formula: MCMC
+
+The normal–normal example is the friendly special case — the posterior has a closed form. Most real models don't cooperate: a stochastic-volatility model or a hierarchical model of many assets produces a posterior you can write down only up to that proportionality sign. **Markov Chain Monte Carlo** solves this by constructing a Markov chain whose stationary distribution *is* the posterior: you take a random walk through parameter space, accepting or rejecting proposed moves (Metropolis–Hastings) so that the chain spends time in each region in proportion to its posterior probability. Run the chain long enough, discard the burn-in, and the samples you collect are draws from the posterior — histograms of those samples give you means, credible intervals, and tail probabilities no formula could. Modern samplers like NUTS (used by PyMC and Stan) automate the hard parts.
+
+## Check your understanding
+
+<Quiz questions={[
+  {
+    q: 'In Bayes’ theorem, the posterior is proportional to…',
+    options: [
+      'prior ÷ likelihood',
+      'likelihood × prior',
+      'likelihood − prior',
+      'the marginal likelihood alone',
+    ],
+    answer: 1,
+    explain: 'P(θ|data) ∝ P(data|θ)·P(θ). The denominator P(data) is a normalizing constant — it makes the posterior integrate to 1 but doesn’t change its shape.',
+  },
+  {
+    q: 'In the normal–normal model, what happens to the posterior mean as the number of observations n grows very large?',
+    options: [
+      'It converges to the prior mean μ₀',
+      'It converges to the sample mean x̄',
+      'It diverges',
+      'It stays halfway between μ₀ and x̄',
+    ],
+    answer: 1,
+    explain: 'The data precision n/σ² grows without bound while the prior precision 1/τ² is fixed, so the precision-weighted average tilts entirely toward the data. Verify with the lab: crank n and watch the posterior chase x̄.',
+  },
+  {
+    q: 'Why is estimating a stock’s drift μ from daily returns so slow, even with a year of data?',
+    options: [
+      'Because returns are not normally distributed',
+      'Because daily volatility is large relative to daily mean return, so each observation carries little information',
+      'Because the prior is always wrong',
+      'Because MCMC does not converge',
+    ],
+    answer: 1,
+    explain: 'A typical stock has σ ≈ 1% per day but drift ≈ 0.03% per day. The signal-to-noise ratio per observation is tiny, so the likelihood is nearly flat and the posterior narrows very slowly — you saw this in the lab as the sluggish "weight on data."',
+  },
+  {
+    q: 'When do you need MCMC instead of a formula?',
+    options: [
+      'Whenever the prior is normal',
+      'When the posterior has no closed form, as in most realistic models',
+      'Only for discrete parameters',
+      'Never — conjugate priors always exist',
+    ],
+    answer: 1,
+    explain: 'Conjugacy is the exception, not the rule. For stochastic volatility, hierarchical, or nonlinear models the posterior can only be evaluated up to a constant — MCMC samples from it anyway by building a Markov chain whose stationary distribution is the posterior.',
+  },
+]} />

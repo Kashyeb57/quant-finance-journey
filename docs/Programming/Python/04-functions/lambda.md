@@ -111,3 +111,7 @@ list(map(lambda x:x**2,numbers))
 ```text
 [1, 4, 9, 16, 25, 36]
 ```
+
+:::tip Open scratchpad
+Want to experiment freely beyond these exercises? [Open the Python Notebook →](/notebook) — numpy, pandas, matplotlib, a full Jupyter-style environment that runs entirely in your browser and saves between sessions.
+:::
