@@ -22,7 +22,7 @@ routes = [
 [[d1_databases]]
 binding = "DB"
 database_name = "site_analytics"
-database_id = "REPLACE_WITH_DATABASE_ID_FROM_WRANGLER"
+database_id = "7d455993-754e-4bcb-a58e-f11fe028641c"
 
 # VIEW_TOKEN (the dashboard password) is NOT stored here — it is set as a
 # secret with `wrangler secret put VIEW_TOKEN` so it never lands in git.

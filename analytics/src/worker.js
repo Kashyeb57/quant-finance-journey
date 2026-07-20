@@ -206,6 +206,23 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+// Format a stored UTC ISO timestamp in Central Time (Alabama), e.g.
+// "2026-07-20 14:56:24 CDT". Storage stays UTC; this is display only.
+function fmtCT(iso) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Chicago',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      hourCycle: 'h23', timeZoneName: 'short',
+    }).formatToParts(new Date(iso));
+    const g = (t) => (parts.find((p) => p.type === t) || {}).value || '';
+    return `${g('year')}-${g('month')}-${g('day')} ${g('hour')}:${g('minute')}:${g('second')} ${g('timeZoneName')}`;
+  } catch (_) {
+    return String(iso);
+  }
+}
+
 function statList(rows, keyName) {
   if (!rows.length) return '<li class="muted">no data yet</li>';
   return rows
@@ -218,7 +235,7 @@ function renderDashboard(d) {
     .map((r) => {
       const loc = [r.city, r.region, r.country].filter(Boolean).join(', ');
       return `<tr>
-        <td class="mono nowrap">${esc(r.ts).replace('T', ' ').replace(/\.\d+Z$/, ' UTC')}</td>
+        <td class="mono nowrap">${esc(fmtCT(r.ts))}</td>
         <td class="mono">${esc(r.ip)}</td>
         <td>${esc(loc || '—')}</td>
         <td class="mono">${esc(r.path)}</td>
@@ -269,7 +286,7 @@ function renderDashboard(d) {
 </style></head>
 <body><div class="wrap">
   <h1>Visitor log <span class="accent">·</span> joyebkashyeb.com.np</h1>
-  <p class="sub">Private owner view. Auto-recorded on every page view. Times are UTC.</p>
+  <p class="sub">Private owner view. Auto-recorded on every page view. Times are Central (Alabama).</p>
 
   <div class="cards">
     <div class="card"><div class="k">Total visits</div><div class="v">${d.visits}</div></div>
@@ -286,7 +303,7 @@ function renderDashboard(d) {
 
   <div class="tablewrap"><table>
     <thead><tr>
-      <th>Time (UTC)</th><th>IP</th><th>Location</th><th>Page</th><th>Device</th><th>Browser · OS</th><th>Network (ASN)</th>
+      <th>Time (CT)</th><th>IP</th><th>Location</th><th>Page</th><th>Device</th><th>Browser · OS</th><th>Network (ASN)</th>
     </tr></thead>
     <tbody>${rows || '<tr><td colspan="7" class="muted" style="padding:20px">No visits recorded yet.</td></tr>'}</tbody>
   </table></div>
