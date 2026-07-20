@@ -6,6 +6,14 @@ import styles from './index.module.css';
 
 const SUBJECTS = [
   {
+    icon: '📈',
+    title: 'Finance',
+    blurb: 'Options, payoffs and Black–Scholes, with live labs you can drag and explore.',
+    teaser: 'Inside: Black–Scholes pricer with Greeks, payoff explorer, CAPM flashcards.',
+    status: 'live',
+    to: '/docs/Finance/derivatives',
+  },
+  {
     icon: '∑',
     title: 'Mathematics',
     blurb: 'Calculus, linear algebra, and the stochastic calculus behind every pricing model.',
@@ -14,36 +22,28 @@ const SUBJECTS = [
     to: '/docs/Mathematics/stochastic-calculus',
   },
   {
+    icon: '📊',
+    title: 'Statistics',
+    blurb: 'Inference, regression and time series — drawing conclusions you can defend.',
+    teaser: 'Inside: Bayesian prior→posterior lab and quiz; more stats notes in progress.',
+    status: 'live',
+    to: '/docs/Statistics/bayesian-inference',
+  },
+  {
     icon: '🎲',
-    title: 'Probability & Statistics',
-    blurb: 'Distributions, inference and time series — the language uncertainty is written in.',
-    teaser: 'Inside: interactive bell-curve lab and quiz; inference notes in progress.',
-    status: 'progress',
+    title: 'Probability',
+    blurb: 'Distributions and stochastic processes — the language uncertainty is written in.',
+    teaser: 'Inside: interactive bell-curve lab and quiz; foundations & processes in progress.',
+    status: 'live',
     to: '/docs/Probability/distributions',
   },
   {
-    icon: '📈',
-    title: 'Finance & Derivatives',
-    blurb: 'Options, payoffs and Black–Scholes, with live labs you can drag and explore.',
-    teaser: 'Inside: Black–Scholes pricer with Greeks, payoff explorer, CAPM flashcards.',
-    status: 'live',
-    to: '/docs/Finance/derivatives',
-  },
-  {
     icon: '🐍',
-    title: 'Python',
-    blurb: 'A full course where every code block runs in your browser — no setup at all.',
+    title: 'Programming',
+    blurb: 'A full Python course where every code block runs in your browser — no setup at all.',
     teaser: 'Inside: five modules of runnable code plus a FIFO stock-ledger project.',
     status: 'live',
     to: '/docs/Programming/Python',
-  },
-  {
-    icon: '🤖',
-    title: 'Machine Learning',
-    blurb: 'From regression to deep learning, aimed squarely at financial applications.',
-    teaser: 'Notes in progress — the outline and starting points are up.',
-    status: 'progress',
-    to: '/docs/Machine_Learning/overview',
   },
   {
     icon: '🏦',
@@ -52,6 +52,14 @@ const SUBJECTS = [
     teaser: 'Inside: compound-interest lab and quiz; macro & policy notes in progress.',
     status: 'progress',
     to: '/docs/Economics/interest-rates',
+  },
+  {
+    icon: '🤖',
+    title: 'Machine Learning',
+    blurb: 'From regression to deep learning, aimed squarely at financial applications.',
+    teaser: 'Notes in progress — the outline and starting points are up.',
+    status: 'progress',
+    to: '/docs/Machine_Learning/overview',
   },
 ];
 

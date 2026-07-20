@@ -7,6 +7,7 @@ import NormalExplorer from '@site/src/components/Interactive/NormalExplorer';
 import GBMSimulator from '@site/src/components/Interactive/GBMSimulator';
 import CompoundInterestLab from '@site/src/components/Interactive/CompoundInterestLab';
 import BayesianUpdaterLab from '@site/src/components/Interactive/BayesianUpdaterLab';
+import ComingSoon from '@site/src/components/Interactive/ComingSoon';
 import PySandbox from '@site/src/components/Interactive/PySandbox';
 import Notebook from '@site/src/components/Interactive/Notebook';
 import CalcPlot from '@site/src/components/CalcPlot';
@@ -22,6 +23,7 @@ export default {
   GBMSimulator,
   CompoundInterestLab,
   BayesianUpdaterLab,
+  ComingSoon,
   PySandbox,
   Notebook,
   CalcPlot,
