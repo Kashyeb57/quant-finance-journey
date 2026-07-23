@@ -1,0 +1,50 @@
+.row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 10px 0 6px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e6e8eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  color: #1c1e21;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease,
+    color 0.18s ease, border-color 0.18s ease;
+}
+
+.btn:hover {
+  transform: translateY(-4px);
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(46, 133, 85, 0.35);
+  text-decoration: none;
+}
+
+.btn svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+/* Dark mode: neutral charcoal surface, light icon; green accent on hover. */
+:global([data-theme='dark']) .btn {
+  background: #1f2228;
+  border-color: #2b2f36;
+  color: #e6e8eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+:global([data-theme='dark']) .btn:hover {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  color: #14161a;
+}
