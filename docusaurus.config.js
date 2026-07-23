@@ -123,13 +123,13 @@ const config = {
           {to: '/roadmap', label: 'Roadmap', position: 'left'},
           {to: '/notebook', label: 'Notebook', position: 'left'},
           {to: '/terminal', label: 'Terminal', position: 'left'},
+          {to: '/projects', label: 'Projects', position: 'left'},
           {
             label: 'Library',
             position: 'left',
             items: [
               {to: '/books', label: '📚 Books'},
               {to: '/resources', label: '🔗 Resources'},
-              {to: '/projects', label: '🛠️ Projects'},
               {to: '/tools', label: '⚙️ Tools'},
               {to: '/scope', label: '🎯 Scope'},
             ],
