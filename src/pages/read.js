@@ -5,9 +5,9 @@ import BrowserOnly from '@docusaurus/BrowserOnly';
 import PdfReader from '@site/src/components/PdfReader';
 import styles from './read.module.css';
 
-// Only books from my own repos may be opened — this keeps /read from being
+// Only same-origin library files may be opened — this keeps /read from being
 // turned into an open renderer for any URL.
-const ALLOWED_PREFIX = 'https://raw.githubusercontent.com/Kashyeb57/';
+const ALLOWED_PREFIX = '/library/';
 
 function Reader() {
   const params = new URLSearchParams(window.location.search);
@@ -22,7 +22,7 @@ function Reader() {
       </div>
     );
   }
-  if (!file.startsWith(ALLOWED_PREFIX)) {
+  if (!file.startsWith(ALLOWED_PREFIX) || file.includes('..')) {
     return (
       <div className={styles.msg}>
         <p>This reader only opens books from the Library.</p>
