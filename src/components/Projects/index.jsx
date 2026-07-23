@@ -14,6 +14,51 @@ import styles from './styles.module.css';
 
 const PROJECTS = [
   {
+    title: 'This Site — Interactive Quantitative Finance Platform',
+    status: 'In Progress',
+    overview: [
+      'A from-scratch interactive learning platform for quantitative finance, built on Docusaurus/React and deployed on Cloudflare in front of GitHub Pages. Every lesson is hands-on: Python runs directly in the browser (Pyodide), pricing and probability models have draggable inputs, and finished topics end with instant-feedback quizzes.',
+      'Beyond the notes, it ships a browser-based Jupyter-style notebook (numpy / pandas / matplotlib), a custom in-site PDF reader, a self-hosted book library, and a live market terminal — all in a single static site.',
+    ],
+    sections: [
+      {
+        heading: 'Highlights',
+        items: [
+          'In-browser Python with a Run button on every snippet (Pyodide)',
+          'Interactive labs: Black–Scholes pricer with Greeks, GBM simulator, Bayesian prior→posterior, bell-curve explorer',
+          'Custom PDF.js reader that range-streams large textbooks page-by-page',
+          'LaTeX math via KaTeX, quizzes, and progress tracking in localStorage',
+        ],
+      },
+    ],
+    tags: ['React', 'Docusaurus', 'Pyodide', 'PDF.js', 'KaTeX', 'Cloudflare', 'GitHub Actions'],
+    links: [
+      { label: 'Source on GitHub', url: 'https://github.com/Kashyeb57/quant-finance-journey' },
+    ],
+  },
+  {
+    title: 'Edge Visitor Analytics — Cloudflare Worker + D1',
+    status: 'Completed',
+    overview: [
+      'A privacy-respecting, owner-only analytics system for this site, built as a Cloudflare Worker backed by a D1 (SQLite) database. A tiny beacon on each page view reports the path; the Worker reads geo, device, language, and time-on-page at Cloudflare’s edge and writes them to D1, then serves a token-protected dashboard — no third-party trackers, no cookies.',
+    ],
+    sections: [
+      {
+        heading: 'Engineering',
+        items: [
+          'Deployed on a Worker route so it intercepts /_a/* while the rest of the site stays static',
+          'Server-side geo / IP / device capture at the edge — can’t be spoofed by the client',
+          'Time-on-page via per-view IDs and pagehide beacons; language from Accept-Language',
+          'Token-guarded dashboard with traffic sources, top visitors, a 14-day chart, and filters',
+        ],
+      },
+    ],
+    tags: ['Cloudflare Workers', 'D1 / SQLite', 'Edge computing', 'JavaScript', 'Wrangler'],
+    links: [
+      { label: 'Source on GitHub', url: 'https://github.com/Kashyeb57/quant-finance-journey/tree/main/analytics' },
+    ],
+  },
+  {
     title: 'Time and Attendance System (TAS) — CS 310 Team Project',
     status: 'Completed',
     overview: [
