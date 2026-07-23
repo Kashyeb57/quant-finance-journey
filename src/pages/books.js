@@ -4,11 +4,11 @@ import Heading from '@theme/Heading';
 import ResourceCards from '@site/src/components/ResourceCards';
 import BookShelf from '@site/src/components/BookShelf';
 
-// My own library — PDFs living in my GitHub repos. The on-site reader
-// (/read) renders them with PDF.js straight from GitHub raw (CORS-enabled,
-// no file-size limit), so books open on this site regardless of size.
-const QIP = 'https://raw.githubusercontent.com/Kashyeb57/Quant-Interview-Prep-Resources/main';
-const QR = 'https://raw.githubusercontent.com/Kashyeb57/Quant_resources/main';
+// Library PDFs served straight from public GitHub repos via raw.githubusercontent
+// (CORS-enabled, no file-size limit) and rendered on-site by /read with PDF.js.
+// These point at the upstream source repos so the books stay available.
+const QIP = 'https://raw.githubusercontent.com/nikhil-iitb/Quant-Interview-Prep-Resources/main';
+const QR = 'https://raw.githubusercontent.com/Ricktho1/Quant_resources/main';
 
 const LIBRARY = [
   // ── Core textbooks ────────────────────────────────────────────────
