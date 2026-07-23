@@ -195,7 +195,7 @@ const config = {
 
   stylesheets: [
     {
-      href: 'https://cdn.jsdelivr.net/npm/katex@0.13.24/dist/katex.min.css',
+      href: 'https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css',
       type: 'text/css',
       crossorigin: 'anonymous',
     },

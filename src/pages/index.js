@@ -1,8 +1,14 @@
 import clsx from 'clsx';
+import katex from 'katex';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import styles from './index.module.css';
+
+// Render a LaTeX string to KaTeX HTML for the hero equation chips.
+function tex(s) {
+  return {__html: katex.renderToString(s, {throwOnError: false})};
+}
 
 const SUBJECTS = [
   {
@@ -121,14 +127,6 @@ function HeroChart() {
         strokeLinecap="round"
       />
       <circle cx="414" cy="78" r="6" className={styles.heroDot} />
-      <g className={styles.heroFormula}>
-        <rect x="18" y="22" rx="8" width="210" height="38" />
-        <text x="32" y="47">dS = μS dt + σS dW</text>
-      </g>
-      <g className={styles.heroFormula}>
-        <rect x="250" y="200" rx="8" width="160" height="38" />
-        <text x="264" y="225">Δ = ∂V / ∂S</text>
-      </g>
     </svg>
   );
 }
@@ -168,6 +166,14 @@ export default function Home() {
           </div>
           <div className={styles.heroVisual}>
             <HeroChart />
+            <span
+              className={clsx(styles.formula, styles.formulaTop)}
+              dangerouslySetInnerHTML={tex('dS = \\mu S\\,dt + \\sigma S\\,dW')}
+            />
+            <span
+              className={clsx(styles.formula, styles.formulaBottom)}
+              dangerouslySetInnerHTML={tex('\\Delta = \\dfrac{\\partial V}{\\partial S}')}
+            />
           </div>
         </div>
       </header>

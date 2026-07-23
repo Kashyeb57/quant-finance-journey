@@ -73,6 +73,7 @@
 
 .heroVisual {
   min-width: 0;
+  position: relative;
 }
 
 .heroChart {
@@ -95,15 +96,35 @@
   stroke-width: 3;
 }
 
-.heroFormula rect {
-  fill: var(--ifm-background-color);
-  stroke: var(--ifm-toc-border-color);
+/* KaTeX equation chips floating over the hero chart */
+.formula {
+  position: absolute;
+  z-index: 2;
+  background: var(--ifm-background-color);
+  border: 1px solid var(--ifm-toc-border-color);
+  border-radius: 10px;
+  padding: 7px 13px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  line-height: 1;
+  white-space: nowrap;
+  font-size: 0.95rem;
 }
 
-.heroFormula text {
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 15px;
-  fill: var(--ifm-color-emphasis-700);
+.formulaTop {
+  top: 7%;
+  left: 4%;
+}
+
+.formulaBottom {
+  bottom: 9%;
+  right: 4%;
+}
+
+@media (max-width: 600px) {
+  .formula {
+    font-size: 0.78rem;
+    padding: 5px 10px;
+  }
 }
 
 /* ── Sections ─────────────────────────────────────────────────────── */
