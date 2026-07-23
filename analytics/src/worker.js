@@ -68,6 +68,19 @@ async function handleCollect(request, env, ctx, url) {
     };
   }
 
+  // Duration ping: when a visitor leaves a page, the beacon reports how long
+  // that view lasted. Update the existing row rather than inserting a new one.
+  if (body.t === 'end' && body.v) {
+    const secs = Math.max(0, Math.min(parseInt(body.s, 10) || 0, 86400));
+    ctx.waitUntil(
+      env.DB.prepare(`UPDATE hits SET duration = MAX(COALESCE(duration,0), ?) WHERE view_id = ?`)
+        .bind(secs, String(body.v).slice(0, 40))
+        .run()
+        .catch(() => {})
+    );
+    return new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } });
+  }
+
   const cf = request.cf || {};
   const ua = request.headers.get('User-Agent') || '';
   const parsed = parseUA(ua);
@@ -87,17 +100,20 @@ async function handleCollect(request, env, ctx, url) {
     browser: parsed.browser,
     os: parsed.os,
     screen: [body.w, body.h].filter(Boolean).join('x').slice(0, 16),
+    lang: (request.headers.get('Accept-Language') || '').split(',')[0].trim().slice(0, 35),
+    view_id: String(body.v || '').slice(0, 40),
   };
 
   // Write in the background so the beacon returns instantly.
   const write = env.DB.prepare(
     `INSERT INTO hits
-      (ts, ip, country, city, region, timezone, asn, path, referer, ua, device, browser, os, screen)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      (ts, ip, country, city, region, timezone, asn, path, referer, ua, device, browser, os, screen, lang, view_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   )
     .bind(
       row.ts, row.ip, row.country, row.city, row.region, row.timezone, row.asn,
-      row.path, row.referer, row.ua, row.device, row.browser, row.os, row.screen
+      row.path, row.referer, row.ua, row.device, row.browser, row.os, row.screen,
+      row.lang, row.view_id
     )
     .run()
     .catch(() => {});
@@ -137,7 +153,7 @@ async function handleJson(request, env, url) {
   if (!authorized(env, url)) return denied();
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '500', 10) || 500, 5000);
   const { results } = await env.DB.prepare(
-    `SELECT ts, ip, country, city, region, timezone, asn, path, referer, device, browser, os, screen, ua
+    `SELECT ts, ip, country, city, region, timezone, asn, path, referer, device, browser, os, screen, lang, duration, ua
        FROM hits ORDER BY id DESC LIMIT ?`
   )
     .bind(limit)
@@ -151,42 +167,79 @@ async function handleJson(request, env, url) {
 
 async function handleDashboard(request, env, url) {
   if (!authorized(env, url)) return denied();
+  try {
+    return await renderDashboardResponse(request, env, url);
+  } catch (e) {
+    // Fail readable instead of Cloudflare's generic 1101.
+    const msg = esc(String((e && e.message) || e));
+    return new Response(
+      `<!doctype html><meta charset="utf-8"><body style="background:#14161a;color:#e6e8eb;font-family:system-ui,sans-serif;padding:40px;max-width:760px;margin:auto">
+        <h2>Dashboard error</h2>
+        <p>A query failed while building the log. If you just added a feature, the database migration may not have run yet. From the <code>analytics</code> folder:</p>
+        <pre style="background:#1c1f26;padding:12px;border-radius:8px;white-space:pre-wrap">wrangler d1 execute site_analytics --file=./migrations/001_lang_duration.sql --remote</pre>
+        <p style="color:#8b929c">Details:</p>
+        <pre style="background:#1c1f26;padding:12px;border-radius:8px;white-space:pre-wrap;color:#e06c75">${msg}</pre>
+      </body>`,
+      { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } }
+    );
+  }
+}
 
+async function renderDashboardResponse(request, env, url) {
   const token = url.searchParams.get('token');
   const limit = Math.min(parseInt(url.searchParams.get('limit') || '200', 10) || 200, 2000);
+  const ownerIp = request.headers.get('CF-Connecting-IP') || '';
 
-  const [recent, totals, topPages, topCountries, topDevices, topBrowsers] = await Promise.all([
-    env.DB.prepare(
-      `SELECT ts, ip, country, city, region, asn, path, device, browser, os, screen, ua
-         FROM hits ORDER BY id DESC LIMIT ?`
-    ).bind(limit).all(),
-    env.DB.prepare(
-      `SELECT COUNT(*) AS visits, COUNT(DISTINCT ip) AS uniques FROM hits`
-    ).all(),
-    env.DB.prepare(
-      `SELECT path, COUNT(*) AS n FROM hits GROUP BY path ORDER BY n DESC LIMIT 10`
-    ).all(),
-    env.DB.prepare(
-      `SELECT country, COUNT(*) AS n FROM hits GROUP BY country ORDER BY n DESC LIMIT 10`
-    ).all(),
-    env.DB.prepare(
-      `SELECT device, COUNT(*) AS n FROM hits GROUP BY device ORDER BY n DESC LIMIT 10`
-    ).all(),
-    env.DB.prepare(
-      `SELECT browser, COUNT(*) AS n FROM hits GROUP BY browser ORDER BY n DESC LIMIT 10`
-    ).all(),
-  ]);
+  // Optional filters: ?hide=<ip>[,<ip>]  and  ?humans=1  (exclude bots)
+  const f = buildFilter(url);
+  const where = f.clauses.length ? 'WHERE ' + f.clauses.join(' AND ') : '';
+  const andTail = f.clauses.length ? ' AND ' + f.clauses.join(' AND ') : '';
+  const run = (sql, p = []) => {
+    const st = env.DB.prepare(sql);
+    return (p.length ? st.bind(...p) : st).all();
+  };
 
-  const t = totals.results[0] || { visits: 0, uniques: 0 };
+  const langWhere = f.clauses.length
+    ? `WHERE ${f.clauses.join(' AND ')} AND lang IS NOT NULL AND lang != ''`
+    : `WHERE lang IS NOT NULL AND lang != ''`;
+
+  const [recent, totals, last15, series, topPages, topCountries, topDevices, topBrowsers, refs, visitors, languages] =
+    await Promise.all([
+      run(`SELECT ts, ip, country, city, region, asn, path, referer, device, browser, os, ua, duration
+             FROM hits ${where} ORDER BY id DESC LIMIT ?`, [...f.params, limit]),
+      run(`SELECT COUNT(*) AS visits, COUNT(DISTINCT ip) AS uniques,
+                  SUM(CASE WHEN device='Bot' THEN 1 ELSE 0 END) AS bots,
+                  AVG(CASE WHEN duration > 0 THEN duration END) AS avgdur
+             FROM hits ${where}`, f.params),
+      run(`SELECT COUNT(*) AS n FROM hits WHERE ts >= datetime('now','-15 minutes')${andTail}`, f.params),
+      run(`SELECT ts FROM hits WHERE ts >= datetime('now','-14 days')${andTail}`, f.params),
+      run(`SELECT path, COUNT(*) AS n FROM hits ${where} GROUP BY path ORDER BY n DESC LIMIT 10`, f.params),
+      run(`SELECT country, COUNT(*) AS n FROM hits ${where} GROUP BY country ORDER BY n DESC LIMIT 12`, f.params),
+      run(`SELECT device, COUNT(*) AS n FROM hits ${where} GROUP BY device ORDER BY n DESC LIMIT 10`, f.params),
+      run(`SELECT browser, COUNT(*) AS n FROM hits ${where} GROUP BY browser ORDER BY n DESC LIMIT 10`, f.params),
+      run(`SELECT referer, COUNT(*) AS n FROM hits ${where} GROUP BY referer ORDER BY n DESC LIMIT 100`, f.params),
+      run(`SELECT ip, COUNT(*) AS n, MAX(ts) AS last_ts, country, city, region
+             FROM hits ${where} GROUP BY ip ORDER BY n DESC LIMIT 15`, f.params),
+      run(`SELECT lang, COUNT(*) AS n FROM hits ${langWhere} GROUP BY lang ORDER BY n DESC LIMIT 10`, f.params),
+    ]);
+
+  const t = totals.results[0] || { visits: 0, uniques: 0, bots: 0, avgdur: 0 };
   const html = renderDashboard({
-    token,
-    visits: t.visits,
-    uniques: t.uniques,
+    token, ownerIp, hide: f.hide, humans: f.humans,
+    visits: t.visits || 0,
+    uniques: t.uniques || 0,
+    bots: t.bots || 0,
+    avgdur: t.avgdur || 0,
+    last15: (last15.results[0] || {}).n || 0,
+    series: series.results || [],
     recent: recent.results || [],
     topPages: topPages.results || [],
     topCountries: topCountries.results || [],
     topDevices: topDevices.results || [],
     topBrowsers: topBrowsers.results || [],
+    refs: refs.results || [],
+    visitors: visitors.results || [],
+    languages: languages.results || [],
   });
 
   return new Response(html, {
@@ -196,6 +249,21 @@ async function handleDashboard(request, env, url) {
       'X-Robots-Tag': 'noindex, nofollow',
     },
   });
+}
+
+// Parse ?hide= / ?humans= into SQL clauses (values are bound, never concatenated).
+function buildFilter(url) {
+  const clauses = [];
+  const params = [];
+  const hide = (url.searchParams.get('hide') || '')
+    .split(',').map((s) => s.trim()).filter(Boolean);
+  if (hide.length) {
+    clauses.push(`ip NOT IN (${hide.map(() => '?').join(',')})`);
+    params.push(...hide);
+  }
+  const humans = url.searchParams.get('humans') === '1';
+  if (humans) clauses.push(`device != 'Bot'`);
+  return { clauses, params, hide, humans };
 }
 
 function esc(s) {
@@ -230,21 +298,127 @@ function statList(rows, keyName) {
     .join('');
 }
 
+function pairList(rows) {
+  if (!rows.length) return '<li class="muted">no data yet</li>';
+  return rows.map((r) => `<li><span>${esc(r.name || '—')}</span><b>${r.n}</b></li>`).join('');
+}
+
+// Classify a referrer URL into a source bucket + clean hostname.
+const SITE_HOST = 'joyebkashyeb.com.np';
+function refInfo(ref) {
+  if (!ref) return { host: '(direct)', cat: 'Direct' };
+  let host;
+  try { host = new URL(ref).hostname.replace(/^www\./, '').toLowerCase(); }
+  catch { return { host: String(ref).slice(0, 40), cat: 'Other' }; }
+  if (host === SITE_HOST || host.endsWith('.' + SITE_HOST)) return { host: '(internal)', cat: 'Internal' };
+  const search = ['google.', 'bing.', 'duckduckgo.', 'yahoo.', 'yandex.', 'baidu.', 'ecosia.'];
+  const social = ['t.co', 'twitter.', 'x.com', 'linkedin.', 'lnkd.in', 'facebook.', 'fb.com',
+    'instagram.', 'reddit.', 'youtube.', 'youtu.be', 'github.', 'pinterest.', 'quora.',
+    'medium.', 'substack.', 'ycombinator.'];
+  if (search.some((s) => host.includes(s))) return { host, cat: 'Search' };
+  if (social.some((s) => host.includes(s))) return { host, cat: 'Social' };
+  return { host, cat: 'Other' };
+}
+
+// YYYY-MM-DD for an ISO timestamp, in Central time.
+function ctDate(iso) {
+  const p = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(iso));
+  const g = (t) => (p.find((x) => x.type === t) || {}).value || '';
+  return `${g('year')}-${g('month')}-${g('day')}`;
+}
+
+function filterLink(token, obj) {
+  const p = new URLSearchParams();
+  p.set('token', token);
+  if (obj.hide && obj.hide.length) p.set('hide', obj.hide.join(','));
+  if (obj.humans) p.set('humans', '1');
+  return `${LOGS_PATH}?${p.toString()}`;
+}
+
+// Human-friendly duration: 8s, 1m 12s, 3m.
+function fmtDur(secs) {
+  const s = parseInt(secs, 10);
+  if (!s || s <= 0) return '—';
+  if (s < 60) return s + 's';
+  const m = Math.floor(s / 60), r = s % 60;
+  return r ? `${m}m ${r}s` : `${m}m`;
+}
+
 function renderDashboard(d) {
-  const rows = d.recent
-    .map((r) => {
-      const loc = [r.city, r.region, r.country].filter(Boolean).join(', ');
-      return `<tr>
-        <td class="mono nowrap">${esc(fmtCT(r.ts))}</td>
-        <td class="mono">${esc(r.ip)}</td>
-        <td>${esc(loc || '—')}</td>
-        <td class="mono">${esc(r.path)}</td>
-        <td>${esc(r.device)}</td>
-        <td>${esc(r.browser)} · ${esc(r.os)}</td>
-        <td class="mono small" title="${esc(r.ua)}">${esc((r.asn || '').slice(0, 28))}</td>
-      </tr>`;
-    })
-    .join('');
+  // visits over the last 14 days, bucketed by Central date
+  const counts = {};
+  for (const r of d.series) { const day = ctDate(r.ts); counts[day] = (counts[day] || 0) + 1; }
+  const now = new Date();
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const key = ctDate(new Date(now.getTime() - i * 86400000).toISOString());
+    days.push({ key, n: counts[key] || 0 });
+  }
+  const maxN = Math.max(1, ...days.map((x) => x.n));
+  const chart = days.map((x) => {
+    const pct = x.n ? Math.max(Math.round((x.n / maxN) * 100), 8) : 0;
+    return `<div class="bar" title="${x.key}: ${x.n} visit(s)">
+      <div class="barTrack"><div class="barFill" style="height:${pct}%"></div></div>
+      <div class="barLbl">${x.key.slice(5)}</div></div>`;
+  }).join('');
+
+  // traffic sources + top external referrers, derived from stored referrers
+  const catTally = {}; const hostTally = {};
+  for (const r of d.refs) {
+    const info = refInfo(r.referer);
+    catTally[info.cat] = (catTally[info.cat] || 0) + r.n;
+    if (info.cat !== 'Direct' && info.cat !== 'Internal') {
+      hostTally[info.host] = (hostTally[info.host] || 0) + r.n;
+    }
+  }
+  const catRows = Object.entries(catTally).sort((a, b) => b[1] - a[1]).map(([name, n]) => ({ name, n }));
+  const hostRows = Object.entries(hostTally).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, n]) => ({ name, n }));
+
+  // top visitors by IP
+  const visitorRows = d.visitors.map((v) => {
+    const shortLoc = [v.city, v.country].filter(Boolean).join(', ');
+    const fullLoc = [v.city, v.region, v.country].filter(Boolean).join(', ');
+    const you = d.ownerIp && v.ip === d.ownerIp ? ' <span class="you">you</span>' : '';
+    return `<tr>
+      <td class="mono small">${esc(v.ip)}${you}</td>
+      <td><b class="accent">${v.n}</b></td>
+      <td class="small" title="${esc(fullLoc)}">${esc(shortLoc || '—')}</td>
+      <td class="mono small">${esc(fmtCT(v.last_ts))}</td></tr>`;
+  }).join('');
+
+  // recent visits
+  const rows = d.recent.map((r) => {
+    const shortLoc = [r.city, r.country].filter(Boolean).join(', ');
+    const fullLoc = [r.city, r.region, r.country].filter(Boolean).join(', ');
+    const src = refInfo(r.referer).host;
+    return `<tr>
+      <td class="mono small">${esc(fmtCT(r.ts))}</td>
+      <td class="mono small">${esc(r.ip)}</td>
+      <td class="small" title="${esc(fullLoc)}">${esc(shortLoc || '—')}</td>
+      <td class="small">${esc(src)}</td>
+      <td class="mono small trunc" title="${esc(r.path)}">${esc(r.path)}</td>
+      <td class="mono small">${fmtDur(r.duration)}</td>
+      <td class="small">${esc(r.device)}</td>
+      <td class="small">${esc(r.browser)} · ${esc(r.os)}</td>
+      <td class="mono small" title="${esc(r.ua)}">${esc((r.asn || '').slice(0, 22))}</td></tr>`;
+  }).join('');
+
+  // filter-bar links
+  const hidingSelf = d.ownerIp && d.hide.includes(d.ownerIp);
+  const selfLink = d.ownerIp
+    ? (hidingSelf
+        ? `<a href="${esc(filterLink(d.token, { hide: d.hide.filter((x) => x !== d.ownerIp), humans: d.humans }))}">Show my visits</a>`
+        : `<a href="${esc(filterLink(d.token, { hide: [...d.hide, d.ownerIp], humans: d.humans }))}">Exclude my visits</a>`)
+    : '';
+  const humansLink = d.humans
+    ? `<a href="${esc(filterLink(d.token, { hide: d.hide, humans: false }))}">Include bots</a>`
+    : `<a href="${esc(filterLink(d.token, { hide: d.hide, humans: true }))}">Humans only</a>`;
+  const allLink = `<a href="${esc(LOGS_PATH + '?token=' + encodeURIComponent(d.token))}">Show all</a>`;
+  const activeNote = (d.hide.length || d.humans)
+    ? `<span class="fnote">active: ${[d.hide.length ? `hiding ${d.hide.length} IP` : '', d.humans ? 'humans only' : ''].filter(Boolean).join(' · ')}</span>`
+    : `<span class="fnote">showing everything</span>`;
 
   return `<!doctype html>
 <html lang="en"><head>
@@ -259,27 +433,42 @@ function renderDashboard(d) {
     font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   .wrap { max-width: 1200px; margin: 0 auto; padding: 28px 20px 80px; }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: #8b929c; margin: 0 0 24px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 14px; margin-bottom: 26px; }
-  .card { background: #1c1f26; border: 1px solid #262b34; border-radius: 12px; padding: 16px 18px; }
+  .sub { color: #8b929c; margin: 0 0 18px; }
+  .fbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0 0 22px; font-size: 13px; }
+  .fbar a { text-decoration: none; background: #1c1f26; border: 1px solid #262b34; padding: 5px 11px; border-radius: 8px; }
+  .fbar a:hover { border-color: #25c2a0; }
+  .fnote { color: #6b727c; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 14px; margin-bottom: 22px; }
+  .card { background: #1c1f26; border: 1px solid #262b34; border-radius: 12px; padding: 14px 16px; }
   .card .k { color: #8b929c; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
-  .card .v { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .card .v { font-size: 26px; font-weight: 700; margin-top: 4px; }
   .accent { color: #25c2a0; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 16px; margin-bottom: 26px; }
   .panel { background: #1c1f26; border: 1px solid #262b34; border-radius: 12px; padding: 14px 16px; }
+  .panel.wide { margin-bottom: 24px; }
   .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #8b929c; margin: 0 0 10px; }
   .panel ul { list-style: none; margin: 0; padding: 0; }
   .panel li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid #23272f; }
   .panel li:last-child { border-bottom: 0; }
   .panel li b { color: #25c2a0; }
+  .panel li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chart { display: flex; gap: 6px; align-items: flex-end; }
+  .bar { flex: 1; text-align: center; }
+  .barTrack { height: 92px; display: flex; align-items: flex-end; }
+  .barFill { width: 58%; margin: 0 auto; background: #25c2a0; border-radius: 3px 3px 0 0; }
+  .barLbl { font-size: 9px; color: #6b727c; margin-top: 6px; white-space: nowrap; }
+  h2.sec { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #8b929c; margin: 26px 0 10px; }
   .muted { color: #6b727c; }
-  table { width: 100%; border-collapse: collapse; background: #1c1f26; border: 1px solid #262b34; border-radius: 12px; overflow: hidden; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #23272f; vertical-align: top; }
+  .you { color: #14161a; background: #25c2a0; font-size: 10px; padding: 1px 5px; border-radius: 6px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; background: #1c1f26; border: 1px solid #262b34; border-radius: 12px; overflow: hidden; font-size: 12.5px; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #23272f; vertical-align: middle; white-space: nowrap; }
   th { background: #191c22; color: #8b929c; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; position: sticky; top: 0; }
-  tr:hover td { background: #20242c; }
+  tbody tr:nth-child(2n) td { background: #191b21; }
+  tr:hover td { background: #22262e; }
   .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .small { font-size: 12px; }
+  .small { font-size: 11.5px; }
   .nowrap { white-space: nowrap; }
+  .trunc { max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
   .tablewrap { overflow-x: auto; border-radius: 12px; }
   .foot { margin-top: 18px; color: #6b727c; font-size: 12px; }
   a { color: #25c2a0; }
@@ -288,24 +477,41 @@ function renderDashboard(d) {
   <h1>Visitor log <span class="accent">·</span> joyebkashyeb.com.np</h1>
   <p class="sub">Private owner view. Auto-recorded on every page view. Times are Central (Alabama).</p>
 
+  <div class="fbar">${selfLink}${humansLink}${allLink}${activeNote}</div>
+
   <div class="cards">
     <div class="card"><div class="k">Total visits</div><div class="v">${d.visits}</div></div>
     <div class="card"><div class="k">Unique IPs</div><div class="v accent">${d.uniques}</div></div>
-    <div class="card"><div class="k">Showing</div><div class="v">${d.recent.length}</div><div class="k">most recent</div></div>
+    <div class="card"><div class="k">Human visits</div><div class="v">${Math.max(d.visits - d.bots, 0)}</div></div>
+    <div class="card"><div class="k">Bot hits</div><div class="v">${d.bots}</div></div>
+    <div class="card"><div class="k">Avg. time on page</div><div class="v">${fmtDur(Math.round(d.avgdur))}</div></div>
+    <div class="card"><div class="k">Last 15 min</div><div class="v accent">${d.last15}</div><div class="k">live</div></div>
   </div>
+
+  <div class="panel wide"><h2>Visits · last 14 days</h2><div class="chart">${chart}</div></div>
 
   <div class="grid">
     <div class="panel"><h2>Top pages</h2><ul>${statList(d.topPages, 'path')}</ul></div>
+    <div class="panel"><h2>Traffic sources</h2><ul>${pairList(catRows)}</ul></div>
+    <div class="panel"><h2>Top referrers</h2><ul>${pairList(hostRows)}</ul></div>
     <div class="panel"><h2>Countries</h2><ul>${statList(d.topCountries, 'country')}</ul></div>
     <div class="panel"><h2>Devices</h2><ul>${statList(d.topDevices, 'device')}</ul></div>
     <div class="panel"><h2>Browsers</h2><ul>${statList(d.topBrowsers, 'browser')}</ul></div>
+    <div class="panel"><h2>Languages</h2><ul>${statList(d.languages, 'lang')}</ul></div>
   </div>
 
+  <h2 class="sec">Top visitors (by IP)</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>IP</th><th>Visits</th><th>Location</th><th>Last seen (CT)</th></tr></thead>
+    <tbody>${visitorRows || '<tr><td colspan="4" class="muted" style="padding:20px">none</td></tr>'}</tbody>
+  </table></div>
+
+  <h2 class="sec">Recent visits</h2>
   <div class="tablewrap"><table>
     <thead><tr>
-      <th>Time (CT)</th><th>IP</th><th>Location</th><th>Page</th><th>Device</th><th>Browser · OS</th><th>Network (ASN)</th>
+      <th>Time (CT)</th><th>IP</th><th>Location</th><th>Source</th><th>Page</th><th>On page</th><th>Device</th><th>Browser · OS</th><th>Network (ASN)</th>
     </tr></thead>
-    <tbody>${rows || '<tr><td colspan="7" class="muted" style="padding:20px">No visits recorded yet.</td></tr>'}</tbody>
+    <tbody>${rows || '<tr><td colspan="9" class="muted" style="padding:20px">No visits recorded yet.</td></tr>'}</tbody>
   </table></div>
 
   <p class="foot">

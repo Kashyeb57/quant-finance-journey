@@ -3,38 +3,70 @@
  *
  * Fires a tiny same-origin request to the Cloudflare Worker (/_a/collect) on
  * each page view so the private analytics log can record the visit (IP + geo
- * + device are read server-side by the Worker from Cloudflare's edge — this
- * script only sends the path and referrer).
+ * + device + language are read server-side by the Worker; this script sends
+ * the path, referrer, and — when the visitor leaves a page — how long they
+ * stayed on it).
  *
- * It is intentionally defensive: it never throws, and if the Worker isn't
- * deployed yet the request just fails silently — the site is unaffected.
+ * Defensive by design: it never throws, and if the Worker isn't deployed the
+ * requests just fail silently — the site is unaffected.
  */
 
 const ENDPOINT = '/_a/collect';
 
-function send(pathname) {
-  if (typeof navigator === 'undefined') return;
+let currentVid = null; // id of the page view currently being timed
+let startSec = 0; // when the current view started (unix seconds)
+
+function nowSec() {
+  return Math.floor(Date.now() / 1000);
+}
+
+function genVid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+}
+
+function post(obj) {
   try {
-    const payload = JSON.stringify({
-      p: pathname,
-      r: document.referrer || '',
-      w: window.screen ? window.screen.width : undefined,
-      h: window.screen ? window.screen.height : undefined,
-    });
+    const body = JSON.stringify(obj);
     if (navigator.sendBeacon) {
-      // sendBeacon survives page unloads and is fire-and-forget.
-      navigator.sendBeacon(ENDPOINT, payload);
+      navigator.sendBeacon(ENDPOINT, body);
     } else {
-      fetch(ENDPOINT, { method: 'POST', body: payload, keepalive: true }).catch(() => {});
+      fetch(ENDPOINT, { method: 'POST', body, keepalive: true }).catch(() => {});
     }
   } catch (_) {
     /* analytics must never break the page */
   }
 }
 
+// Report how long the current view lasted (idempotent: the Worker keeps the max).
+function endCurrentView() {
+  if (!currentVid) return;
+  post({ t: 'end', v: currentVid, s: Math.max(0, nowSec() - startSec) });
+}
+
+function startView(pathname) {
+  endCurrentView(); // close out the previous page's timer
+  currentVid = genVid();
+  startSec = nowSec();
+  post({
+    p: pathname,
+    r: document.referrer || '',
+    v: currentVid,
+    w: window.screen ? window.screen.width : undefined,
+    h: window.screen ? window.screen.height : undefined,
+  });
+}
+
+if (typeof document !== 'undefined') {
+  // Fires when the tab is hidden or the page is being unloaded — the reliable
+  // moment to capture time-on-page (sendBeacon still works during unload).
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') endCurrentView();
+  });
+  window.addEventListener('pagehide', endCurrentView);
+}
+
 // Called by Docusaurus after every route change, including the first load.
-// previousLocation is null on the initial page view, so that view is counted.
 export function onRouteDidUpdate({ location, previousLocation }) {
   if (previousLocation && previousLocation.pathname === location.pathname) return;
-  send(location.pathname);
+  startView(location.pathname);
 }

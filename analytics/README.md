@@ -98,6 +98,22 @@ If you'd rather **not** store full IPs, you can anonymise them in the Worker
 (e.g. drop the last octet) — ask and I'll switch it to hashed/truncated IPs
 while keeping country/city.
 
+## Applying updates (schema changes)
+
+When a new feature adds database columns, there's a migration file in
+`migrations/`. Run it **before** deploying the new Worker (deploying first just
+pauses logging until the columns exist — no data is lost after you migrate):
+
+```bash
+cd analytics
+wrangler d1 execute site_analytics --file=./migrations/001_lang_duration.sql --remote
+wrangler deploy
+```
+
+`001_lang_duration.sql` adds `lang` (visitor language), `view_id`, and
+`duration` (time-on-page). Older rows simply show “—” for these until new
+visits arrive.
+
 ## Housekeeping
 
 Prune old rows anytime, e.g. keep the last 90 days:
@@ -112,6 +128,7 @@ wrangler d1 execute site_analytics --remote \
 | File | Purpose |
 |------|---------|
 | `src/worker.js` | The Worker: `/_a/collect` (record) + `/_a/logs` (dashboard) |
-| `schema.sql` | D1 table definition |
+| `schema.sql` | D1 table definition (fresh installs) |
+| `migrations/*.sql` | Incremental schema changes for an existing database |
 | `wrangler.toml` | Worker config (route + D1 binding) |
 | `../src/clientModules/analytics.js` | Site beacon (already wired into `docusaurus.config.js`) |
