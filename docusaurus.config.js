@@ -22,7 +22,7 @@ const config = {
   baseUrl: '/',
 
   organizationName: 'Kashyeb57',
-  projectName: 'Quantitative-Finance_Joyeb',
+  projectName: 'quant-finance-journey',
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
@@ -36,6 +36,31 @@ const config = {
   // No-ops until the Worker in ./analytics is deployed; never breaks the site.
   clientModules: ['./src/clientModules/analytics.js'],
 
+  // SEO: structured data so search engines understand who/what this site is.
+  headTags: [
+    {
+      tagName: 'script',
+      attributes: {type: 'application/ld+json'},
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: 'Joyeb Kashyeb',
+        url: 'https://joyebkashyeb.com.np',
+        jobTitle: 'Computer Science & Data Science student (quantitative finance)',
+        alumniOf: 'Jacksonville State University',
+        knowsAbout: [
+          'Quantitative Finance', 'Derivatives Pricing', 'Probability',
+          'Statistics', 'Stochastic Calculus', 'Machine Learning', 'Python',
+        ],
+        sameAs: [
+          'https://github.com/Kashyeb57',
+          'https://www.linkedin.com/in/joyeb-kashyeb-b46468361',
+          'https://www.instagram.com/kashyeb57/',
+        ],
+      }),
+    },
+  ],
+
   presets: [
     [
       'classic',
@@ -48,7 +73,7 @@ const config = {
           // "Edit this page" opens the GitHub editor on this repo —
           // the one-click, no-code way to fix or extend any note.
           editUrl:
-            'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb/edit/main/',
+            'https://github.com/Kashyeb57/quant-finance-journey/edit/main/',
           showLastUpdateTime: true,
         },
         blog: false,
@@ -110,9 +135,8 @@ const config = {
             ],
           },
           {to: '/about', label: 'About', position: 'right'},
-          {to: '/admin', label: 'Publish', position: 'right'},
           {
-            href: 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb',
+            href: 'https://github.com/Kashyeb57/quant-finance-journey',
             label: 'GitHub',
             position: 'right',
           },
@@ -146,8 +170,17 @@ const config = {
               {label: 'Publish (owner)', to: '/admin'},
               {
                 label: 'GitHub',
-                href: 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb',
+                href: 'https://github.com/Kashyeb57/quant-finance-journey',
               },
+            ],
+          },
+          {
+            title: 'Connect',
+            items: [
+              {label: 'LinkedIn', href: 'https://www.linkedin.com/in/joyeb-kashyeb-b46468361'},
+              {label: 'GitHub', href: 'https://github.com/Kashyeb57'},
+              {label: 'Instagram', href: 'https://www.instagram.com/kashyeb57/'},
+              {label: 'Email', href: 'mailto:kashyeb005@gmail.com'},
             ],
           },
         ],

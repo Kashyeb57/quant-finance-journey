@@ -5,7 +5,7 @@ import Head from '@docusaurus/Head';
 import Heading from '@theme/Heading';
 import styles from './admin.module.css';
 
-const REPO = 'https://github.com/Kashyeb57/Quantitative-Finance_Joyeb';
+const REPO = 'https://github.com/Kashyeb57/quant-finance-journey';
 
 const NOTE_TEMPLATE = `---
 title: My New Note

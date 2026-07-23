@@ -180,3 +180,25 @@ blockquote {
   --viz-card-bg: #1b1b1d;
   --viz-panel-bg: #242526;
 }
+
+/* "soon" badge on sidebar topics that are still in progress — signals to
+   visitors that the curriculum is actively growing, not that links are dead. */
+.menu__link.soon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.menu__link.soon::after {
+  content: 'soon';
+  flex: none;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--ifm-color-primary);
+  border: 1px solid var(--ifm-color-primary);
+  border-radius: 999px;
+  padding: 0 6px;
+  opacity: 0.7;
+}

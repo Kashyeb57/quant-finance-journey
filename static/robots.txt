@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# The owner-only analytics endpoints and reader don't belong in search results.
+Disallow: /_a/
+Disallow: /read
+Disallow: /admin
+
+Sitemap: https://joyebkashyeb.com.np/sitemap.xml
