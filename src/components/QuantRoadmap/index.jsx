@@ -3,9 +3,9 @@ import BrowserOnly from '@docusaurus/BrowserOnly';
 import styles from './styles.module.css';
 
 /*
- * Quant Roadmap — based on the "Quant Guild Roadmap" by Roman Paolucci.
- * Five pillars × three levels. Click any node to mark it complete;
- * progress is saved to localStorage and scored against the three career tracks.
+ * Quant Roadmap — five pillars × three levels. Click any node to mark it
+ * complete; progress is saved to localStorage and scored against the three
+ * career tracks.
  */
 
 const STORAGE_KEY = 'quantRoadmapProgressV1';
@@ -367,7 +367,7 @@ function RoadmapInner() {
         <p>
           Five pillars, three levels. Tick off each topic as you learn it &mdash;
           your progress saves automatically and scores you against the three quant
-          career tracks below. Adapted from Roman Paolucci&rsquo;s Quant Guild roadmap.
+          career tracks below.
         </p>
       </div>
 
@@ -488,10 +488,7 @@ function RoadmapInner() {
         <p>
           <strong>How much do I need?</strong> Depends on your goal &mdash; you don&rsquo;t have to
           learn everything, but learn as much as you can. Most topics are covered in
-          high-school and college courses, and free videos on{' '}
-          <a href="https://www.youtube.com/@QuantGuild" target="_blank" rel="noreferrer">Quant Guild</a>.
-          Original roadmap by Roman Paolucci on{' '}
-          <a href="https://roadmap.sh/r/quant-roadmap-bzunq" target="_blank" rel="noreferrer">roadmap.sh</a>.
+          high-school and college courses, and plenty of free videos online.
         </p>
       </div>
     </div>
