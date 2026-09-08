@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { fmtPrice, marketStatus } from './marketData';
+import React, { useState } from 'react';
+import { marketStatus } from './marketData';
+import { fmtPrice, fmtSignedMoney, fmtClockCT } from '../../lib/format';
+import { getPortfolio } from '../../lib/market';
+import usePolling from '../../lib/usePolling';
 import styles from './styles.module.css';
 
 /*
@@ -14,48 +17,25 @@ import styles from './styles.module.css';
 const POLL_MS = 15000;
 
 const money = (v) => (v == null || Number.isNaN(v) ? '—' : `$${fmtPrice(v)}`);
-const signedMoney = (v) => (v == null || Number.isNaN(v) ? '—' : `${v >= 0 ? '+' : '−'}$${fmtPrice(Math.abs(v))}`);
+const signedMoney = (v) => fmtSignedMoney(v);
 const signedPct = (v) => (v == null || Number.isNaN(v) ? '' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(2)}%`);
 const dirClassOf = (v) => (v == null ? '' : v >= 0 ? styles.up : styles.down);
-
-function fmtAsOf(iso) {
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-    }).format(new Date(iso)) + ' CT';
-  } catch (_) {
-    return '';
-  }
-}
-
-async function fetchPortfolio() {
-  const res = await fetch('/_m/portfolio', { cache: 'no-store' });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
+const fmtAsOf = (iso) => fmtClockCT(iso);
 
 export default function Portfolio() {
   const [state, setState] = useState({ status: 'loading' });
 
-  useEffect(() => {
-    let cancelled = false;
-    async function pull() {
-      if (document.visibilityState === 'hidden') return;
-      try {
-        const d = await fetchPortfolio();
-        if (cancelled) return;
-        if (d && d.account && !d.error) setState({ status: 'ok', data: d });
-        else setState((s) => (s.status === 'ok' ? s : { status: 'idle' }));
-      } catch (_) {
-        if (!cancelled) setState((s) => (s.status === 'ok' ? s : { status: 'idle' }));
-      }
+  usePolling(async ({ signal, cancelled }) => {
+    try {
+      const d = await getPortfolio({ signal });
+      if (cancelled()) return;
+      if (d && d.account && !d.error) setState({ status: 'ok', data: d });
+      else setState((s) => (s.status === 'ok' ? s : { status: 'idle' }));
+    } catch (_) {
+      // Keep showing the last good snapshot; otherwise fall back to "not connected".
+      if (!cancelled()) setState((s) => (s.status === 'ok' ? s : { status: 'idle' }));
     }
-    pull();
-    const timer = setInterval(pull, POLL_MS);
-    const onVis = () => { if (document.visibilityState === 'visible') pull(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => { cancelled = true; clearInterval(timer); document.removeEventListener('visibilitychange', onVis); };
-  }, []);
+  }, POLL_MS);
 
   const status = marketStatus();
 

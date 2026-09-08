@@ -36,3 +36,15 @@ DESIGN_HANDOFF.md
 MS444_STATS_GAP_REPORT.md
 .claude/
 .understand-anything/
+
+# Cross-assistant handoff state (see .handoff/README.md) and per-agent dirs.
+# Private working state, shared between AI sessions on this machine — not part
+# of the site.
+.handoff/
+.openai/
+
+# Local scratch / one-off dumps — never part of the site
+git_history_calculus.txt
+old_calc.txt
+scratch_*.txt
+scratch_*.js

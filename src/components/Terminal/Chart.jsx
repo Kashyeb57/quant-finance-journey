@@ -3,6 +3,8 @@ import { useColorMode } from '@docusaurus/theme-common';
 import { fetchBars, tfConfig, isCrypto, cryptoGran, TIMEFRAMES, fmtPrice } from './marketData';
 import { subscribeCryptoTicker } from './cryptoStream';
 import { subscribeStockTrades } from './stockStream';
+import { getGex, getPortfolio } from '../../lib/market';
+import usePolling from '../../lib/usePolling';
 import styles from './styles.module.css';
 import GexProfile from './GexProfile';
 
@@ -16,13 +18,6 @@ import GexProfile from './GexProfile';
  */
 
 const LIB = 'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
-
-// The market Worker only runs in production. From localhost we call the live
-// domain directly (it allow-lists localhost for CORS) so the GEX panel previews.
-const MARKET_BASE =
-  (typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname))
-    ? 'https://joyebkashyeb.com.np'
-    : '';
 
 let _libPromise = null;
 function loadLib() {
@@ -397,26 +392,19 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
   }, [timeframe]);
 
   /* ---- open-position overlay: is there a position in THIS ticker? ---- */
+  // Clear the previous symbol's overlay the moment the chart changes symbol.
   useEffect(() => {
-    let cancelled = false;
     setPos(null); setPl(null); setPlY(null);
-    const sym = (ticker || '').toUpperCase();
-    async function pull() {
-      if (document.visibilityState === 'hidden') return;
-      try {
-        const res = await fetch('/_m/portfolio', { cache: 'no-store' });
-        if (!res.ok) return;
-        const d = await res.json();
-        if (cancelled || !d || !Array.isArray(d.positions)) return;
-        setPos(d.positions.find((x) => (x.symbol || '').toUpperCase() === sym) || null);
-      } catch (_) { /* overlay is optional — never break the chart */ }
-    }
-    pull();
-    const id = setInterval(pull, 20000);
-    const onVis = () => { if (document.visibilityState === 'visible') pull(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => { cancelled = true; clearInterval(id); document.removeEventListener('visibilitychange', onVis); };
   }, [ticker]);
+
+  usePolling(async ({ signal, cancelled }) => {
+    const sym = (ticker || '').toUpperCase();
+    try {
+      const d = await getPortfolio({ signal });
+      if (cancelled() || !d || !Array.isArray(d.positions)) return;
+      setPos(d.positions.find((x) => (x.symbol || '').toUpperCase() === sym) || null);
+    } catch (_) { /* overlay is optional — never break the chart */ }
+  }, 20000, [ticker]);
 
   /* ---- draw the entry line + keep the live P/L in sync (TradingView-style) ---- */
   useEffect(() => {
@@ -472,9 +460,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     const sym = gexTarget;
     (async () => {
       try {
-        const res = await fetch(`${MARKET_BASE}/_m/gex?symbol=${encodeURIComponent(sym)}&exp=${gexExp}`, { cache: 'no-store' });
-        if (!res.ok) { if (!cancelled) { setGexChain(null); setGex(null); setGexErr(true); } return; }
-        const d = await res.json();
+        const d = await getGex(sym, gexExp);
         if (cancelled) return;
         if (!d || !d.spot) { setGexChain(null); setGex(null); setGexErr(true); return; }
         // Tag the chain with its instrument so the live re-compute below never

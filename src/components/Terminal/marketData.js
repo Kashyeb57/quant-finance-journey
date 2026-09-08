@@ -5,9 +5,17 @@
  * which holds the Alpaca credentials server-side. If that Worker is not
  * deployed yet — or is briefly unavailable — we fall back to a keyless public
  * source so the Terminal keeps working instead of showing an empty panel.
+ *
+ * Worker calls go through `src/lib/market.js` so this file no longer hardcodes
+ * the API origin; the keyless fallbacks below are third-party URLs and are
+ * fetched directly.
  */
 
-const WORKER = '/_m';
+import { getBars as workerBars, getSnapshot as workerSnapshot } from '../../lib/market';
+
+// Re-exported so existing `import { fmtPrice } from './marketData'` call sites
+// keep working while the shared implementations live in src/lib/format.js.
+export { fmtPrice, fmtVolume } from '../../lib/format';
 
 const PROXIES = [
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
@@ -157,7 +165,7 @@ export async function fetchBars(symbol, tfKey) {
 
   // 1. our Worker (real feed, credentials stay server-side)
   try {
-    const j = await getJson(`${WORKER}/bars?symbol=${encodeURIComponent(symbol)}&tf=${tfKey}`);
+    const j = await workerBars(symbol, tfKey);
     if (j && Array.isArray(j.bars) && j.bars.length) {
       return { bars: j.bars, source: 'worker' };
     }
@@ -193,7 +201,7 @@ export async function fetchSnapshot(symbol) {
 
   // 1. our Worker
   try {
-    const j = await getJson(`${WORKER}/snapshot?symbol=${encodeURIComponent(symbol)}`);
+    const j = await workerSnapshot(symbol);
     if (j && j.last != null) return { ...j, source: 'worker' };
   } catch (e) {
     /* fall through */
@@ -253,15 +261,5 @@ export function marketStatus(now = new Date()) {
   return { state: 'closed', label: 'Market closed' };
 }
 
-export function fmtPrice(v) {
-  if (v == null || Number.isNaN(v)) return '—';
-  return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-export function fmtVolume(v) {
-  if (v == null || Number.isNaN(v)) return '—';
-  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
-  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
-  return String(v);
-}
+/* fmtPrice / fmtVolume now live in src/lib/format.js and are re-exported at the
+ * top of this file, so every page formats prices and volume identically. */

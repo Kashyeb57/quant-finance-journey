@@ -35,6 +35,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Fails only on errors (crash-class rules such as react-hooks/rules-of-hooks).
+      # Warnings are advisory and do not block a deploy.
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
 

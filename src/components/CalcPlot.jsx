@@ -482,9 +482,13 @@ function PlotlyChart({ chartName }) {
   const [ready, setReady] = useState(false);
 
   const def = CHARTS[chartName];
-  if (!def) return <div style={{ color: 'red', padding: '1rem' }}>Chart "{chartName}" not found.</div>;
 
+  // NOTE: every hook must run on every render. The "chart not found" early
+  // return lives *below* this effect — putting it above skipped the hook on
+  // that render path, and React then throws "rendered fewer hooks than
+  // expected" as soon as an unknown chart name reaches this component.
   useEffect(() => {
+    if (!def) return undefined;
     const { data, layout } = def();
     loadPlotly().then(Plotly => {
       if (!divRef.current) return;
@@ -503,7 +507,9 @@ function PlotlyChart({ chartName }) {
     return () => {
       if (divRef.current && window.Plotly) window.Plotly.purge(divRef.current);
     };
-  }, [chartName]);
+  }, [chartName, def]);
+
+  if (!def) return <div style={{ color: 'red', padding: '1rem' }}>Chart "{chartName}" not found.</div>;
 
   return (
     <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
