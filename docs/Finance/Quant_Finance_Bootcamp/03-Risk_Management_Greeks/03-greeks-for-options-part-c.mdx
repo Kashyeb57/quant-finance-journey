@@ -1,0 +1,168 @@
+---
+title: 'Greeks for Options – Part C (Theta)'
+description: 'Theta and time decay — why it is negative for the long and positive for the short, the intrinsic/extrinsic split that explains it, and why decay is fastest at the money and accelerates into expiry.'
+---
+
+Delta and gamma are about the *stock* moving. Theta is about nothing happening
+at all — the option losing value simply because a day went by.
+
+## Definition
+
+> Theta measures the sensitivity of the option price with respect to **time**.
+> It represents how much the price of an option **falls as time passes** (each
+> day).
+
+$$
+\Theta = \frac{\partial V}{\partial t}
+= \frac{\text{change in option price}}{\text{change in time}}
+$$
+
+Theta is also called **time decay**, because an option **loses its value as we
+approach maturity**. An option contract bought at $t=0$ and expiring at
+$t=3$ months is, all else equal, worth a little less every single day of that
+journey.
+
+Formally: it tells how much the price of the option will decrease as each day
+passes, **holding all other factors constant**.
+
+### A worked reading
+
+You own a call option:
+
+| | |
+| --- | --- |
+| Current stock price | \$100 |
+| Strike price | \$100 |
+| Time to expiry | 30 days |
+| **Theta** | **−\$0.10 per day** |
+
+As every day passes, the value of your option decreases by **\$0.10**.
+
+- If theta is **negative**, the option price **declines** by that much.
+- If theta is **positive**, the option price **increases** by that much.
+
+## Who time works for
+
+This is the part that matters in practice.
+
+**Theta is negative for a LONG position** — long call *and* long put. When you
+are the buyer, **theta works against you.**
+
+> Think of an **ice cube**. As time passes, does the ice cube melt? Yes. Time is
+> working against the ice cube — and against you.
+
+**Theta is positive for a SHORT position** — short call *and* short put. As time
+passes, the short position **benefits from time decay**.
+
+> Think of **renting out a house**. You collect rent from the person staying
+> there. The more days they stay, the more rent they pay. **Time is working in
+> support of you.**
+
+$$
+\text{Long} \Rightarrow \Theta < 0 \text{ (against you)}
+\qquad
+\text{Short} \Rightarrow \Theta > 0 \text{ (in your favour)}
+$$
+
+This is the mirror image of gamma, which favours the long. The option seller
+collects decay but carries accelerating directional risk; the buyer pays decay
+for that convexity. That trade-off is the heart of option trading.
+
+## The shape of decay
+
+Time decay is **not linear**. It is slow while the option is young and
+accelerates sharply into the final days:
+
+<svg viewBox="0 0 640 260" role="img" aria-label="Option value against days to expiration: a convex curve that decays slowly at first and collapses near expiry" style={{width: '100%', height: 'auto'}}>
+  <g stroke="currentColor" strokeWidth="1" opacity="0.4" fill="none">
+    <line x1="70" y1="30" x2="70" y2="200" />
+    <line x1="70" y1="200" x2="580" y2="200" />
+  </g>
+  <path d="M70,45 C220,60 350,95 460,140 C520,168 555,190 578,199" fill="none" stroke="#25c2a0" strokeWidth="2.5" />
+  <g stroke="currentColor" strokeWidth="1" opacity="0.25">
+    <line x1="240" y1="30" x2="240" y2="200" strokeDasharray="3 3" />
+    <line x1="460" y1="30" x2="460" y2="200" strokeDasharray="3 3" />
+  </g>
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="30" y="40">Option</text><text x="34" y="56">value</text>
+    <text x="300" y="228">Days to expiration</text>
+    <text x="62" y="216">90</text><text x="228" y="216">60</text><text x="450" y="216">20</text><text x="572" y="216">0</text>
+    <text x="330" y="88" opacity="0.75">decay is slow while there is time…</text>
+    <text x="392" y="182" opacity="0.75">…then collapses</text>
+  </g>
+</svg>
+
+## Why: intrinsic and extrinsic value
+
+Theta only makes sense once the option price is split in two.
+
+**Intrinsic value** — the real value of the option **if exercised right now**:
+
+$$
+\text{Call: } S_T - K \qquad\qquad \text{Put: } K - S_T
+$$
+
+If that is negative the option would not be exercised, so **OTM intrinsic value
+is 0**. (With $K=100$ and the stock at 110, a call's intrinsic value is 10.)
+
+**Extrinsic value** — also called **time value**:
+
+> The additional value beyond the intrinsic value, which accounts for factors
+> such as **time to expiration** and **volatility**.
+
+Putting them together:
+
+$$
+\text{Option price} = \text{Intrinsic value} + \text{Extrinsic value}
+$$
+
+**Theta eats the extrinsic value only.** Intrinsic value is untouched by the
+calendar — it is arithmetic on today's prices. So an option's exposure to time
+decay is exactly its exposure to *extrinsic* value.
+
+## Theta by moneyness
+
+Everything follows from that last sentence.
+
+### In the money
+
+ITM options have a **significant amount of intrinsic value**, so the price is
+**less dependent on time decay**. As expiration approaches, the intrinsic value
+dominates and the extrinsic value becomes smaller and smaller — so **theta is
+smaller**.
+
+### At the money
+
+Here $S_T = K$, so the intrinsic value is **exactly zero** and the option price
+is **extrinsic value only**. It is pure time value — and there is more of it
+here than anywhere else.
+
+> **Theta is highest for ATM options.** They have the greatest potential to lose
+> value as time passes.
+
+### Out of the money
+
+Intrinsic value is zero as well, but the extrinsic value is small. Worked
+through — an OTM call with $K = 110$ while the stock sits at $S = 100$:
+
+| | |
+| --- | --- |
+| **Case 1 — 30 days to expiry** | There is still a real chance the stock climbs to 110, so the option **still has some time value**. Decay is **relatively slow**. |
+| **Case 2 — 5 days to expiry** | In a normal market it is **highly unlikely** the stock travels from 100 to 110. Intrinsic value is zero and the remaining extrinsic value evaporates → **theta is high**, and decay **accelerates in the final days**. |
+
+So the conclusion is two-sided, and both halves matter:
+
+- Theta decay is **relatively slower for an OTM option at longer maturity**…
+- …**but as expiration approaches, the chance of becoming ITM diminishes and
+  theta accelerates** — the option loses its value much faster.
+
+## Summary
+
+- $\Theta = \partial V / \partial t$ — the option's daily bleed, all else equal.
+  A theta of −\$0.10 costs you ten cents a day.
+- **Long → theta negative, time against you** (the melting ice cube).
+  **Short → theta positive, time for you** (collecting rent).
+- **Option price = intrinsic + extrinsic**, and **theta only consumes the
+  extrinsic** part.
+- **Theta is highest ATM** (pure time value), **lower ITM and OTM**.
+- Decay is **convex** — slow early, accelerating hard into the last days.
