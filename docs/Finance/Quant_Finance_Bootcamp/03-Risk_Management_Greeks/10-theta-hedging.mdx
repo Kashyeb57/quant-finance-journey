@@ -1,0 +1,150 @@
+---
+title: Theta Hedging
+description: 'Neutralising time decay — the worked 100-contract example, why the hedge is always the opposite side, and why both very long and very short expiries need it.'
+---
+
+Every hedge so far has defended against something that might or might not
+happen. **Time decay is the one risk that is certain.** The clock runs whether
+the market moves or not.
+
+## Definition
+
+> Theta hedging is a risk-management strategy which is used to manage an option
+> portfolio's **exposure to time decay.**
+
+Recall what theta is: it **measures the sensitivity of the option price with
+respect to time**.
+
+### Theta decay
+
+> **As every day passes, the option price loses its value.**
+
+An option worth **\$2.50** today does not sit there:
+
+| Day | Option price |
+| --- | --- |
+| $D_0$ | \$2.50 |
+| $D_1$ | \$2.40 |
+| $D_2$ | \$2.25 |
+| … | falling |
+
+Nothing needs to happen in the market for this. The option is simply worth less
+because there is less time left for it to come good.
+
+### The goal
+
+> The goal of theta hedging is to **offset or reduce the impact of time decay on
+> the portfolio value** — to **eliminate the impact of time decay on our option
+> price.**
+
+$$
+\Theta_p = 0
+$$
+
+## The sign of theta
+
+Theta's signs are the **reverse** of gamma's and vega's, and that reversal is
+the whole reason the hedge works:
+
+| Theta | Positions |
+| --- | --- |
+| **Positive** | **Short call, short put** |
+| **Negative** | **Long call, long put** |
+
+The buyer of an option pays for time and watches it drain away; the seller
+collected that premium up front and keeps a little more of it each day. Decay is
+a cost to the long and income to the short.
+
+## Worked example
+
+You are **long 100 call option contracts**, with:
+
+$$
+\Theta = -50
+$$
+
+Theta is negative, which means **every day the option price will lose its
+value** — \$50 a day, in this case, purely from the calendar.
+
+### Step 1 — find positive theta
+
+> Theta hedging: **select those option contracts whose theta is positive** —
+> a **short call** or a **short put**.
+
+Suppose you enter a **short position** with:
+
+$$
+\Theta = +5
+$$
+
+### Step 2 — size it
+
+Short **10** of them:
+
+$$
+10 \times 5 = \mathbf{50}
+$$
+
+### Step 3 — total
+
+$$
+\Theta_p = -50 + 50 = \mathbf{0}
+$$
+
+**Theta neutral.** Every day that passes by, **the option price will not change
+with time.**
+
+### What the two legs are doing
+
+The structure is **long call + short put**, and the two legs are doing opposite
+things to the clock:
+
+$$
+\underbrace{\text{decline}}_{\text{long call}} \;+\; \underbrace{\text{gain}}_{\text{short put}} \;=\; \mathbf{0}
+$$
+
+**By adding a short position, your portfolio's net theta is zero.** The decay
+you pay on the long leg is exactly the decay you collect on the short one.
+
+## The rule, in both directions
+
+Because the hedge is always the **opposite side** of the position you hold:
+
+| If the portfolio's theta is… | Hedge with |
+| --- | --- |
+| **Positive** | a **long** position (call or put) — long options carry negative theta |
+| **Negative** | a **short** position (call or put) — short options carry positive theta |
+
+Either way you end at $\Theta_p = 0$.
+
+## When theta hedging is required
+
+It is needed at both ends of the maturity spectrum, for opposite reasons.
+
+**a) Long-term option contracts.** If you plan to **hold an option position for
+a longer period**, theta hedging **helps minimise the losses from time decay**.
+Decay per day is small on a long-dated option, but you are exposed to it for a
+long time, and it accumulates.
+
+**b) Short-term option contracts.** When you have a **shorter term, theta decay
+accelerates quickly.** A contract with one week left bleeds far faster per day
+than one with a month left — the decay curve steepens into expiry. Here **theta
+hedging becomes very important**, because the loss arrives fast.
+
+The middle of the curve is where you can most afford to ignore it. The two ends
+are where it costs you.
+
+## Summary
+
+- **Theta hedging eliminates the effect of time on the portfolio value** —
+  $\Theta_p = 0$ means the option price stops changing simply because a day
+  passed.
+- **Theta is positive for short positions** (short call, short put) and
+  **negative for long positions** (long call, long put) — decay is a cost to the
+  buyer and income to the seller.
+- Worked: long 100 calls at $\Theta = -50$, neutralised by **shorting 10
+  contracts at $\Theta = +5$** → $-50 + 50 = 0$.
+- The hedge is always the **opposite side**: positive portfolio theta is hedged
+  long, negative portfolio theta is hedged short.
+- It matters for **long-dated positions** (decay accumulates) and for
+  **short-dated ones** (decay accelerates into expiry).
