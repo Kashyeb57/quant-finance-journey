@@ -1,0 +1,300 @@
+---
+title: Cholesky Decomposition for Geometric Brownian Motion (GBM)
+description: 'Deriving the two-stock Cholesky factor, correlating normal draws, and applying them in the accompanying GBM workbook.'
+---
+
+## Correlated processes
+
+**GBM → model a single stock.** Now consider **two stocks**:
+
+- **S₁ → ABC**.
+- **S₂ → XYZ**.
+
+The example labels both as **financial companies** and asks whether S₁ and S₂
+will have correlation or not: **yes**.
+
+When we model our stocks using geometric Brownian motion, we need to make sure
+that the **same correlation is also integrated within the GBM process**. The
+diagram shows S₁ and S₂ linked by correlation before modeling, each passing
+through a GBM arrow, with correlation retained between the two resulting
+processes.
+
+To integrate the correlation between the processes, we use **Cholesky
+decomposition**.
+
+## Cholesky decomposition
+
+### Step 1: define the correlation matrix
+
+The example's correlation between S₁ and S₂ is **ρ = 0.6 or 60%**.
+
+$$
+\Sigma=\begin{bmatrix}1&\rho\\\rho&1\end{bmatrix}.
+$$
+
+**Note:**
+
+$$
+-1\leq\rho\leq1.
+$$
+
+### Step 2: define Cholesky decomposition
+
+The goal is to find a **lower triangular matrix** such that:
+
+$$
+L=\begin{bmatrix}L_{11}&0\\L_{21}&L_{22}\end{bmatrix},
+\qquad
+L^T=\begin{bmatrix}L_{11}&L_{21}\\0&L_{22}\end{bmatrix},
+$$
+
+$$
+\boxed{\Sigma=LL^T}.
+$$
+
+The superscript **T** marks the transpose; Σ is the **correlation matrix**.
+
+### Matrix multiplication
+
+$$
+\begin{bmatrix}1&\rho\\\rho&1\end{bmatrix}
+=\begin{bmatrix}L_{11}&0\\L_{21}&L_{22}\end{bmatrix}
+\begin{bmatrix}L_{11}&L_{21}\\0&L_{22}\end{bmatrix}.
+$$
+
+From the upper-left entry:
+
+$$
+L_{11}\cdot L_{11}=1,
+\qquad L_{11}^2=1,
+\qquad\boxed{L_{11}=1}.
+$$
+
+From the upper-right entry:
+
+$$
+L_{11}L_{21}+0\cdot L_{22}=\rho.
+$$
+
+$$
+L_{11}L_{21}=\rho.
+$$
+
+Since **L₁₁ = 1**:
+
+$$
+\boxed{L_{21}=\rho}.
+$$
+
+From the lower-right entry:
+
+$$
+1=L_{21}^2+L_{22}^2.
+$$
+
+$$
+1=\rho^2+L_{22}^2.
+$$
+
+$$
+\boxed{L_{22}=\sqrt{1-\rho^2}}.
+$$
+
+Therefore the **Cholesky matrix** is:
+
+$$
+L=\begin{bmatrix}L_{11}&0\\L_{21}&L_{22}\end{bmatrix}
+=\boxed{\begin{bmatrix}1&0\\\rho&\sqrt{1-\rho^2}\end{bmatrix}}.
+$$
+
+## Use Cholesky decomposition in GBM
+
+Let's assume we have **2 correlated stocks**.
+
+### Step 1: GBM equation
+
+For a single stock:
+
+$$
+dS_t=\mu S_t\,dt+\sigma S_t\,dW_t.
+$$
+
+- **Sₜ:** stock price at time t.
+- **μ:** expected return.
+- **σ:** volatility.
+- **dWₜ:** Wiener process, the **random component**.
+
+### Step 2: correlating our Wiener processes using Cholesky decomposition
+
+The diagram connects **S₁, S₂ → ρ → dW₁, dW₂**, asks **“How?”**, and points
+to **Cholesky decomposition**. It recalls **dW₁ = Z₁ sqrt(t)** for an increment
+over a time interval.
+
+**a) Generate standard normal random variables Z₁, Z₂.**
+
+For each stock, the Excel draw is:
+
+```excel
+=NORM.S.INV(RAND())
+```
+
+**S₁ → Z₁**, **S₂ → Z₂**.
+
+**b) Use Cholesky decomposition to transform these independent random variables
+to correlated random variables.**
+
+The two-column sketch labels the original Z₁/Z₂ columns **uncorrelated** and
+the transformed Z₁′/Z₂′ columns **correlated random variables**, with **ρ**
+beside the transformation arrow.
+
+$$
+L=\begin{bmatrix}1&0\\\rho&\sqrt{1-\rho^2}\end{bmatrix},
+\qquad LL^T=\Sigma.
+$$
+
+### Calculate correlated Wiener processes
+
+Using the source's primed dW notation:
+
+$$
+\begin{bmatrix}dW_1'\\dW_2'\end{bmatrix}
+=L\begin{bmatrix}Z_1\\Z_2\end{bmatrix}
+=\begin{bmatrix}1&0\\\rho&\sqrt{1-\rho^2}\end{bmatrix}
+\begin{bmatrix}Z_1\\Z_2\end{bmatrix}.
+$$
+
+The uncorrelated dW₁/dW₂ are associated with Z₁/Z₂; multiplying by L gives the
+correlated pair. The matrix multiplication gives:
+
+$$
+dW_1'=1\cdot Z_1+0\cdot Z_2,
+\qquad\boxed{dW_1'=Z_1}.
+$$
+
+This is labelled **correlated Wiener process for S₁**.
+
+$$
+\boxed{dW_2'=\rho Z_1+\sqrt{1-\rho^2}\,Z_2}.
+$$
+
+This is labelled **correlated Wiener process for S₂**. The paired-column sketch
+repeats **Z₁** in the first transformed column and **ρZ₁ + √(1−ρ²)Z₂** in the
+second.
+
+### Step 3: simulate GBM for correlated stocks
+
+The handwritten equations are:
+
+$$
+S_{t+\Delta t}^{1}=S_t^{1}
+\exp\left[(\mu_1-0.5\sigma_1^2)\Delta t+\sigma_1dW_1'\right],
+$$
+
+$$
+S_{t+\Delta t}^{2}=S_t^{2}
+\exp\left[(\mu_2-0.5\sigma_2^2)\Delta t+\sigma_2dW_2'\right].
+$$
+
+:::note Time-step scaling
+
+The transformed variables **LZ** above are correlated standard-normal draws.
+Actual Wiener increments over Δt are **√Δt LZ**. The source uses dW′ for both
+the draws and the increments. Its Excel stock formulas supply the required
+√Δt multiplier explicitly, as shown below.
+
+:::
+
+### Conclusion in the notes
+
+The final diagram is **dW₁, dW₂ → dW₁′, dW₂′ → correlated Wiener process →
+ρ → S₁, S₂**. The concluding equations repeat:
+
+$$
+\Sigma=\begin{bmatrix}1&\rho\\\rho&1\end{bmatrix},
+\qquad LL^T=\Sigma,
+\qquad
+\begin{bmatrix}dW_1'\\dW_2'\end{bmatrix}
+=L\begin{bmatrix}Z_1\\Z_2\end{bmatrix},
+$$
+
+$$
+\boxed{dW_1'=Z_1,\qquad dW_2'=\rho Z_1+\sqrt{1-\rho^2}\,Z_2}.
+$$
+
+## Excel: Correlated Process (GBM)
+
+The course's expanded workbook carries this as its fourth sheet. Everything
+that makes it work is below — inputs, the two decomposition steps, and the
+formula in each column.
+
+| Input | Value | Sheet annotation |
+| --- | --- | --- |
+| Time Horizon T | 1 year | |
+| Steps N | 252 (daily steps) | |
+| dt (delta t) | 1/252 | |
+| μ1 | 0.1 | Drift for S1 |
+| μ2 | 0.08 | Drift for S2 |
+| σ1 | 0.2 | Vol for S1 |
+| σ2 | 0.25 | Vol for S2 |
+| S1 | 100 | Price at t=0 for S1 |
+| S2 | 120 | Price at t=0 for S2 |
+| Correlation ρ | 0.6 | rho |
+
+**Step 1: Correlation Matrix**, labelled **Stock 1 / Stock 2**:
+
+$$
+\Sigma=\begin{bmatrix}1&0.6\\0.6&1\end{bmatrix}.
+$$
+
+**Step 2: Cholesky Decomposition**, again labelled **Stock 1 / Stock 2**:
+
+$$
+L=\begin{bmatrix}1&0\\0.6&0.8\end{bmatrix}.
+$$
+
+B18 is `=SQRT(B13)`, C18 is `0`, B19 is `=B14`, and C19 is
+`=SQRT(1-B10^2)`. The sheet labels the resulting draws **Correlated / Rand Var**.
+
+The formula images show Σ and L, then:
+
+$$
+dW_1=L_{11}Z_1+L_{12}Z_2,\qquad
+dW_2=L_{21}Z_1+L_{22}Z_2,
+$$
+
+$$
+dW_t^1=Z_1,\qquad dW_t^2=\rho Z_1+\sqrt{1-\rho^2}\,Z_2.
+$$
+
+The simulation columns are **Step**, **Random Z1**, **Random Z2**,
+**Correlated Rand 1**, **Correlated Rand 2**, **Stock 1 Price**, **Stock 2 Price**.
+
+```excel
+I2 = NORM.S.INV(RAND())
+J2 = NORM.S.INV(RAND())
+K2 = $B$18*I2+$C$18*J2
+L2 = $B$19*I2+$C$19*J2
+M2 = $B$8*EXP(($B$4-0.5*$B$6^2)*$B$3+$B$6*K2*SQRT($B$3))
+N2 = $B$9*EXP(($B$5-0.5*$B$7^2)*$B$3+$B$7*L2*SQRT($B$3))
+```
+
+For the first saved row:
+
+- **Z1 = 0.6315462639559063**, **Z2 = −0.0033393554021659043**.
+- **Correlated Rand 1 = 0.6315462639559063**.
+- **Correlated Rand 2 = 0.37625627405181106**.
+- **Stock 1 Price = 100.83085211070397**.
+- **Stock 2 Price = 120.73652287597228**.
+
+:::note The source sheet resets its stock prices each row
+
+The copied M/N formulas retain **$B$8 / $B$9**, the initial stock prices, on
+every row. For example, M3 still starts from $B$8, not M2. The sheet therefore
+contains **252 correlated one-step draws from the starting prices**, rather
+than one cumulative 252-step GBM path. For a cumulative path, later rows must
+use the preceding row's stock prices — `M3` should start from `M2`. The
+formulas above reproduce the source sheet exactly, including this quirk; note
+that the **GBM** sheet in the same workbook *does* compound correctly
+(`L3 = L2*EXP(...)`), so the two sheets disagree.
+
+:::

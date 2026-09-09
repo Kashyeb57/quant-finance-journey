@@ -1,0 +1,264 @@
+---
+title: 'Quant Modeling: Pricing European Option Using Binomial Tree'
+description: 'The complete binomial pricing procedure and the accompanying five-step SPY call and put workbook example.'
+---
+
+## Calculation for pricing European option using binomial tree
+
+The handwritten calculation begins with a three-step tree. Each horizontal
+interval is **Δt**; each branch multiplies the stock price by **u** or **d**.
+
+| Time | Stock-price nodes, highest to lowest | Option-value labels |
+| --- | --- | --- |
+| 0 | S₀ | f |
+| Δt | S₀u; S₀d | f_u; f_d |
+| 2Δt | S₀uu; S₀ud; S₀dd | f_uu; f_ud; f_dd |
+| 3Δt | S₀uuu; S₀uud; S₀udd; S₀ddd | Terminal payoffs |
+
+Each node branches upward to its next **u** value and downward to its next
+**d** value. Adjacent nodes share their middle successor. The later tree
+highlights the final nodes and draws arrows **back toward f** for valuation;
+at each local fork the successor option values are labelled **f_u** and **f_d**.
+
+## Step 1: calculate the time steps
+
+$$
+\Delta t=\frac{T}{n}.
+$$
+
+This is the **length of each step**. The workbook instruction reads
+“Calculate Time Step”: **Δt = T/n: Length of each time step**.
+
+## Step 2: calculate up and down movement
+
+The workbook calls this “Calculate Up and Down Factors”.
+
+$$
+u=e^{\sigma\sqrt{\Delta t}}:
+\quad\text{Upward movement factor}.
+$$
+
+$$
+d=\frac{1}{u}
+=\frac{1}{e^{\sigma\sqrt{\Delta t}}}
+=e^{-\sigma\sqrt{\Delta t}}:
+\quad\text{Downward movement factor}.
+$$
+
+The one-step branch is **S₀ → S₀u** on the up move and **S₀ → S₀d** on the
+down move.
+
+## Step 3: calculate risk-neutral probabilities
+
+**Probability of an upward move**:
+
+$$
+p=\frac{e^{r\Delta t}-d}{u-d}.
+$$
+
+**Probability of a downward move**: **1 − p**.
+
+$$
+p+(1-p)=1.
+$$
+
+## Step 4: construct the binomial tree
+
+Create a binomial tree representing possible future prices of the underlying
+asset at each node.
+
+For each node **(i, j)** where **i** is the time step and **j** is the number
+of upward moves:
+
+$$
+S_{i,j}=S_0\cdot u^j\cdot d^{(i-j)}.
+$$
+
+## Calculate the payoff
+
+The handwritten PDF labels this **Step 4** again. In the workbook's seven-step
+sequence, this is **Step 5: Calculate Option Payoff at Expiration**.
+
+For each node at the final time step **(n, j)**, compute the payoff of the option.
+
+For a European call option:
+
+$$
+\text{Call}=\max(S_T-K,0),
+\qquad C_{n,j}=\max(S_{n,j}-K,0).
+$$
+
+For a European put option:
+
+$$
+\text{Put}=\max(K-S_T,0),
+\qquad P_{n,j}=\max(K-S_{n,j},0).
+$$
+
+## Back propagation of option value
+
+This is **Step 5** in the PDF and **Step 6: Back-Propagation of Option Values**
+in the workbook.
+
+Starting from the final time step and moving backward to the present, compute
+the option value at each node as the discounted expected value of the option
+in the next time step.
+
+$$
+f=e^{-r\Delta t}\left[p f_u+(1-p)f_d\right].
+$$
+
+For each node **(i, j)**:
+
+**Call Option:**
+
+$$
+C_{i,j}=e^{-r\Delta t}\cdot
+\left(p\cdot C_{i+1,j+1}+(1-p)\cdot C_{i+1,j}\right).
+$$
+
+**Put Option:**
+
+$$
+P_{i,j}=e^{-r\Delta t}\cdot
+\left(p\cdot P_{i+1,j+1}+(1-p)\cdot P_{i+1,j}\right).
+$$
+
+## Step 7: result
+
+The option price at the root of the tree **(0, 0)** gives the current price of
+the European option:
+
+$$
+\text{Call Option Price}:\quad C_0=C_{0,0}.
+$$
+
+$$
+\text{Put Option Price}:\quad P_0=P_{0,0}.
+$$
+
+## Excel implementation: SPY, five steps
+
+The accompanying workbook has one sheet, **Binomial Tree**, with a **European
+Call Option** tree and a **European Put Option** tree. Both run from **t = 0**
+through **t = 5**. This is the recorded example's data, not a current quote.
+
+| Input | Workbook value |
+| --- | --- |
+| Contract Name | SPY240709C00555000 |
+| Underlying Stock | SPY |
+| Current Date | 2024-07-02 |
+| Expiry Date | 2024-07-09 |
+| Stock Price | 549 |
+| Strike Price | 555 |
+| Maturity (T) | 6/252 = 0.023809523809523808 |
+| Risk free rate | 0.055 |
+| Volatility | 0.1110219281839827 |
+| N (Steps) | 5 |
+| delta t (Time/Steps) | 0.0047619047619047615 |
+| u — up movt | 1.0076906632925549 |
+| d — down movt | 0.992368031606618 |
+| p — prob up movt | 0.5151796125582274 |
+| 1-p — prob down movt | 0.4848203874417726 |
+
+### Date, day and count
+
+The sheet repeats the current/expiry dates at B7:B8 and computes **Total Days**
+in D23 with `=SUM(C23:C30)`:
+
+| Date | Day | Count |
+| --- | --- | --- |
+| 2024-07-02 | Tuesday | 1 |
+| 2024-07-03 | Wednesday | 1 |
+| 2024-07-04 | Thursday | 1 |
+| 2024-07-05 | Friday | 1 |
+| 2024-07-06 | Saturday | 0 |
+| 2024-07-07 | Sunday | 0 |
+| 2024-07-08 | Monday | 1 |
+| 2024-07-09 | Tuesday | 1 |
+| **Total Days** | | **6** |
+
+The recorded count includes both endpoint dates and assigns 1 to every weekday
+in this range. The example uses this exact count; no holiday calendar adjustment
+is present in the sheet.
+
+### Historical returns and volatility
+
+The SPY history has columns **Date**, **Adj Close**, and **Returns**, covering
+252 prices from **2023-06-30** through **2024-07-01**. The first price is
+**437.165192** and the last is **545.340027**.
+
+The sheet records both return definitions:
+
+- `Return = Price Today/Price Yes -1`
+- `Return = ln(Price Today/Price Yes)`
+
+The actual **Returns** column uses the first definition. AC3 is `=AB3/AB2-1`,
+copied down through AC253. Its first return is **0.0011505033090557504**.
+
+| Calculation | Excel formula | Saved result |
+| --- | --- | --- |
+| 1D std dev, AD3 | `=STDEV.S(AC3:AC253)` | 0.0069937240964212145 |
+| Annualized std dev, AD4 | `=AD3*SQRT(252)` | 0.1110219281839827 |
+| Volatility, B11 | `=STDEV.S(AC3:AC253)*SQRT(252)` | 0.1110219281839827 |
+
+The file stores `STDEV.S` with Excel's `_xlfn.` compatibility prefix. The input
+is one year of daily adjusted closes — 252 observations, running from
+2023-06-30 to 2024-07-01 — with each return computed as
+`price today / price yesterday − 1`, exactly as the sheet's own margin note
+puts it.
+
+### Spreadsheet formulas
+
+| Cell | Calculation | Formula |
+| --- | --- | --- |
+| B9 | Maturity | `=D23/252` |
+| B13 | Time step | `=B9/B12` |
+| B14 | Up factor | `=EXP(B11*SQRT(B13))` |
+| B15 | Down factor | `=1/B14` |
+| B16 | Up probability | `=(EXP(B10*B13)-B15)/(B14-B15)` |
+| B17 | Down probability | `=1-B16` |
+| F11 | Initial stock price, call tree | `=B5` |
+| G10 | First up price | `=F11*B14` |
+| G12 | First down price | `=F11*B15` |
+| K7 | Highest terminal call payoff | `=MAX(K6-$B$6,0)` |
+| J8 | Call backward valuation | `=($B$16*K7+$B$17*K9)*EXP(-$B$10*$B$13)` |
+| F12 | Call at the root | `=($B$16*G11+$B$17*G13)*EXP(-$B$10*$B$13)` |
+| F31 | Initial stock price, put tree | `=B5` |
+| K27 | Highest-stock terminal put payoff | `=MAX($B$6-K26,0)` |
+| J28 | Put backward valuation | `=($B$16*K27+$B$17*K29)*EXP(-$B$10*$B$13)` |
+| F32 | Put at the root | `=($B$16*G31+$B$17*G33)*EXP(-$B$10*$B$13)` |
+| B19 | Call Option Price | `=F12` |
+| B20 | Put Option Price | `=F32` |
+
+### Results and the recorded market comparison
+
+| Option | Model value | Screenshot quote | Sheet annotation |
+| --- | --- | --- | --- |
+| Call | 1.7130626117205423 | 0.4000 | Under Valued |
+| Put | 6.986752561379506 | 9.95 | Over Valued |
+
+“Under Valued” and “Over Valued” are the original sheet's own annotations,
+comparing its model output against quotes recorded at the time on
+**SPY240709C00555000** and the matching put. The call was quoted at **0.4000**,
+**+0.2200 (+122.22%)** on the day, at close 4:14 PM EDT (**3:14 PM CT**); the
+put at **9.95**, unchanged at **0.00 (0.00%)**, at close 3:08 PM EDT on July 1
+(**2:08 PM CT**). Both were delayed OPR quotes in USD.
+
+Treat the comparison as a lesson in model limits rather than a trade signal. A
+five-step tree on one year of historical volatility says a call worth \$0.40 in
+the market is worth \$1.71 — a gap of more than 4×. The tree is not finding
+free money; it is telling you that five steps and backward-looking volatility
+are a coarse instrument for a contract eight days from expiry, where the
+market's own implied volatility is the better estimate.
+
+:::note Two stock-node references in the source workbook
+
+The put-tree stock cells **I30** (`=H29*B31`) and **J29** (`=I28*B31`) reference
+the blank B31, producing saved values of **0**. The down-move factor they should
+point at is **B15**. They are not used by the sheet's terminal payoff or backward
+option-value formulas, so they do not change its reported put price — but they
+are wrong, and worth knowing about if you rebuild the sheet and wonder why two
+nodes read zero.
+
+:::

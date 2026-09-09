@@ -1,0 +1,355 @@
+---
+title: Model Stock Using Geometric Brownian Motion (GBM) (Excel)
+description: 'The full logarithm-and-Itô derivation of geometric Brownian motion, followed by the Brownian, generalized Brownian and GBM spreadsheet examples.'
+---
+
+## Geometric Brownian motion
+
+GBM is a stochastic process which is widely used to model the behaviour of
+assets (**stock price**).
+
+GBM ensures that the asset price **remains positive** and incorporates
+**randomness proportional to the current price level**, making it suitable for
+quantitative modeling.
+
+The stock-price margin contrasts **“−ve ?? ”** with **“0 or +ve”**. GBM with a
+positive starting price stays strictly positive at finite times.
+
+The notes say: **we use GBM to model stock price; we don't use it to model
+interest rate**. The interest-rate branch instead points to **mean reversion
+process → stochastic interest-rate model**. This describes the course's model
+choices.
+
+## The GBM equation
+
+Start with the generalized Wiener equation:
+
+$$
+dX_t=\mu\,dt+\sigma\,dW_t.
+$$
+
+For GBM, the change is **proportional to the current value of Sₜ**:
+
+$$
+\frac{dS_t}{S_t}=\mu\,dt+\sigma\,dW_t.
+$$
+
+Therefore the **GBM equation**, an **SDE** to solve for modeling stock prices, is:
+
+$$
+\boxed{dS_t=\mu S_t\,dt+\sigma S_t\,dW_t}.
+$$
+
+- **μ:** the margin lists both **risk-free rate** and **stock's rate of return**.
+  These correspond to risk-neutral pricing and a real-world return model,
+  respectively; the spreadsheet below uses its specified drift.
+- **σ:** volatility of the stock price.
+- **Quant model → assumption**; **quant processes → assumption**.
+
+### Randomness and ordinary differential equations
+
+The reminder **dWₜ = Z × sqrt(t)** points to a **standard normal process**.
+The margin also names **Poisson** and **Bernoulli** as other distributions;
+they are not used for the standard-normal Z in this GBM construction.
+
+$$
+dX_t=\mu\,dt+\sigma\,dW_t.
+$$
+
+The comparison labels **DE / regular calculus** with the handwritten schematic
+**dXₜ = μdt + σ**, and **SDE / random** with **dXₜ = μdt + σdWₜ**. The dWₜ
+term is boxed as the **Wiener process**; an unfilled distribution reminder is
+drawn as **[ ] N [ ]**.
+
+## Solution of the stock-price SDE
+
+$$
+dS_t=\mu S_t\,dt+\sigma S_t\,dW_t.
+$$
+
+### Step 1: let's assume Yₜ = ln(Sₜ)
+
+Instead of modeling Sₜ directly, let:
+
+$$
+Y_t=\ln(S_t).
+$$
+
+The **ln → +ve / −ve** margin is the reminder to take a real logarithm of a
+**positive price**. The logarithm itself can be negative when the price is
+between 0 and 1.
+
+### Step 2: let's use Itô's lemma to solve
+
+$$
+dY_t=d\bigl(\ln(S_t)\bigr)
+=\frac{1}{S_t}\,dS_t-\frac12\frac{1}{S_t^2}(dS_t)^2.
+$$
+
+The notes label the logarithm **stochastic in nature** and divide the right
+side into **1st component** and **2nd component**.
+
+### Step 3: substitute the SDE into dYₜ
+
+$$
+dS_t=\mu S_t\,dt+\sigma S_t\,dW_t.
+$$
+
+**1st component:**
+
+$$
+\begin{aligned}
+\frac{1}{S_t}\,dS_t
+&=\frac{1}{S_t}\left(\mu S_t\,dt+\sigma S_t\,dW_t\right) \\
+&=\mu\,dt+\sigma\,dW_t.
+\end{aligned}
+$$
+
+**2nd component:**
+
+$$
+\frac12\frac{1}{S_t^2}(dS_t)^2
+=\frac12\frac{1}{S_t^2}\left(\mu S_t\,dt+\sigma S_t\,dW_t\right)^2.
+$$
+
+The annotations say **ignore** the higher-order dt contributions: **dt → small
+= 1/252**, **dt² → infinitely small = 1/(252)²**, with a zero-like oval beside
+the latter. In Itô differential algebra, the rules being used are
+**(dt)² = 0**, **dt dWₜ = 0**, and **(dWₜ)² = dt**; the finite number 1/(252)²
+is small, not literally zero.
+
+Thus:
+
+$$
+\begin{aligned}
+\frac12\frac{1}{S_t^2}(dS_t)^2
+&=\frac12\frac{1}{S_t^2}\left[\sigma S_t\,dW_t\right]^2 \\
+&=\frac12\frac{1}{S_t^2}\left[\sigma^2 S_t^2(dW_t)^2\right] \\
+&=\frac12\sigma^2(dW_t)^2 \\
+&=\frac12\sigma^2\,dt.
+\end{aligned}
+$$
+
+**Property of Wiener process:**
+
+$$
+\boxed{(dW_t)^2=dt}.
+$$
+
+**Combining the terms, we get:**
+
+$$
+dY_t=\mu\,dt+\sigma\,dW_t-\frac12\sigma^2\,dt.
+$$
+
+$$
+\boxed{dY_t=\left(\mu-\frac12\sigma^2\right)dt+\sigma\,dW_t}.
+$$
+
+### Step 4: integrate the above equation from 0 to t
+
+$$
+\int_0^t dY_s
+=\int_0^t\left(\mu-\frac12\sigma^2\right)ds
++\int_0^t\sigma\,dW_s.
+$$
+
+The two right-hand integrals are labelled **1st** and **2nd**. The first gives
+the factor **t − 0**. For constant μ and σ, with W₀ = 0:
+
+$$
+Y_t-Y_0=\left(\mu-\frac12\sigma^2\right)(t-0)+\sigma W_t.
+$$
+
+$$
+\boxed{Y_t-Y_0=\left(\mu-\frac12\sigma^2\right)t+\sigma W_t}.
+$$
+
+The margin explains **integrate = sum**, with small increments across **0 to t**:
+
+$$
+\int_0^t\sigma\,dW_s=\sigma W_t.
+$$
+
+It then returns to:
+
+$$
+Y_t=\ln(S_t),\qquad Y_0=\ln(S_0).
+$$
+
+:::note Integrated Wiener notation in the handwritten derivation
+
+The source correctly evaluates the stochastic integral as **σWₜ**, but several
+subsequent lines on pages 21–22 write **σdWₜ** instead. This includes the
+displayed difference Yₜ − Y₀, both logarithm equations and the final exponential.
+After integration over 0 to t, these terms are **σWₜ**, as used here. For one
+simulation interval, the corresponding increment is **σ√Δt Z**.
+
+:::
+
+### Step 5: substitute Yₜ and Y₀ in the above equation
+
+$$
+\ln(S_t)-\ln(S_0)=\left(\mu-\frac12\sigma^2\right)t+\sigma W_t.
+$$
+
+Use:
+
+$$
+\ln A-\ln B=\ln\left(\frac{A}{B}\right).
+$$
+
+$$
+\ln\left(\frac{S_t}{S_0}\right)
+=\left(\mu-\frac12\sigma^2\right)t+\sigma W_t.
+$$
+
+### Step 6: taking exp on both sides
+
+$$
+\exp\left(\ln\left(\frac{S_t}{S_0}\right)\right)
+=\exp\left[\left(\mu-\frac12\sigma^2\right)t+\sigma W_t\right].
+$$
+
+$$
+\frac{S_t}{S_0}=\exp\left[\left(\mu-\frac12\sigma^2\right)t+\sigma W_t\right].
+$$
+
+$$
+\boxed{S_t=S_0\exp\left[\left(\mu-\frac12\sigma^2\right)t+\sigma W_t\right]}.
+$$
+
+The final annotation, continued by the single word on page 23, reads
+**“equation to model stock price”**.
+
+## Simulation of GBM
+
+The instruction image in both workbooks says: **To simulate GBM in discrete
+time, use:**
+
+$$
+S_{t+\Delta t}=S_t e^{(\mu-\sigma^2/2)\Delta t+\sigma\sqrt{\Delta t}Z}.
+$$
+
+The increment instruction in the expanded workbook is:
+
+$$
+dW_t=\sqrt{dt}\,Z,
+$$
+
+where **Z ∼ N(0, 1)** is a standard normal random variable, and **dt** is the
+time step. The accompanying bell curve illustrates that standard normal
+distribution.
+
+## The two Excel examples
+
+The course ships two workbooks. Everything below is the model they contain —
+the parameter block, the formula in each column, and the first computed step —
+so the sheet can be rebuilt from scratch rather than opened:
+
+- **The first workbook**: a **Brownian Motion** sheet and a **GBM** sheet.
+- **The expanded workbook**: **Brownian Motion**, **Generalized BM**, **GBM**,
+  and **Correlated Process (GBM)**. The last sheet belongs to the next
+  [Cholesky lesson](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/cholesky-decomposition-gbm).
+
+Rebuilding it is worth more than reading it, because the whole point is that
+the path changes every time Excel recalculates.
+
+### Brownian Motion sheet
+
+The headings are **Step**, **Random No**, **Delta T**, **Weiner Process**,
+**Increment**; the expanded file also labels column F **dWt**.
+
+**W0 = 0**. Under **Stand Norm Dist**, **Mean = 0**, **Var = 1**, and
+**Sigma = SQRT(Var) = 1**.
+
+| Cell | Formula | Meaning |
+| --- | --- | --- |
+| B2 | `=NORM.S.INV(RAND())` | Standard-normal random draw |
+| C2 | `=SQRT(1/252)` | √Δt = 0.06299407883487121 |
+| D2 | `=H1+C2*B2` | First process value, starting from zero |
+| D3 | `=D2+C3*B3` | Previous value plus the next increment |
+| E3 | `=D3-D2` | Increment recovered from consecutive values |
+| F2, expanded file | `=B2*C2` | Increment directly from the random draw |
+
+The formulas continue through **step 1000**. Excel stores `NORM.S.INV` with
+the `_xlfn.` compatibility prefix. Despite the **Delta T** column label, C
+contains **√Δt**; Δt itself is **1/252**.
+
+The original notes beside the table read **Col B → Random Var**, **Wt+1 →
+Wt + sigma * sqrt(t) * Z**, **sigma = 1**, **Z → Rand Var**, **T → Time**.
+The expanded file writes **Wt+1 = Wt + sqrt(t) * Z**, **Wt+1 − Wt = sqrt(t)*Z**,
+**dWt = Z * sqrt(t)**, and **Z → Standard Normal Rand Var**.
+
+The first saved process value is **0.02728321027829932** in the first workbook
+and **−0.05507000898776514** in the expanded one. Recalculating RAND produces
+different simulations.
+
+### Generalized BM sheet
+
+The embedded definition reads: **The generalized Wiener process is defined by
+the stochastic differential equation (SDE):**
+
+$$
+dX_t=\mu\,dt+\sigma\,dW_t.
+$$
+
+At **t = 0**, **X0 = 100**; **u = 5**, **sigma = 0.2**, and **delta t = 1/252**.
+Here the sheet's u is the drift μ, an absolute change per unit time, not the
+binomial up factor or a displayed 5% percentage.
+
+| Column | Heading | First-row formula |
+| --- | --- | --- |
+| A | Step | Starts at 1; ends at 252 |
+| B | Random No. (Z) | `=NORM.S.INV(RAND())` |
+| C | delta t | `=SQRT(1/252)` (contains √Δt) |
+| D | dWt | `=B2*C2` |
+| E | u*dt | `=$L$2*$L$4` |
+| F | sigma*dWt | `=$L$3*D2` |
+| G | dXt | `=E2+F2` |
+| H | Xt | `=L1+G2`, then `=H2+G3` |
+
+The saved first row has **Z = −0.866433225441666**, **dWt =
+−0.054580162908624046**, **u*dt = 0.01984126984126984**, **sigma*dWt =
+−0.01091603258172481**, **dXt = 0.00892523725954503**, and **Xt =
+100.00892523725955**.
+
+The margin connects **X0**, **X1**, **X1−X0 → dXt**, **X2−X1 → dXt**,
+and **dXt = u*dt + sigma*dWt**. The original workbook retains these scratch
+calculations and its complete 252-step path.
+
+### GBM sheets
+
+Both use **So = 100**, **Drift (μ) = 0.1**, **Volatility (σ) = 0.2**,
+and **delta t = 1/252**.
+
+The first workbook has **Step**, **Rand**, **Sims 1**, with:
+
+```excel
+E2 = NORM.S.INV(RAND())
+F2 = B1*EXP(($B$2-0.5*$B$3^2)*$B$4+$B$3*SQRT($B$4)*E2)
+F3 = F2*EXP(($B$2-0.5*$B$3^2)*$B$4+$B$3*SQRT($B$4)*E3)
+```
+
+The first saved simulated price is **99.6788836872274**, followed by
+**98.3324804365328**. The sheet's notes also record **max(ST−K, 0)** and
+**Stock → Log Normal**.
+
+The expanded workbook has **Rand 1–5** and **Sims 1–5**, with independent
+normal draws in E:I and paths in L:P. Each next row uses its own previous price:
+
+```excel
+L2 = B1*EXP(($B$2-0.5*$B$3^2)*$B$4+$B$3*SQRT($B$4)*E2)
+L3 = L2*EXP(($B$2-0.5*$B$3^2)*$B$4+$B$3*SQRT($B$4)*E3)
+```
+
+The five first saved prices are **99.04175431504902**, **101.80931475977961**,
+**100.07065575917649**, **100.60882433022049**, and **101.40397372526257**.
+The five paths run for **1000 steps**. The first file's single path includes
+**1001 steps**; its last populated step row is 1002.
+
+The expanded sheet also writes **S1 = S0*exp(mu − 0.5*sigma*sigma)t + sigma*dWt**
+as a shorthand reminder; the actual Excel formula above puts the complete
+drift-plus-random term inside the exponential. It labels **ABC → S1**,
+**XYZ → S2**, **Correlation**, and **BS / BT / MC** as a bridge to subsequent
+pricing and correlated-process lessons.

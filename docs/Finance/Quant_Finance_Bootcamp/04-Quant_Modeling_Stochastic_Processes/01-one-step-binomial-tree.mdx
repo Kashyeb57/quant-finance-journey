@@ -1,0 +1,480 @@
+---
+title: 'One Step Binomial Tree & No Arbitrage Argument (Theory)'
+description: 'The one-step binomial model: the $20 stock example, a riskless portfolio, and the complete derivation of the risk-neutral option-pricing formula.'
+---
+
+## Binomial tree
+
+Binomial Tree is a mathematical model which is used to price derivatives
+(European Option, American Option).
+
+It basically assumes that **stock prices can move in 2 directions**, i.e.
+**up direction or down direction**. This is the **assumption**.
+
+## One step binomial model and no arbitrage argument
+
+- Stock price → **\$20**.
+- It is known that at **T = 3 months**, the stock price will be **22 or 18**.
+- Interest → **value a call option**: buy the stock at **\$21** at **t = 3 months**.
+- **K = \$21**.
+
+The stock-price and option-payoff tree is:
+
+```text
+                                 Stock = $22; K = $21
+                                / Option payoff = $1
+             Stock price = $20
+                                \ Stock = $18; K = $21
+                                  Option payoff = $0
+             Today                t = 3 months
+```
+
+When the stock is **\$22**, the option payoff is:
+
+$$
+\begin{aligned}
+\text{Option payoff} &= \max(S_T-K,0) \\
+&= \max(22-21,0) \\
+&= 1.
+\end{aligned}
+$$
+
+When the stock is **\$18**, the option payoff is:
+
+$$
+\begin{aligned}
+\text{Option payoff} &= \max(S_T-K,0) \\
+&= \max(18-21,0) \\
+&= 0.
+\end{aligned}
+$$
+
+### Consider a portfolio
+
+Consider a portfolio consisting of:
+
+- **Long position in Δ shares** of stock.
+- **Short position in 1 call option**.
+
+If the stock price **moves from \$20 to \$22**:
+
+$$
+\text{Total value of portfolio} = 22\Delta-1.
+$$
+
+If the stock **moves down from \$20 to \$18**, the option is **0**:
+
+$$
+\begin{aligned}
+\text{Total value of portfolio} &= 18\Delta-0 \\
+&= 18\Delta.
+\end{aligned}
+$$
+
+**No arbitrage → value of portfolio (up) = value of portfolio (down).**
+
+Choose Δ to make these two portfolio values equal:
+
+$$
+\begin{aligned}
+22\Delta-1 &= 18\Delta \\
+22\Delta-18\Delta &= 1 \\
+4\Delta &= 1 \\
+\Delta &= \boxed{0.25.}
+\end{aligned}
+$$
+
+### A riskless portfolio
+
+A riskless portfolio is:
+
+- Long = **Δ shares = 0.25 share**.
+- Short = **1 option = 1 option**, whose price today is **f**.
+
+**If stock price goes up (\$20 → \$22):**
+
+$$
+\begin{aligned}
+\text{Portfolio value} &= 22\Delta-1 \\
+&= 22\times(0.25)-1 \\
+&= 5.5-1 \\
+&= \boxed{\$4.5}.
+\end{aligned}
+$$
+
+**If stock price goes down (\$20 → \$18):**
+
+$$
+\begin{aligned}
+\text{Portfolio value} &= 18\Delta \\
+&= 18\times(0.25) \\
+&= \boxed{\$4.5}.
+\end{aligned}
+$$
+
+Regardless of whether the stock price goes up or down, the value of the
+portfolio is always **\$4.5 at the end of the life of the option**.
+
+$$
+\text{Portfolio value} = \$4.5.
+$$
+
+### Present value of the portfolio
+
+$$
+\text{Present value of portfolio} = 4.5\left(e^{-rT}\right).
+$$
+
+The **risk-free rate** and time are:
+
+$$
+\begin{aligned}
+r &= 4\%, \\
+T &= 3\text{ months} \\
+&= \frac{3}{12} = 0.25.
+\end{aligned}
+$$
+
+So the portfolio value is:
+
+$$
+\begin{aligned}
+\text{Portfolio value} &= 4.5\times\left(e^{-0.04\times\frac{3}{12}}\right), \\
+\text{PV}_{\text{today}} &\approx \boxed{4.455.} \qquad (1)
+\end{aligned}
+$$
+
+### Option price today
+
+The value of our stock price today is **\$20**.
+
+**f → option price.** The margin also records the notation reminder
+“John C Hull → BT → f”.
+
+$$
+\begin{aligned}
+\text{Value of portfolio today} &= 20\Delta-f \\
+&= 20\times(0.25)-f \\
+&= 5-f. \qquad (2)
+\end{aligned}
+$$
+
+Equating (1) and (2):
+
+$$
+\begin{aligned}
+5-f &\approx 4.455, \\
+f &\approx \boxed{0.545.}
+\end{aligned}
+$$
+
+This is the **option price today**. In the absence of arbitrage opportunities,
+the value of the option must be **\$0.545**, to the precision used here.
+
+## Generalization: one step binomial tree
+
+$$
+\begin{aligned}
+S_0 &\longrightarrow \text{stock price today}, \\
+f &\longrightarrow \text{option price today}.
+\end{aligned}
+$$
+
+- If the stock price moves **up**, its price is **S₀u**; the payoff from the
+  option is **fᵤ**.
+- If the stock price moves **down**, its price is **S₀d**; the payoff from the
+  option is **f_d**.
+
+```text
+                        S₀u
+                       / fᵤ
+             S₀
+             f         \ S₀d
+             t = 0       f_d
+```
+
+The up and down factors written beside the tree are:
+
+$$
+\boxed{u=e^{\sigma\sqrt{\Delta t}}},
+\qquad d=\frac{1}{u},
+\qquad \boxed{d=e^{-\sigma\sqrt{\Delta t}}}.
+$$
+
+Here **u = up factor**, **d = down factor**; σ is volatility and Δt is the
+length of a time step. For this one-step tree, Δt = T.
+
+If there is an **up movement in stock price**, the portfolio value is:
+
+$$
+\boxed{S_0u\Delta-f_u}. \qquad (1)
+$$
+
+If there is a **down movement**, the portfolio value is:
+
+$$
+\boxed{S_0d\Delta-f_d}. \qquad (2)
+$$
+
+### No arbitrage condition and the hedge ratio
+
+Irrespective of the stock going up/down, the value of the portfolio will remain
+the same. The notes label this the **no arbitrage condition**: (1) = (2).
+
+$$
+S_0u\Delta-f_u=S_0d\Delta-f_d.
+$$
+
+Rearrange:
+
+$$
+S_0u\Delta-S_0d\Delta=f_u-f_d.
+$$
+
+Factor out Δ:
+
+$$
+\Delta\left[S_0u-S_0d\right]=f_u-f_d.
+$$
+
+Therefore:
+
+$$
+\boxed{\Delta=\frac{f_u-f_d}{S_0u-S_0d}}.
+$$
+
+The earlier example gives **Δ = 0.25**. The margin beside the general formula
+leaves **fᵤ =** and **f_d =** as unfilled reminders and boxes **S₀u**.
+
+*Clarification:* choosing this Δ makes the portfolio riskless in the two-state
+model. No arbitrage then requires that riskless portfolio to earn the risk-free
+rate; it does not require every portfolio to have equal up/down values.
+
+### Value today and cost of setting the portfolio
+
+The **value of portfolio (today)**, using the up outcome, is:
+
+$$
+\left(S_0u\Delta-f_u\right)e^{-rT}.
+$$
+
+The **cost of setting the portfolio** is:
+
+$$
+S_0\Delta-f.
+$$
+
+Equate these:
+
+$$
+S_0\Delta-f=\left(S_0u\Delta-f_u\right)e^{-rT}.
+$$
+
+Expand the right-hand side:
+
+$$
+S_0\Delta-f=S_0u\Delta e^{-rT}-f_u e^{-rT}.
+$$
+
+Rearrange to isolate f:
+
+$$
+S_0\Delta-S_0u\Delta e^{-rT}+f_u e^{-rT}=f.
+$$
+
+$$
+f=S_0\Delta\left[1-u e^{-rT}\right]+f_u e^{-rT}.
+$$
+
+### Substitute the value of Δ in the above equation
+
+$$
+\Delta=\frac{f_u-f_d}{S_0u-S_0d}.
+$$
+
+Substitute:
+
+$$
+f=S_0\left[\frac{f_u-f_d}{S_0u-S_0d}\right]
+\left[1-u e^{-rT}\right]+f_u e^{-rT}.
+$$
+
+Cancel S₀:
+
+$$
+f=\left[\frac{f_u-f_d}{u-d}\right]
+\left[1-u e^{-rT}\right]+f_u e^{-rT}.
+$$
+
+Expand the numerator:
+
+$$
+f=\frac{f_u\left(1-u e^{-rT}\right)}{u-d}
+-\frac{f_d\left(1-u e^{-rT}\right)}{u-d}
++f_u e^{-rT}.
+$$
+
+**Take out the negative** from the f_d term and group the fᵤ terms:
+
+$$
+f=f_u\left(\frac{1-u e^{-rT}}{u-d}+e^{-rT}\right)
++\frac{f_d\left(u e^{-rT}-1\right)}{u-d}.
+$$
+
+Put the fᵤ terms over a common denominator:
+
+$$
+f=f_u\left[\frac{1-u e^{-rT}+u e^{-rT}-d e^{-rT}}{u-d}\right]
++\frac{f_d\left(u e^{-rT}-1\right)}{u-d}.
+$$
+
+Cancel the opposite u terms:
+
+$$
+\boxed{
+f=\frac{f_u\left(1-d e^{-rT}\right)+f_d\left(u e^{-rT}-1\right)}{u-d}
+}.
+$$
+
+## The risk-neutral probability
+
+The **probability of up movement** is:
+
+$$
+p=\frac{e^{rT}-d}{u-d}.
+$$
+
+The **probability of down movement** is:
+
+$$
+1-p=\frac{u-e^{rT}}{u-d}.
+$$
+
+:::note Handwritten sign correction
+
+On pages 8–9, the handwritten down-probability expression uses a negative
+exponent:
+
+$$
+1-p=\frac{u-e^{-rT}}{u-d}.
+$$
+
+Page 9 also writes:
+
+$$
+(1-p)(u-d)=u-e^{-rT}.
+$$
+
+These two source expressions have a sign error. Subtracting the stated p from
+1 gives **u − eʳᵀ**, with a positive exponent. The derivation below uses that
+correction; the original expressions are retained here so the discrepancy is
+visible.
+
+:::
+
+### Let's simplify the fᵤ term
+
+Start with:
+
+$$
+f_u\left(1-d e^{-rT}\right).
+$$
+
+Expand p:
+
+$$
+p=\frac{e^{rT}-d}{u-d}.
+$$
+
+$$
+p(u-d)=e^{rT}-d.
+$$
+
+**Multiply by e⁻ʳᵀ**:
+
+$$
+p(u-d)e^{-rT}=1-d e^{-rT}.
+$$
+
+So:
+
+$$
+1-d e^{-rT}=p(u-d)e^{-rT}.
+$$
+
+**Multiply by fᵤ**:
+
+$$
+\boxed{f_u\left(1-d e^{-rT}\right)=p(u-d)e^{-rT}f_u}.
+$$
+
+### Simplify the f_d term
+
+Now take:
+
+$$
+f_d\left(u e^{-rT}-1\right).
+$$
+
+Use the **down probability**, with the sign correction above:
+
+$$
+1-p=\frac{u-e^{rT}}{u-d}.
+$$
+
+$$
+(1-p)(u-d)=u-e^{rT}.
+$$
+
+**Multiply the whole equation by e⁻ʳᵀ**:
+
+$$
+(1-p)(u-d)e^{-rT}=u e^{-rT}-1.
+$$
+
+$$
+u e^{-rT}-1=(1-p)(u-d)e^{-rT}.
+$$
+
+**Let's multiply by f_d**:
+
+$$
+\boxed{f_d\left(u e^{-rT}-1\right)=f_d(1-p)(u-d)e^{-rT}}.
+$$
+
+### Substitute both terms into the option value
+
+Return to:
+
+$$
+f=\frac{f_u\left(1-d e^{-rT}\right)+f_d\left(u e^{-rT}-1\right)}{u-d}.
+$$
+
+Substitute the two expressions:
+
+$$
+f=\frac{f_u p(u-d)e^{-rT}+f_d(1-p)(u-d)e^{-rT}}{u-d}.
+$$
+
+Cancel u − d:
+
+$$
+f=f_u p e^{-rT}+f_d(1-p)e^{-rT}.
+$$
+
+The **one step binomial tree** formula is:
+
+$$
+\boxed{f=e^{-rT}\left[p f_u+(1-p)f_d\right]}.
+$$
+
+```text
+                       p          S₀u
+                        /         fᵤ
+             S₀
+             f          \         S₀d
+                       1 − p      f_d
+```
+
+The tree labels the up branch **p** and the down branch **1 − p**; the option
+values **fᵤ** and **f_d** are brought back to **f** using the formula above.

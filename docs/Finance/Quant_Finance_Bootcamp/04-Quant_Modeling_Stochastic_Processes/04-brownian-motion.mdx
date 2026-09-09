@@ -1,0 +1,262 @@
+---
+title: Brownian Motion (Stochastic Process)
+description: 'Stochastic processes, the Markov property, the five Wiener-process properties, and the full expectation and variance derivations.'
+---
+
+## Stochastic process
+
+Any variable whose value changes over time in an uncertain way is said to be a
+**stochastic process**.
+
+Stochastic process → **“random” process**. Stocks are random processes;
+they are **stochastic in nature**, **random in nature**. We are trying to
+**model the randomness**.
+
+The two stock sketches show irregular paths rising, falling and rising again.
+Their annotation reads: **stocks follow stochastic process as it's random in
+nature**.
+
+## Types of stochastic process
+
+### a) Discrete time stochastic process
+
+A **DT SP** is a process in which the value of the variable can change over
+certain **fixed points in time**.
+
+### b) Continuous time stochastic process
+
+A **CT SP** is a process where the value of the variable can change at **any
+point in time**.
+
+Example: **GBM (Geometric Brownian Motion)**.
+
+## Markov property
+
+**Markov process:** a Markov process is a type of stochastic process where the
+**current value** of the variable is relevant for predicting the future, but
+the **past values** of the variable are irrelevant.
+
+The timeline marks the past as **irrelevant**, highlights **t₀** (the current
+value) as **relevant**, and points from it to **t + 1** to **predict the future**.
+
+**Markov property:** the Markov property states that the future state of a
+process depends only on the **present state**, not on its **past values**.
+
+For a stochastic process:
+
+$$
+\{X_t\}_{t>0},
+$$
+
+it satisfies the Markov property when:
+
+$$
+P(X_{t+1}\mid X_t,X_{t-1},\ldots,X_0)
+=P(X_{t+1}\mid X_t).
+$$
+
+The diagram again shows **t − 2**, **t − 1**, **t**, and **t + 1**, with the
+**current value** at t highlighted: **no need of historical data** beyond the
+current state for this conditional prediction.
+
+### Example: stock XYZ
+
+The sketch takes **stock (XYZ)** from **\$20**, **5 years** ago, to **\$100
+today**. Whatever price you see today captures everything that has happened in
+the past.
+
+**Markov process is memoryless:** the current state contains all the information
+needed to predict the future.
+
+**Note:** stock prices are also **assumed to be a Markov process** in the world
+of quantitative finance. This is the modeling assumption in these notes.
+
+## Relevance of Markov property in quant finance
+
+### 1. Helpful for option pricing
+
+**Black Scholes Model → price European option.**
+
+The Black Scholes Model assumes that the stock price follows **GBM (Geometric
+Brownian Motion)**, which is a **Markov process**.
+
+### 2. Modeling interest rates
+
+Stochastic interest-rate models — **Vasicek, CIR, Hull White Model, Ho Lee
+Model** — consume **Brownian motion**.
+
+**Brownian motion follows the Markov property.**
+
+## Wiener process / Brownian motion
+
+A Wiener process is a **continuous-time stochastic process that models random
+motion**. It is widely used in **physics and finance**.
+
+The physical analogy is a **mosquito / honey bee in a container**, with a
+wandering path drawn inside it. The diagram labels **Wiener process / Brownian
+motion → random process**.
+
+Mathematically, a Wiener process is denoted by:
+
+$$
+\{W_t\}_{t\geq0}.
+$$
+
+This is a **continuous-time stochastic process**. The stock sketch is labelled
+**GBM**, and the adjacent relationship is **BM → GBM**.
+
+## Properties of Wiener process / Brownian motion
+
+To qualify as a Wiener process, it should satisfy **5 properties**.
+
+### 1. Initial value
+
+The process should **start at zero**:
+
+$$
+\boxed{W_0=0}.
+$$
+
+The initial-point sketch places the process at **t = 0**.
+
+### 2. Independent increments
+
+The changes in the process are **independent of each other**. The notes connect
+this to the **Markov property**.
+
+The **honey bee in a container** example sketches several possible movements
+between **t** and **t + s**, with **s = 1 second** as an illustration.
+
+$$
+W_{t+s}-W_t.
+$$
+
+These increments are independent of each other **over non-overlapping time
+intervals**. The non-overlap qualification makes the handwritten statement
+precise.
+
+### 3. Normally distributed increments
+
+For any **s > 0**, the change is **normally distributed**:
+
+$$
+\boxed{W_{t+s}-W_t\sim N(0,s)}.
+$$
+
+$$
+N(0,s)\quad\longrightarrow\quad
+\text{mean}=0,\qquad\text{variance}=s.
+$$
+
+Variance is **proportional to the time increment**. The timeline labels the
+endpoints Wₜ and Wₜ₊ₛ, with **normal distribution** written beside the increment:
+
+$$
+\Delta t=t+s-t=s.
+$$
+
+### 4. Continuous path
+
+The Wiener process should **“evolve smoothly over time”**, which means that
+there should be **no jumps**. The stock-path sketches contrast a connected
+path with broken paths, highlight **no gap**, and conclude **it's a CTSP**.
+
+*Terminology clarification:* “smoothly” here means **continuously**, as the
+no-jump explanation says; Brownian paths are not differentiable smooth curves.
+
+### 5. Wiener process is also a martingale
+
+**Martingale process:** a martingale is a process where the **future expected
+value is always equal to the current value**.
+
+For a Wiener process Wₜ, at any time **t**, the future value Wₜ₊ₛ (**s > 0**)
+depends only on where it is at t, not on how it got there.
+
+Mathematically:
+
+$$
+E[W_{t+s}\mid W_t]=W_t.
+$$
+
+**The best guess for the future value is just the current value.**
+
+## Expectation of Wiener process = 0
+
+Expectation → **average value or mean**.
+
+$$
+E[X_t]=0.
+$$
+
+The derivation switches to the symbol **X** for the same standard Brownian
+process. From the Brownian-motion definition:
+
+$$
+X_t=X_0+\text{sum of independent increments}.
+$$
+
+The handwritten expectation step is:
+
+$$
+E[X_t]=E[X_0]+E[\Delta X].
+$$
+
+Here ΔX represents the sum of the increments over the interval. The initial
+value is:
+
+$$
+X_0=0\quad\Longrightarrow\quad E[X_0]=0.
+$$
+
+**ΔX → normal distribution → mean = 0.** Therefore:
+
+$$
+\begin{aligned}
+E[X_t]&=E[X_0]+E[\Delta X] \\
+&=0+0, \\
+\boxed{E[X_t]}&=\boxed{0}.
+\end{aligned}
+$$
+
+## Variance of Xₜ = t
+
+The notes pose **Var(Xₜ) = t = ??**, then add the independent increment variances:
+
+$$
+\operatorname{Var}(X_t)=\operatorname{Var}(X_0)
++\operatorname{Var}(\Delta X_1)+\operatorname{Var}(\Delta X_2)
++\cdots+\operatorname{Var}(\Delta X_n).
+$$
+
+Each increment has variance equal to its time length:
+
+$$
+\operatorname{Var}(\Delta X_i)=\Delta t.
+$$
+
+Thus:
+
+$$
+\operatorname{Var}(X_t)=0+\Delta t+\Delta t+\cdots+\Delta t.
+$$
+
+The timeline divides the interval from **0 to t** into **n** equal intervals,
+each labelled **Δt**:
+
+$$
+\operatorname{Var}(X_t)=n\Delta t=t.
+$$
+
+$$
+\boxed{\operatorname{Var}(X_t)=t}.
+$$
+
+The final margin reminds us that at **X₀**, the **mean is 0** and the
+**variance is 0**.
+
+## Where Brownian motion leads
+
+The closing diagram connects **Brownian motion** to both:
+
+- **GBM**.
+- **Black Scholes Modeling**.

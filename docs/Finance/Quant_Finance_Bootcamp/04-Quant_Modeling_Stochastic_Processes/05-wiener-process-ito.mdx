@@ -1,0 +1,179 @@
+---
+title: 'Generalized Wiener Process & Itô''s Lemma'
+description: 'Wiener increments, drift and diffusion, Itô processes, and the stochastic chain rule.'
+---
+
+## From Brownian motion to Wiener increments
+
+The opening of the geometric Brownian motion notes repeats the
+[Brownian motion lesson](./04-brownian-motion.mdx). Its variance derivation adds:
+
+$$
+\operatorname{Std}(X_t)=\sqrt{t}.
+$$
+
+The transition diagram is **Brownian motion → GBM / Black Scholes Modeling**.
+
+**Wiener Process → Brownian Motion.** A Wiener process is a continuous
+stochastic process that models random motion. **Stochastic → random**.
+
+- Wiener process → **Wₜ**.
+- Change in Wiener process → **dWₜ**.
+
+The increment calculation is:
+
+$$
+W_{t+\Delta t}=W_t+\sigma\sqrt{dt}\,Z.
+$$
+
+$$
+W_{t+\Delta t}-W_t=\sigma\sqrt{dt}\,Z.
+$$
+
+For the standard Wiener process, **σ = 1**:
+
+$$
+W_{t+\Delta t}-W_t=Z\sqrt{dt}.
+$$
+
+The notes write this as:
+
+$$
+\boxed{dW_t=Z\sqrt{dt}}.
+$$
+
+**Z → standard normal random variable**; **dt → change in time**. The wandering
+path marks the change in the Wiener process as **Z√dt**. For a finite simulation
+step, this notation means ΔW = Z√Δt.
+
+## Generalized Wiener process
+
+The generalized Wiener process is an extension of the standard Wiener process
+that incorporates a **drift and volatility term**.
+
+$$
+\boxed{dW_t=Z\sqrt{dt}}\quad\longrightarrow\quad
+\text{standard Wiener process}.
+$$
+
+### Mathematical formula of generalized Wiener process
+
+The generalized Wiener process is defined by the **stochastic differential
+equation (SDE)**:
+
+$$
+\boxed{dX_t=\mu\,dt+\sigma\,dW_t}.
+$$
+
+| Symbol | Meaning in the notes |
+| --- | --- |
+| Xₜ | Stochastic process that we are trying to model: stock price, interest rate |
+| μ | Drift component; long-term average |
+| σ | Diffusion component; represents volatility of the process |
+| dWₜ | Standard Wiener-process increment or change |
+
+The annotations label **μdt** as **drift**, **σ** as **vol**, and **dWₜ** as
+the standard Wiener process, with the reminder **dWₜ = Z × sqrt(t)**. In this
+increment formula, the time under the square root is the interval length.
+
+The histogram sketch represents the normally distributed **dWₜ or increment**
+and points to an **Excel spreadsheet**. The handwritten distribution is:
+
+$$
+dW_t\sim N(0,\sqrt{dt}).
+$$
+
+:::note Standard deviation versus variance
+
+The expression above uses √dt as the spread parameter. In the earlier lesson,
+the second argument of N is **variance**. Keeping that convention, the increment
+is N(0, dt), with **standard deviation √dt**. The original notation is retained
+above so these two conventions are not silently mixed.
+
+:::
+
+Under the annotation **“Differentiate”**, the notes repeat:
+
+$$
+dX_t=\mu\,dt+\sigma\,dW_t.
+$$
+
+For this generalized Wiener process, **μ = constant**, **σ = constant**, and
+the simulation **dt = constant**. The example **μ = 5%** labels **μdt** as
+**constant throughout**; dWₜ supplies the random part. A margin arrow says
+**model stock price**.
+
+## Itô's process
+
+A further type of stochastic process is **“Itô's process”**. It generalizes the
+Wiener process so the parameters **μ** and **σ** are functions of the underlying
+variable **x** and time **t**:
+
+$$
+\boxed{dx=\mu(x,t)\,dt+\sigma(x,t)\,dW_t}.
+$$
+
+**x → underlying → stock**; **t → time**. Unlike the constant-parameter case,
+μ and σ are **not necessarily constant**. The earlier constant form is recorded
+in the margin as **μdt + σdWₜ**.
+
+## Itô's lemma
+
+Itô's lemma is a fundamental result in stochastic calculus which extends the
+**classic chain rule of calculus to stochastic processes driven by Brownian
+motion**.
+
+Let Xₜ be a stochastic process which follows Itô's process:
+
+$$
+dX_t=\mu(X_t,t)\,dt+\sigma(X_t,t)\,dW_t.
+$$
+
+Let **f(Xₜ, t)** be a **twice differentiable function of Xₜ and t**. Then:
+
+$$
+df(X_t,t)=\frac{\partial f}{\partial t}\,dt
++\frac{\partial f}{\partial x}\,dX_t
++\frac12\frac{\partial^2 f}{\partial x^2}\sigma^2(X_t,t)\,dt.
+$$
+
+**Substitute dXₜ**:
+
+$$
+df(X_t,t)=\frac{\partial f}{\partial t}\,dt
++\frac{\partial f}{\partial x}
+\left(\mu(X_t,t)\,dt+\sigma(X_t,t)\,dW_t\right)
++\frac12\frac{\partial^2 f}{\partial x^2}\sigma^2(X_t,t)\,dt.
+$$
+
+:::note Handwritten substitution correction
+
+The intermediate substitution on page 14 writes **μdt + ½σ²dt** inside the
+first-derivative term. The SDE above requires **μdt + σdWₜ** there. The final
+boxed formula in the notes restores the stochastic term correctly; that final
+formula is reproduced below.
+
+:::
+
+Collect terms to obtain:
+
+$$
+\boxed{
+df(X_t,t)=
+\left(\frac{\partial f}{\partial t}
++\mu\frac{\partial f}{\partial x}
++\frac{\sigma^2}{2}\frac{\partial^2f}{\partial x^2}\right)dt
++\sigma\frac{\partial f}{\partial x}\,dW_t
+}.
+$$
+
+The final stochastic term continues at the top of the next page. The notes
+label this **“Mathematical Derivation — Itô's Lemma”**, with **“1 hr”** beside
+it and a reminder **“Upload 1 video — Itô lemma derivation”**. No such video
+is included among the supplied Module 4 files.
+
+**Itô's lemma → to calculate how we can model stock price.**
+
+The **chain rule → Itô's lemma** annotation is paired with a **normal
+differentiation** sketch: a smooth curve with vertical intervals. The comparison
+is that a **stochastic process has random noise (Wiener process)**.

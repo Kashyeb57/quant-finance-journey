@@ -1,0 +1,143 @@
+---
+title: 'Two Step Binomial Tree & Mathematical Calculation'
+description: 'The two-step recombining tree, backward calculation at each node, and the expanded option-value formula.'
+---
+
+## Two step binomial tree
+
+Each step has length **Δt**. Each upward branch has factor **u** and probability
+**p**; each downward branch has factor **d** and probability **1 − p**.
+
+<svg viewBox="0 0 640 330" role="img" aria-label="Two-step recombining binomial tree: from S0 the price moves up by factor u with probability p or down by factor d, and the middle node S0ud is reached by both up-then-down and down-then-up" style={{width: '100%', height: 'auto'}}>
+  <g strokeWidth="2.5" fill="none">
+    <line x1="105" y1="165" x2="285" y2="80" stroke="#25c2a0" />
+    <line x1="285" y1="80" x2="465" y2="35" stroke="#25c2a0" />
+    <line x1="285" y1="250" x2="465" y2="165" stroke="#25c2a0" />
+    <line x1="105" y1="165" x2="285" y2="250" stroke="#e0a44a" />
+    <line x1="285" y1="80" x2="465" y2="165" stroke="#e0a44a" />
+    <line x1="285" y1="250" x2="465" y2="295" stroke="#e0a44a" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="105" cy="165" r="5" /><circle cx="285" cy="80" r="5" />
+    <circle cx="285" cy="250" r="5" /><circle cx="465" cy="35" r="5" />
+    <circle cx="465" cy="165" r="5" /><circle cx="465" cy="295" r="5" />
+  </g>
+  <g fill="currentColor" fontSize="13" fontFamily="monospace">
+    <text x="30" y="160">S₀</text><text x="30" y="176" opacity="0.75">f</text>
+    <text x="297" y="66">S₀u</text><text x="297" y="82" opacity="0.75">f_u</text>
+    <text x="297" y="266">S₀d</text><text x="297" y="282" opacity="0.75">f_d</text>
+    <text x="482" y="30">S₀u²</text><text x="482" y="46" opacity="0.75">f_uu</text>
+    <text x="482" y="160">S₀ud</text><text x="482" y="176" opacity="0.75">f_ud</text>
+    <text x="482" y="290">S₀d²</text><text x="482" y="306" opacity="0.75">f_dd</text>
+  </g>
+  <g fontSize="11" fontFamily="monospace" opacity="0.8">
+    <text x="170" y="105" fill="#25c2a0">u, p</text>
+    <text x="170" y="225" fill="#e0a44a">d, 1−p</text>
+    <text x="360" y="45" fill="#25c2a0">u, p</text>
+    <text x="352" y="135" fill="#e0a44a">d, 1−p</text>
+    <text x="352" y="200" fill="#25c2a0">u, p</text>
+    <text x="360" y="290" fill="#e0a44a">d, 1−p</text>
+  </g>
+  <g stroke="currentColor" strokeWidth="1" opacity="0.35">
+    <line x1="105" y1="318" x2="465" y2="318" />
+    <line x1="105" y1="313" x2="105" y2="323" />
+    <line x1="285" y1="313" x2="285" y2="323" />
+    <line x1="465" y1="313" x2="465" y2="323" />
+  </g>
+  <g fill="currentColor" fontSize="11" fontFamily="monospace" opacity="0.7">
+    <text x="99" y="312">0</text><text x="272" y="312">Δt</text><text x="452" y="312">2Δt</text>
+  </g>
+</svg>
+
+Two arrows converge on the middle node — that is the point of the diagram. It
+is reached by **up then down** or **down then up**, and both land in the same
+place because:
+
+$$
+S_0ud=S_0du.
+$$
+
+The tree contains these stock prices and option values:
+
+| Time | Node | Stock price | Option value |
+| --- | --- | --- | --- |
+| 0 | Initial | S₀ | f |
+| Δt | Up | S₀u | f_u |
+| Δt | Down | S₀d | f_d |
+| 2Δt | Up-up | S₀u² | f_uu |
+| 2Δt | Up-down / down-up | S₀ud | f_ud |
+| 2Δt | Down-down | S₀d² | f_dd |
+
+## Mathematical calculation
+
+The one-step valuation formula, now using the length of **one** step, is:
+
+$$
+f=e^{-r\Delta t}\left[p f_u+(1-p)f_d\right].
+$$
+
+The risk-neutral up probability is:
+
+$$
+p=\frac{e^{r\Delta t}-d}{u-d}.
+$$
+
+At the **up node**:
+
+$$
+f_u=e^{-r\Delta t}\left[p f_{uu}+(1-p)f_{ud}\right].
+$$
+
+At the **down node**:
+
+$$
+f_d=e^{-r\Delta t}\left[p f_{ud}+(1-p)f_{dd}\right].
+$$
+
+The handwritten margin highlights the two weighted terms at that down node:
+
+$$
+f_{ud}\,p,\qquad f_{dd}\,(1-p).
+$$
+
+Bring the two intermediate values back to today:
+
+$$
+f=e^{-r\Delta t}\left[p f_u+(1-p)f_d\right].
+$$
+
+Substituting the two intermediate expressions gives the boxed two-step result:
+
+$$
+\boxed{
+f=e^{-2r\Delta t}\left[p^2f_{uu}+2p(1-p)f_{ud}+(1-p)^2f_{dd}\right]
+}.
+$$
+
+The two paths to the middle node account for the **2p(1 − p)** term.
+
+## Notation and volatility
+
+| Symbol | Meaning |
+| --- | --- |
+| u | Upward movement |
+| d | Downward movement |
+| p | Probability of upward movement |
+| 1 − p | Probability of downward movement |
+| σ | Volatility |
+
+The volatility diagram distinguishes **historical volatility** and **implied
+volatility**:
+
+```text
+                       σ → Volatility
+                         /         \
+          Historical volatility    Implied volatility
+                    |                      ↑
+                    ↓                      |
+          BT → Option value        Option value in the market
+```
+
+The historical-volatility branch feeds the **binomial tree (BT)** to produce
+an **option value**. The other branch connects **option value in the market**
+back to **implied volatility**.
