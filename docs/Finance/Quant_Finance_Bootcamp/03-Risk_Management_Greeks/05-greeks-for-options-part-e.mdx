@@ -1,0 +1,138 @@
+---
+title: 'Greeks for Options – Part E (Rho)'
+description: 'Rho and the risk-free rate — why calls gain and puts lose when rates rise, why rho is highest in the money rather than at the money, and when it matters at all. Closes with all five Greeks side by side.'
+---
+
+The last of the five, and the one traders think about least — until rates start
+moving.
+
+## Definition
+
+> Rho measures the sensitivity of the option price with respect to the
+> **risk-free interest rate** — the change in price for a **1% change** in that
+> rate.
+
+$$
+\rho = \frac{\partial V}{\partial r}
+$$
+
+where $r$ is the risk-free rate.
+
+### What "risk-free rate" means
+
+> The **theoretical return on an investment with no risk.**
+
+In practice it is the **US Treasury rate** (or **SOFR**). The mechanism is
+simple: the US government issues bonds to acquire money, people lend to it
+because it is considered as close to riskless as exists, and the return on that
+lending is the risk-free interest rate.
+
+### Two worked readings
+
+| Option | Rho | Meaning |
+| --- | --- | --- |
+| **Call** | **+0.05** | For every **1% increase** in the interest rate, the option price **increases by \$0.05** |
+| **Put** | **−0.04** | For every 1% increase in the risk-free rate, the put price **decreases by \$0.04** |
+
+So immediately:
+
+$$
+\text{Call} \Rightarrow \rho > 0
+\qquad\qquad
+\text{Put} \Rightarrow \rho < 0
+$$
+
+## Why — it is all discounting
+
+This is the one Greek whose sign is best understood through present value.
+
+When the interest rate rises, **the present value of the strike price falls**.
+Discounting means the interest rate and the discounted amount are **inversely
+related** — a \$110 strike payable in three months might be worth only \$100 in
+today's money once rates rise.
+
+Now split by option type, asking *who pays the strike*:
+
+**Call — you PAY the strike.** A call holder will hand over $K$ to buy the
+stock. If the present value of that obligation falls, you are effectively paying
+**less**. Rising rates worked **in your favour** → **rho is positive**.
+
+**Put — you RECEIVE the strike.** A put holder sells the stock and collects $K$.
+If the present value of what you will receive falls, you are collecting a
+**lesser price** in today's terms. Rising rates work **against** you → **rho is
+negative**.
+
+## Rho and time to expiry
+
+| Maturity | Rho | Why |
+| --- | --- | --- |
+| **Short-term** (5 days) | **Low** | The interest rate has little chance to fluctuate in five days, so the option price will not fluctuate either |
+| **Long-term** (60 days+) | **High** | Rates can move a lot over that horizon, so the impact on the option price is significant |
+
+Rho therefore grows with maturity — the same direction as vega and delta, the
+opposite of gamma.
+
+## Rho and moneyness
+
+Here rho breaks the pattern of the other Greeks. Gamma, vega and theta all peak
+**at the money**. Rho does not — it is **monotonic, and highest in the money**:
+
+| | **Call option** | **Put option** |
+| --- | --- | --- |
+| **ITM** | **Highest** +ve rho | **Highest** −ve rho |
+| **ATM** | Moderate +ve rho | Moderate −ve rho |
+| **OTM** | **Lowest** +ve rho | **Lowest** −ve rho |
+
+**Why ITM is highest.** An in-the-money option is dominated by its **intrinsic
+value** ($S_T - K$), with the extrinsic part small. That intrinsic value contains
+$K$ — and $K$ is exactly the term discounting acts on. So the option is
+**impacted a lot by the interest rate** → higher rho.
+
+**Why OTM is lowest.** An out-of-the-money option has **no intrinsic value** at
+all; it is pure extrinsic value. There is no strike payment in the money to
+discount, so the rate barely touches it → lower rho.
+
+## When does rho actually matter?
+
+> Rho becomes **extremely important when interest rates are expected to rise or
+> fall.**
+
+Conversely, in a **stable interest-rate environment rho becomes less
+significant**, and delta, gamma, theta and vega dominate the risk picture. That
+is why rho is the Greek most often ignored — and why ignoring it stops being
+safe the moment a central bank starts moving.
+
+## All five Greeks, side by side
+
+With rho done, the full set:
+
+| Greek | Measures sensitivity to | Sign | Peaks at | With more time |
+| --- | --- | --- | --- | --- |
+| **Delta** $\Delta$ | Underlying price | Call +, put − | — (S-curve) | **Higher** |
+| **Gamma** $\Gamma$ | Delta (2nd derivative) | Always + | **ATM** | **Lower** |
+| **Theta** $\Theta$ | Time | Long −, short + | **ATM** | Lower per day |
+| **Vega** $\mathcal{V}$ | Implied volatility | Always ≥ 0 | **ATM** | **Higher** |
+| **Rho** $\rho$ | Risk-free rate | Call +, put − | **ITM** | **Higher** |
+
+Two patterns worth carrying away:
+
+- **Gamma, theta and vega all peak at the money** — that is where an option's
+  fate is least decided, so that is where uncertainty is worth most. **Rho is
+  the exception**, peaking in the money, because it acts on the strike rather
+  than on uncertainty.
+- **Long positions are long gamma and long vega but short theta.** You pay decay
+  every day in exchange for convexity and volatility exposure. The short side
+  takes the opposite trade. That single sentence is most of option trading.
+
+## Summary
+
+- $\rho = \partial V / \partial r$ — the price change per **1%** move in the
+  risk-free rate (US Treasury / SOFR).
+- **Calls have positive rho, puts negative** — because rising rates cut the
+  present value of the strike, which helps the buyer who *pays* it and hurts the
+  buyer who *receives* it.
+- **Longer-dated options have more rho**; short-dated have almost none.
+- **Rho is highest ITM**, not ATM — it tracks the strike, and the strike matters
+  most where intrinsic value dominates.
+- It matters when **rates are expected to move**, and is largely ignorable when
+  they are not.
