@@ -1,4 +1,10 @@
 {
   "label": "Probability",
-  "position": 5
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "title": "Probability",
+    "description": "Distributions and stochastic processes — the language uncertainty is written in.",
+    "slug": "/Probability"
+  }
 }

@@ -1,4 +1,10 @@
 {
   "label": "Finance",
-  "position": 2
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "title": "Finance",
+    "description": "Options, payoffs and Black-Scholes — with live pricing labs you can drag and explore.",
+    "slug": "/Finance"
+  }
 }

@@ -4,6 +4,9 @@ import katex from 'katex';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
+import {getQuotes} from '@site/src/lib/market';
+import usePolling from '@site/src/lib/usePolling';
+import {fmtPrice} from '@site/src/lib/format';
 import styles from './index.module.css';
 
 // Render a LaTeX string to KaTeX HTML for the hero equation chips.
@@ -192,37 +195,20 @@ const WATCH = [
   {sym: 'USD/JPY', yf: 'JPY=X', px: '149.82',   chg: '0.3', up: false, s: [150.4,150.2,150.5,150.1,150.3,149.9,150.1,149.8,150.0,149.7,149.9,149.7,149.8,149.82]},
 ];
 
-// The Worker only runs in production, so from localhost we call the live domain
-// directly (it allow-lists localhost for CORS); in prod this is same-origin.
-const QUOTE_API =
-  (typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname))
-    ? 'https://joyebkashyeb.com.np'
-    : '';
-
-const fmtPx = (n) =>
-  n == null ? null : n.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmtPx = (n) => fmtPrice(n, null);
 
 // Poll /_m/quote and return a { yahooSymbol: {price, changePct} } map. Re-polls
 // every 60s so the board tracks the tape during market hours (Yahoo ~15m delay).
+// Origin, timeout and the poll loop all come from the shared data layer.
 function useQuotes(symbols) {
   const key = symbols.join(',');
   const [map, setMap] = useState({});
-  useEffect(() => {
-    let alive = true;
-    const pull = () =>
-      fetch(`${QUOTE_API}/_m/quote?symbols=${encodeURIComponent(key)}`, {cache: 'no-store'})
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => {
-          if (!alive || !d || !d.quotes) return;
-          const m = {};
-          d.quotes.forEach((q) => { if (q && q.symbol) m[q.symbol] = q; });
-          setMap(m);
-        })
-        .catch(() => {});
-    pull();
-    const id = setInterval(pull, 60000);
-    return () => { alive = false; clearInterval(id); };
-  }, [key]);
+  usePolling(async ({signal, cancelled}) => {
+    try {
+      const m = await getQuotes(key.split(','), {signal});
+      if (!cancelled()) setMap(m);
+    } catch (_) { /* the board keeps its last values */ }
+  }, 60000, [key]);
   return map;
 }
 

@@ -1,4 +1,10 @@
 {
   "label": "Mathematics",
-  "position": 3
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "Mathematics",
+    "description": "Calculus, linear algebra, and the stochastic calculus behind every pricing model.",
+    "slug": "/Mathematics"
+  }
 }

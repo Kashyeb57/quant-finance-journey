@@ -1,4 +1,10 @@
 {
   "label": "Machine Learning",
-  "position": 8
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "title": "Machine Learning",
+    "description": "From regression to deep learning, aimed squarely at financial applications.",
+    "slug": "/Machine_Learning"
+  }
 }

@@ -1,4 +1,10 @@
 {
   "label": "Statistics",
-  "position": 4
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "title": "Statistics",
+    "description": "Inference, regression and time series — drawing conclusions you can defend.",
+    "slug": "/Statistics"
+  }
 }

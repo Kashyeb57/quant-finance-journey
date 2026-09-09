@@ -1,4 +1,10 @@
 {
   "label": "Introduction & Goals",
-  "position": 1
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "title": "Introduction & Goals",
+    "description": "Why this site exists, how it is built, and where it is going.",
+    "slug": "/Introduction_and_Goals"
+  }
 }

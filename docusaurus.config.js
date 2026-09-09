@@ -97,6 +97,24 @@ const config = {
     ],
   ],
 
+  // Offline search across all 191 notes. Builds a Lucene index at compile time
+  // and ships it with the static site — no Algolia account, no external service,
+  // nothing to pay for, and it keeps working if a third party goes away.
+  themes: [
+    [
+      '@easyops-cn/docusaurus-search-local',
+      {
+        hashed: true,              // cache-bust the index between deploys
+        indexDocs: true,           // the docs/ notes
+        indexPages: true,          // the standalone pages too (portfolio, books, events…)
+        docsRouteBasePath: '/docs',
+        highlightSearchTermsOnTargetPage: true,
+        explicitSearchResultPath: true,
+        searchBarShortcutHint: false,
+      },
+    ],
+  ],
+
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
