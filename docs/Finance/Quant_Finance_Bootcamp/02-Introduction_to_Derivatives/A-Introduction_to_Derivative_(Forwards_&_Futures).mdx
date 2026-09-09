@@ -117,17 +117,96 @@ participant directly, and one failure propagated through the web.
 Afterwards (in the USA first), a **CCP — Central Counter Party** was introduced
 in the middle of OTC trades as well:
 
-```
-Before:   A ←──────────────→ B        (bilateral; if B defaults, A wears it)
+<svg viewBox="0 0 640 290" role="img" aria-label="Left: eight OTC participants each facing every other, twenty-eight bilateral links. Right: the same eight participants each facing one central counterparty, eight links." style={{width: '100%', height: 'auto'}}>
+  <g stroke="#e0a44a" strokeWidth="1" fill="none" opacity="0.85">
+    <line x1="150.0" y1="44.0" x2="212.2" y2="69.8" />
+    <line x1="150.0" y1="44.0" x2="238.0" y2="132.0" />
+    <line x1="150.0" y1="44.0" x2="212.2" y2="194.2" />
+    <line x1="150.0" y1="44.0" x2="150.0" y2="220.0" />
+    <line x1="150.0" y1="44.0" x2="87.8" y2="194.2" />
+    <line x1="150.0" y1="44.0" x2="62.0" y2="132.0" />
+    <line x1="150.0" y1="44.0" x2="87.8" y2="69.8" />
+    <line x1="212.2" y1="69.8" x2="238.0" y2="132.0" />
+    <line x1="212.2" y1="69.8" x2="212.2" y2="194.2" />
+    <line x1="212.2" y1="69.8" x2="150.0" y2="220.0" />
+    <line x1="212.2" y1="69.8" x2="87.8" y2="194.2" />
+    <line x1="212.2" y1="69.8" x2="62.0" y2="132.0" />
+    <line x1="212.2" y1="69.8" x2="87.8" y2="69.8" />
+    <line x1="238.0" y1="132.0" x2="212.2" y2="194.2" />
+    <line x1="238.0" y1="132.0" x2="150.0" y2="220.0" />
+    <line x1="238.0" y1="132.0" x2="87.8" y2="194.2" />
+    <line x1="238.0" y1="132.0" x2="62.0" y2="132.0" />
+    <line x1="238.0" y1="132.0" x2="87.8" y2="69.8" />
+    <line x1="212.2" y1="194.2" x2="150.0" y2="220.0" />
+    <line x1="212.2" y1="194.2" x2="87.8" y2="194.2" />
+    <line x1="212.2" y1="194.2" x2="62.0" y2="132.0" />
+    <line x1="212.2" y1="194.2" x2="87.8" y2="69.8" />
+    <line x1="150.0" y1="220.0" x2="87.8" y2="194.2" />
+    <line x1="150.0" y1="220.0" x2="62.0" y2="132.0" />
+    <line x1="150.0" y1="220.0" x2="87.8" y2="69.8" />
+    <line x1="87.8" y1="194.2" x2="62.0" y2="132.0" />
+    <line x1="87.8" y1="194.2" x2="87.8" y2="69.8" />
+    <line x1="62.0" y1="132.0" x2="87.8" y2="69.8" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="150.0" cy="44.0" r="5" />
+    <circle cx="212.2" cy="69.8" r="5" />
+    <circle cx="238.0" cy="132.0" r="5" />
+    <circle cx="212.2" cy="194.2" r="5" />
+    <circle cx="150.0" cy="220.0" r="5" />
+    <circle cx="87.8" cy="194.2" r="5" />
+    <circle cx="62.0" cy="132.0" r="5" />
+    <circle cx="87.8" cy="69.8" r="5" />
+  </g>
+  <g stroke="#25c2a0" strokeWidth="1.4" fill="none">
+    <line x1="470.0" y1="44.0" x2="470" y2="132" />
+    <line x1="532.2" y1="69.8" x2="470" y2="132" />
+    <line x1="558.0" y1="132.0" x2="470" y2="132" />
+    <line x1="532.2" y1="194.2" x2="470" y2="132" />
+    <line x1="470.0" y1="220.0" x2="470" y2="132" />
+    <line x1="407.8" y1="194.2" x2="470" y2="132" />
+    <line x1="382.0" y1="132.0" x2="470" y2="132" />
+    <line x1="407.8" y1="69.8" x2="470" y2="132" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="470.0" cy="44.0" r="5" />
+    <circle cx="532.2" cy="69.8" r="5" />
+    <circle cx="558.0" cy="132.0" r="5" />
+    <circle cx="532.2" cy="194.2" r="5" />
+    <circle cx="470.0" cy="220.0" r="5" />
+    <circle cx="407.8" cy="194.2" r="5" />
+    <circle cx="382.0" cy="132.0" r="5" />
+    <circle cx="407.8" cy="69.8" r="5" />
+  </g>
+  <rect x="437" y="116" width="66" height="32" rx="4" fill="var(--ifm-background-color, #0b0b0c)" stroke="currentColor" strokeWidth="1.5" />
+  <text x="470" y="137" textAnchor="middle" fill="currentColor" fontSize="14" fontFamily="monospace">CCP</text>
+  <g fill="currentColor" fontSize="13" textAnchor="middle">
+    <text x="150" y="262">(a) before 2007-08 — bilateral</text>
+    <text x="150" y="280" opacity="0.7">28 exposures</text>
+    <text x="470" y="262">(b) now — through a CCP</text>
+    <text x="470" y="280" opacity="0.7">8 exposures</text>
+  </g>
+</svg>
 
-After:    A ────→ [ CCP ] ←──── B     (both face the CCP, not each other)
-```
+Every line in the left panel is a **credit exposure** — someone who owes, or is
+owed by, someone else. One failure anywhere in that web propagates along the
+lines to everyone connected to it. That is how counterparty risk went systemic
+in 2008.
 
-With a CCP in between, **both parties are obligated to the contract** and the
-chance of the other party defaulting is very low.
+Putting a CCP in the middle does not just tidy the picture, it changes the
+arithmetic. With $N$ participants:
 
-*(Hull sets this out in Figure 2.2 — the traditional web of bilateral OTC
-agreements versus a single central counterparty acting as clearing house.)*
+$$
+\text{bilateral links} = \frac{N(N-1)}{2}
+\qquad\text{versus}\qquad
+\text{links through a CCP} = N
+$$
+
+For the eight participants drawn above that is **28 exposures collapsing to 8**.
+At 100 participants it is **4,950 versus 100**. The CCP becomes the counterparty
+to both sides of every trade, so **both parties are obligated to the contract**
+and the chance of the other side defaulting on you is very low — you are no
+longer exposed to them at all, only to the CCP.
 
 Swaps are the classic OTC example — **IRS** (interest-rate swaps) and
 **CS** (currency swaps), traded between parties such as commercial banks.
