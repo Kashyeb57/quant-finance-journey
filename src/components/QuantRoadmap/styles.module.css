@@ -183,6 +183,20 @@
   margin-bottom: 0.2rem;
   color: var(--pillar);
 }
+/* The pillar name doubles as the way into that subject's notes. */
+.cellHeadLink {
+  color: inherit;
+  text-decoration: none;
+}
+.cellHeadLink:hover {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cellHeadLink span {
+  opacity: 0.5;
+  font-size: 0.8em;
+}
 .cellGoal {
   font-size: 0.72rem;
   color: var(--ifm-color-emphasis-600);

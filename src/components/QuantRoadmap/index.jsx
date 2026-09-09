@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import BrowserOnly from '@docusaurus/BrowserOnly';
+import Link from '@docusaurus/Link';
 import styles from './styles.module.css';
 
 /*
@@ -10,12 +11,14 @@ import styles from './styles.module.css';
 
 const STORAGE_KEY = 'quantRoadmapProgressV1';
 
+// `docs` points each pillar at the notes that actually teach it, so the roadmap
+// is a way in to the 191 notes rather than a list of topics with no next step.
 const PILLARS = [
-  { id: 'math', name: 'Mathematics', color: '#7c3aed' },
-  { id: 'prob', name: 'Probability & Statistics', color: '#2563eb' },
-  { id: 'cs', name: 'Computer Science', color: '#0891b2' },
-  { id: 'ml', name: 'Machine Learning', color: '#db2777' },
-  { id: 'fin', name: 'Finance & Economics', color: '#16a34a' },
+  { id: 'math', name: 'Mathematics', color: '#7c3aed', docs: '/docs/Mathematics' },
+  { id: 'prob', name: 'Probability & Statistics', color: '#2563eb', docs: '/docs/Probability' },
+  { id: 'cs', name: 'Computer Science', color: '#0891b2', docs: '/docs/Programming' },
+  { id: 'ml', name: 'Machine Learning', color: '#db2777', docs: '/docs/Machine_Learning' },
+  { id: 'fin', name: 'Finance & Economics', color: '#16a34a', docs: '/docs/Finance' },
 ];
 
 const LEVELS = [
@@ -445,7 +448,15 @@ function RoadmapInner() {
                   className={`${styles.cell} ${hasTopics ? '' : styles.cellEmpty}`}
                   style={{ '--pillar': p.color }}
                 >
-                  <div className={styles.cellHead}>{p.name}</div>
+                  <div className={styles.cellHead}>
+                    {p.docs && hasTopics ? (
+                      <Link to={p.docs} className={styles.cellHeadLink}>
+                        {p.name} <span aria-hidden="true">↗</span>
+                      </Link>
+                    ) : (
+                      p.name
+                    )}
+                  </div>
                   {hasTopics ? (
                     <>
                       {entry.sub && (
