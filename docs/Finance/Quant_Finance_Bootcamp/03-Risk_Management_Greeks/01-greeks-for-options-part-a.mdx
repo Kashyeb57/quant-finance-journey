@@ -1,0 +1,185 @@
+---
+title: 'Greeks for Options – Part A (Delta)'
+description: 'What the Greeks measure, and delta in full — its sign and range for all four positions, its reading as the probability of finishing in the money, and how time to maturity and volatility move it.'
+---
+
+## What the Greeks are
+
+> The Greeks are **risk measures** used in options to assess the **sensitivity
+> of the option price to various factors**.
+
+An option's price does not depend on one thing. It moves with the underlying
+asset, with time, with interest rates, and with volatility. Each Greek isolates
+**one** of those and asks: if this input moves, how much does the option price
+move?
+
+There are five:
+
+| Greek | Sensitivity of the option price with respect to… |
+| --- | --- |
+| **Delta** ($\Delta$) | the **underlying asset** |
+| **Gamma** ($\Gamma$) | *(the sensitivity of **delta** to the underlying asset)* |
+| **Theta** ($\Theta$) | **time** |
+| **Rho** ($\rho$) | the **risk-free rate** |
+| **Vega** | **implied volatility** |
+
+Gamma is the odd one out: it is a sensitivity *of another Greek*, not of the
+price directly.
+
+## Delta
+
+> Delta tells the sensitivity of the option price with respect to the underlying
+> asset — or equivalently, the **rate of change of the option price relative to
+> the change in the underlying asset**.
+
+$$
+\Delta = \frac{\partial V}{\partial S}
+$$
+
+where $V$ is the price of the option and $S$ is the price of the underlying
+asset. So $\partial V$ is the change in the option price and $\partial S$ the
+change in the underlying asset price.
+
+### Why a partial derivative?
+
+Because the option price is a function of **several** variables at once — the
+asset price, volatility, the rate, time. A function of one variable gives an
+**ordinary** derivative (an ODE, $dV/dS$); a function of many gives a
+**partial** derivative (a PDE, $\partial V / \partial S$), which holds
+everything else fixed and varies only $S$. Option pricing is the second case.
+
+## The sign of delta
+
+Delta can be positive or negative, and which one depends on **the type of
+option** and **the position** you hold.
+
+**Positive delta** — a positive relationship with the underlying:
+
+- the option value **rises** when the stock price rises
+- the option value **falls** when the stock price falls
+
+**Negative delta** — a negative relationship:
+
+- the option price **falls** when the underlying **rises**
+- the option price **rises** when the underlying **falls**
+
+A put has negative delta for exactly this reason: you hold the right to sell, so
+a rising stock makes that right less valuable.
+
+### Range, by option and by position
+
+$$
+\text{Call option: } 0 \text{ to } 1
+\qquad\qquad
+\text{Put option: } 0 \text{ to } -1
+$$
+
+Taking the position into account as well:
+
+| Position | Delta range |
+| --- | --- |
+| **Long call** | 0 to **+1** |
+| **Short call** | 0 to **−1** |
+| **Long put** | 0 to **−1** |
+| **Short put** | 0 to **+1** |
+
+Laid on a number line, −1 is where long put and short call live; +1 is where
+long call and short put live.
+
+## Reading a delta
+
+Suppose the delta of a call is **0.5**. Then
+
+$$
+\Delta = \frac{\partial V}{\partial S} = \frac{\partial V}{1} = 0.5
+\;\Longrightarrow\; \partial V = \$0.5
+$$
+
+> For every **\$1 increase** in the underlying asset, the option price
+> **increases by \$0.50**.
+
+And for a put with delta **−0.5**: a \$1 *rise* in the asset makes the put price
+*fall* by \$0.50.
+
+These values come out of the option pricing models — **Black-Scholes**, the
+**binomial tree**, or **Monte Carlo**. Delta is not assumed; it is computed.
+
+## Delta and moneyness
+
+For a **call**:
+
+| Moneyness | Delta |
+| --- | --- |
+| **ITM** | 0.5 to 1 |
+| **ATM** | ≈ 0.5 |
+| **OTM** | 0 to 0.5 |
+
+For a **put**, mirrored into the negatives:
+
+| Moneyness | Delta |
+| --- | --- |
+| **ITM** | −0.5 to −1 |
+| **ATM** | ≈ −0.5 |
+| **OTM** | 0 to −0.5 |
+
+This is **standard practice among traders and risk managers for defining
+moneyness** — rather than comparing $S$ and $K$ directly, they read it off the
+delta.
+
+## Delta as a probability
+
+This is the interpretation worth carrying around:
+
+> **Delta is the probability of the option contract being in the money at
+> expiry.**
+
+- $\Delta = 0.2$ → roughly a **20% chance** of finishing in the money — clearly
+  OTM territory.
+- $\Delta = 0.5$ → a coin flip — at the money.
+- $\Delta$ between 0.5 and 1 → a **50% to 100%** chance — in the money.
+- $\Delta = 1$ → effectively certain.
+
+And recall what each outcome means at expiry: **ITM** you receive money,
+**ATM** no profit and no loss, **OTM** you have paid the money (the premium) for
+nothing.
+
+## What moves delta
+
+### Time to maturity
+
+Take an **OTM call**. With a **long** time to maturity, the stock has more time
+to move up to the strike, so there is a **higher chance of expiring ITM** — and
+therefore a **higher delta**. Two days from expiry, the stock has almost no room
+to travel, the probability collapses, and delta with it.
+
+$$
+\text{Long-term maturity} \Rightarrow \text{higher delta}
+\qquad
+\text{Short-term maturity} \Rightarrow \text{lower delta}
+$$
+
+### Volatility
+
+The same logic through a different lever.
+
+- **High volatility** — the stock moves around more, so an OTM option has a
+  **higher probability of expiring ITM** → **higher delta**.
+- **Low volatility** — fluctuation is small, the probability of reaching the
+  strike is low → **lower delta**.
+
+Both effects are really one effect: anything that raises the chance of finishing
+in the money raises delta, because *delta is that chance*.
+
+## Summary
+
+- The Greeks are risk measures: the sensitivity of the option price to each
+  input. Five of them — delta, gamma, theta, rho, vega.
+- $\Delta = \partial V/\partial S$ — a **partial** derivative, because the option
+  price depends on several variables at once.
+- **Call delta runs 0 to +1, put delta 0 to −1**; the short of each flips the
+  sign.
+- A delta of 0.5 means a \$1 move in the underlying moves the option \$0.50.
+- **Delta is the probability of finishing in the money** — which is why traders
+  use it to define moneyness (ITM 0.5–1, ATM ≈0.5, OTM 0–0.5 for a call).
+- **More time → higher delta. More volatility → higher delta.** Both raise the
+  chance of expiring ITM.
