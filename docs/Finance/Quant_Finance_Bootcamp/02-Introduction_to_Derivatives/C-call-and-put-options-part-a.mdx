@@ -1,0 +1,224 @@
+---
+title: 'Introduction to Derivative (Call & Put Option) – Part A'
+description: 'Calls and puts from first principles — buyer vs writer, why a premium exists, the four positions, and the payoff of each with worked tables and diagrams.'
+---
+
+A forward and a future are an **obligation**. An option is a **right, but not
+the obligation**. Everything in this note follows from that one difference.
+
+## The difference, in one example
+
+You hold an option contract to **buy XYZ stock at \$100**, three months from
+now. At $t = 3$ the market can be anywhere. Two cases:
+
+**Case 1 — the stock rises to \$110.**
+Your contract lets you buy at \$100 while the market charges \$110. You
+**exercise**: buy at 100, and you are \$10 better off.
+
+**Case 2 — the stock falls to \$90.**
+Your contract says \$100, the market says \$90. Exercising would mean paying
+\$100 for something worth \$90 — a \$10 loss. So you **do not execute the
+deal**. You walk away.
+
+With a forward or a future, Case 2 is not a choice: you are obligated, and you
+take the \$10 loss. The option gives you the **flexibility to buy or not**.
+
+## Buyer and seller are not symmetric
+
+| | **Buyer (holder)** of the option | **Seller (writer / underwriter)** |
+| --- | --- | --- |
+| Has | The **right** to buy or sell | — |
+| Obliged? | **Not** obligated | **Always obligated** to buy or sell the underlying |
+
+The buyer picks whichever outcome suits them; the seller has to live with that
+choice. Which raises the obvious question.
+
+### Why does the buyer pay a premium?
+
+Because the seller is at a structural disadvantage. They carry the obligation
+and have no say in whether the contract is exercised. The **premium** is what
+compensates them for taking on that obligation. It flows once, at the start,
+from buyer to seller:
+
+```
+   Buyer (long)  ──── premium ────→  Seller (short)
+   holds the right                   carries the obligation
+```
+
+## The two types
+
+### Call option
+
+> A call option gives the holder the **right to buy** the underlying asset at
+> the strike price $K$, on a predetermined date.
+
+You would only want a fixed price to *buy* at if you think the price is going
+**up**.
+
+| Position | What you did | Expectation |
+| --- | --- | --- |
+| **Long call** | Bought the right to buy | Price will **rise** → **bullish** |
+| **Short call** | Sold the right to buy | Price will **decline** → **bearish** |
+
+### Put option
+
+> A put option gives the holder the **right to sell** the underlying asset at
+> $K$, on a predetermined date.
+
+| Position | What you did | Expectation |
+| --- | --- | --- |
+| **Long put** | Bought the right to sell | Price will **fall** → **bearish** |
+| **Short put** | Sold the right to sell | Price will **rise** → **bullish** |
+
+A memory aid: a **bull** attacks by throwing its horns **up**; a **bear** swipes
+**down**.
+
+Note the pairing is not "call = bullish". It is the *combination*: long call and
+short put are bullish; short call and long put are bearish.
+
+## The five characteristics of an option
+
+1. **Underlying asset** — stocks, commodities, currencies, bonds.
+2. **Strike price** $K$ — the price the holder can buy or sell at.
+3. **Expiration date** — after which the option expires worthless.
+4. **Exercise style** — **American** (exercisable at *any* point) or
+   **European** (exercisable *only at maturity*). These names are conventions,
+   **not geographical locations** — a European-style option is not a European
+   product.
+5. **Premium** — the price paid by the holder to the seller.
+
+## Payoff
+
+Four positions, four formulas. The `max(·, 0)` is the option's whole character:
+you never exercise into a loss, so the intrinsic part can never go below zero.
+
+$$
+\begin{aligned}
+\text{Long call} \;&=\; \max(S_T - K,\, 0) - \text{premium}\\[2pt]
+\text{Short call} \;&=\; \text{premium} - \max(S_T - K,\, 0)\\[2pt]
+\text{Long put} \;&=\; \max(K - S_T,\, 0) - \text{premium}\\[2pt]
+\text{Short put} \;&=\; \text{premium} - \max(K - S_T,\, 0)
+\end{aligned}
+$$
+
+The short is always the negative of the long — the seller's payoff is
+$-(\text{long payoff})$. Derivatives are a **zero-sum game**: what one side
+gains, the other loses, exactly.
+
+Note also who pays and who receives:
+
+- **Long call and long put → pay** the premium.
+- **Short call and short put → receive** the premium.
+
+The short put can also be written $\text{premium} + \min(S_T - K,\, 0)$, which
+is the same thing.
+
+### Long call, worked out
+
+Take $K = 95$ and a premium of $1$.
+
+| $S_T$ | $\max(S_T-K,0)$ | − premium | **Payoff** |
+| --- | --- | --- | --- |
+| 90 | 0 | −1 | **−1** |
+| 91 | 0 | −1 | **−1** |
+| 92 | 0 | −1 | **−1** |
+| 93 | 0 | −1 | **−1** |
+| 94 | 0 | −1 | **−1** |
+| 95 | 0 | −1 | **−1** |
+| **96** | 1 | −1 | **0** ← breakeven |
+| 97 | 2 | −1 | **+1** |
+| 98 | 3 | −1 | **+2** |
+| 99 | 4 | −1 | **+3** |
+| 100 | 5 | −1 | **+4** |
+
+Below the strike the option is never exercised, so the loss is flat at the
+premium. Above the strike each dollar of stock is a dollar of payoff. Breakeven
+is at
+
+$$
+S_T = K + \text{premium} = 95 + 1 = 96
+$$
+
+### Short call, worked out
+
+The mirror image, same $K = 95$, premium $1$:
+
+| $S_T$ | **Payoff** $= 1 - \max(S_T-95,0)$ |
+| --- | --- |
+| 90–95 | **+1** (keeps the whole premium) |
+| **96** | **0** |
+| 97 | **−1** |
+| 98 | **−2** |
+| 99 | **−3** |
+| 100 | **−4** |
+
+### Long put, worked out
+
+Same $K = 95$, premium $1$ — now the payoff runs the other way:
+
+| $S_T$ | $\max(K-S_T,0)$ | − premium | **Payoff** |
+| --- | --- | --- | --- |
+| 90 | 5 | −1 | **+4** |
+| 91 | 4 | −1 | **+3** |
+| 92 | 3 | −1 | **+2** |
+| 93 | 2 | −1 | **+1** |
+| **94** | 1 | −1 | **0** ← breakeven |
+| 95 | 0 | −1 | **−1** |
+| 96 | 0 | −1 | **−1** |
+| 97+ | 0 | −1 | **−1** |
+
+Breakeven for a put is $K - \text{premium} = 94$.
+
+Worked from the contract's side: you bought the right to sell XYZ at \$100. If
+the market goes to \$110 you do **not** execute — why sell at 100 what fetches
+110? If it drops to \$90 you **do** execute, gaining $K - S_T = 100 - 90 = \$10$.
+
+### The four diagrams
+
+<svg viewBox="0 0 640 420" role="img" aria-label="Payoff diagrams for long call, short call, long put and short put" style={{width: '100%', height: 'auto'}}>
+  <g stroke="currentColor" strokeWidth="1" opacity="0.35" fill="none">
+    <line x1="45" y1="100" x2="290" y2="100" /><line x1="165" y1="25" x2="165" y2="175" />
+    <line x1="355" y1="100" x2="600" y2="100" /><line x1="475" y1="25" x2="475" y2="175" />
+    <line x1="45" y1="300" x2="290" y2="300" /><line x1="165" y1="225" x2="165" y2="375" />
+    <line x1="355" y1="300" x2="600" y2="300" /><line x1="475" y1="225" x2="475" y2="375" />
+  </g>
+  <g fill="none" strokeWidth="2.5">
+    <polyline points="50,128 165,128 285,45" stroke="#25c2a0" />
+    <polyline points="360,72 475,72 595,155" stroke="#e0a44a" />
+    <polyline points="50,245 165,328 285,328" stroke="#25c2a0" />
+    <polyline points="360,372 475,272 595,272" stroke="#e0a44a" />
+  </g>
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="50" y="20">Long call</text><text x="50" y="192" opacity="0.7">limited loss · unlimited profit</text>
+    <text x="360" y="20">Short call</text><text x="360" y="192" opacity="0.7">limited profit · unlimited loss</text>
+    <text x="50" y="220">Long put</text><text x="50" y="392" opacity="0.7">limited loss · limited profit</text>
+    <text x="360" y="220">Short put</text><text x="360" y="392" opacity="0.7">limited profit · limited loss</text>
+    <text x="158" y="115" opacity="0.6">K</text><text x="468" y="115" opacity="0.6">K</text>
+    <text x="158" y="315" opacity="0.6">K</text><text x="468" y="315" opacity="0.6">K</text>
+  </g>
+</svg>
+
+The asymmetry is the point:
+
+| Position | Loss | Profit |
+| --- | --- | --- |
+| **Long call** | Limited (the premium) | **Unlimited** — the price can keep rising |
+| **Short call** | **Unlimited** | Limited (the premium) |
+| **Long put** | Limited (the premium) | Limited — the price can only fall to zero |
+| **Short put** | Limited | Limited (the premium) |
+
+Selling a naked call is the one position here with genuinely unbounded loss.
+
+## Summary
+
+- An option is a **right, not an obligation** — the holder chooses, the writer
+  must comply.
+- The **premium** exists to compensate the writer for carrying that obligation.
+- **Call** = right to buy, **put** = right to sell; **long** = holds the right,
+  **short** = carries the obligation and receives the premium.
+- Bullish: long call, short put. Bearish: short call, long put.
+- All four payoffs are built from `max(·, 0)`, and long and short are exact
+  negatives — a zero-sum game.
+- Breakeven is $K + \text{premium}$ for a call and $K - \text{premium}$ for a put.
+
+Next: [moneyness, and what corporate actions do to an option](/docs/Finance/Quant_Finance_Bootcamp/Introduction_to_Derivatives/D-call-and-put-options-part-b).
