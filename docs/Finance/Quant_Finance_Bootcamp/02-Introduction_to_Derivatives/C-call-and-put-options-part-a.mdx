@@ -87,10 +87,26 @@ short put are bullish; short call and long put are bearish.
    product.
 5. **Premium** — the price paid by the holder to the seller.
 
-## Payoff
+## Payoff and profit are not the same thing
 
-Four positions, four formulas. The `max(·, 0)` is the option's whole character:
-you never exercise into a loss, so the intrinsic part can never go below zero.
+This distinction matters and is easy to blur:
+
+- **Payoff** is the value of the option at expiry, **ignoring the premium**.
+- **Profit** is the payoff **minus the premium you paid** (or plus the premium
+  you received).
+
+**Payoff** — premium removed:
+
+$$
+\begin{aligned}
+\text{Long call} \;&=\; \max(S_T - K,\, 0) &\qquad
+\text{Short call} \;&=\; -\max(S_T - K,\, 0)\\[2pt]
+\text{Long put} \;&=\; \max(K - S_T,\, 0) &\qquad
+\text{Short put} \;&=\; -\max(K - S_T,\, 0)
+\end{aligned}
+$$
+
+**Profit** — what you actually walk away with:
 
 $$
 \begin{aligned}
@@ -100,6 +116,12 @@ $$
 \text{Short put} \;&=\; \text{premium} - \max(K - S_T,\, 0)
 \end{aligned}
 $$
+
+The `max(·, 0)` is the option's whole character: you never exercise into a loss,
+so the payoff can never go below zero. Only the *profit* can.
+
+Everything below is **profit** — the version with the premium in it, since that
+is what determines whether the trade made money.
 
 The short is always the negative of the long — the seller's payoff is
 $-(\text{long payoff})$. Derivatives are a **zero-sum game**: what one side

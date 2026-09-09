@@ -144,11 +144,59 @@ $\times 4$.
 
 Again unchanged — which is the entire point of the adjustment.
 
-### Dividends
+### Stock dividend
 
-Dividends are the other corporate action that affects the option contract, for
-the same reason: paying cash out of the company moves the share price on the
-ex-dividend date through no fault of the option holder.
+> A stock dividend involves a company issuing **more shares** to its existing
+> stakeholders.
+
+A stock dividend is quoted as a percentage, and the trick is to convert that
+percentage into an equivalent split:
+
+$$
+\frac{100\%}{\text{dividend }\%} \;=\; \text{shares you must already hold to receive one new share}
+$$
+
+| Stock dividend | $100/\%$ | Meaning | Equivalent split |
+| --- | --- | --- | --- |
+| **10%** | 10 | 1 new share for every **10** held | 11-for-10 |
+| **20%** | 5 | 1 new share for every **5** held | 6-for-5 |
+| **25%** | 4 | 1 new share for every **4** held | **5-for-4** |
+
+Once you have the equivalent split, the adjustment is the same rule as before.
+For a 25% stock dividend (a 5-for-4 split):
+
+$$
+\text{shares} \;\to\; \times \tfrac{5}{4}
+\qquad\qquad
+K \;\to\; \times \tfrac{4}{5}
+$$
+
+### Worked example — a put, and a 25% stock dividend
+
+Consider a put option contract to sell **100 shares** of the company at
+**\$15 per share**. The company then announces a **25% stock dividend**.
+
+$100\% / 25\% = 4$, so one new share for every four held — a **5-for-4 split**.
+
+| | Pre-dividend | Post-dividend |
+| --- | --- | --- |
+| Number of shares | 100 | $100 \times \tfrac{5}{4} =$ **125** |
+| Strike $K$ | \$15 | $15 \times \tfrac{4}{5} =$ **\$12** |
+| **Total value** | $100 \times 15 =$ **\$1,500** | $125 \times 12 =$ **\$1,500** |
+
+Unchanged, exactly as with a split.
+
+### Cash dividend — the exception
+
+This one catches people out:
+
+> A **cash dividend does NOT adjust the option contract.**
+
+If XYZ pays \$3 per share in cash, the option contract is left alone. Only
+**stock** dividends and **stock splits** change the strike and the share count.
+
+(Cash dividends do still matter for *pricing* — they are an input to the
+Black-Scholes-Merton model — but they do not rewrite the contract terms.)
 
 ## Summary
 
@@ -159,5 +207,8 @@ ex-dividend date through no fault of the option holder.
   whether you *profited*.
 - **American** options can be exercised any time, **European** only at maturity.
 - A **stock split** divides the strike and multiplies the share count, leaving
-  the contract's total value untouched. **Dividends** adjust it for the same
-  reason.
+  the contract's total value untouched.
+- A **stock dividend** does the same thing, once you convert the percentage into
+  an equivalent split via $100\%/\text{dividend }\%$ — a 25% dividend is a
+  5-for-4 split.
+- A **cash dividend does not adjust the contract at all.**

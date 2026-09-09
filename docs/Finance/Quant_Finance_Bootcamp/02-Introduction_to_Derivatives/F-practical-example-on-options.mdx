@@ -1,0 +1,159 @@
+---
+title: Introduction to Derivative (Practical Example on Options)
+description: 'Two worked option strategies — a protective put that caps a shareholder loss at $1,500, and a speculation comparing 100 shares against 20 call contracts to show what leverage really does.'
+---
+
+Two worked examples, both with the numbers carried all the way through. The
+first uses options to **reduce** risk; the second uses them to **magnify** it.
+Same instrument, opposite purposes.
+
+## 1. Hedging — the protective put
+
+**The situation.** An investor owns **1,000 shares** of Company A, currently
+trading at **\$28**. They are concerned about a possible share price decline
+over the next two months and want protection.
+
+**The choice.** Buy **ten July put option contracts** on the company's stock
+with a strike price of **\$27.50**.
+
+| Parameter | Value |
+| --- | --- |
+| Shares held | 1,000 @ \$28 |
+| Strike $K$ | \$27.50 |
+| Premium | \$1 per share |
+| Contract size | 100 shares |
+| Contracts bought | 10 → covers **1,000 shares** |
+| **Total cost** | $1 \times 100 \times 10 =$ **\$1,000** |
+
+> The strategy costs \$1,000, but **guarantees the shares can be sold for at
+> least \$27.50 per share** during the life of the option.
+
+That sentence is the whole idea of a hedge: you have bought a **floor**.
+
+### What it does, price by price
+
+Two separate P/Ls, then the combination:
+
+$$
+\begin{aligned}
+\text{Option P/L} \;&=\; \max(27.5 - S,\, 0) \times 1000 \;-\; 1000\\[2pt]
+\text{Stock P/L} \;&=\; (S - 28) \times 1000
+\end{aligned}
+$$
+
+| Stock price $S$ | Option P/L (\$) | Stock P/L (\$) | **Combined (\$)** |
+| --- | --- | --- | --- |
+| 20 | +6,500 | −8,000 | **−1,500** |
+| 21 | +5,500 | −7,000 | **−1,500** |
+| 22 | +4,500 | −6,000 | **−1,500** |
+| 23 | +3,500 | −5,000 | **−1,500** |
+| 24 | +2,500 | −4,000 | **−1,500** |
+| 25 | +1,500 | −3,000 | **−1,500** |
+| 26 | +500 | −2,000 | **−1,500** |
+| 27 | −500 | −1,000 | **−1,500** |
+| 28 | −1,000 | 0 | **−1,000** |
+| 29 | −1,000 | +1,000 | **0** |
+| 30 | −1,000 | +2,000 | **+1,000** |
+| 32 | −1,000 | +4,000 | **+3,000** |
+| 34 | −1,000 | +6,000 | **+5,000** |
+
+Read the last column. **Below \$27.50 the combined result is frozen at
+−\$1,500**, no matter how far the stock falls. At \$20 the unhedged shareholder
+has lost \$8,000; the hedged one has lost \$1,500. Above the strike the put
+expires worthless and the investor keeps the upside, minus the \$1,000 premium.
+
+Where does −\$1,500 come from? The floor is \$27.50 per share, so the shares are
+worth at least 27.50 × 1000 = **\$27,500**; subtract the \$1,000 premium and
+the position is worth \$26,500 against the \$28,000 it started at.
+
+$$
+\text{maximum loss} \;=\; 28{,}000 - (27.50 \times 1000) + 1{,}000 \;=\; \$1{,}500
+$$
+
+**The trade-off:** the investor gave up \$1,000 of certain money to convert an
+open-ended downside into a known, capped one. On the option leg alone, breakeven
+is at $S = 26.50$ (where the \$1 premium is exactly recovered).
+
+## 2. Speculation — 100 shares versus 20 call contracts
+
+**The situation.** A speculator believes a stock will **increase** in value over
+the next two months. The stock currently trades at **\$20**. A two-month call
+option with a **\$22.50** strike is selling for **\$1**. The speculator is
+willing to invest **\$2,000**.
+
+Two ways to spend the same \$2,000:
+
+| Alternative | What it buys |
+| --- | --- |
+| **A** | 100 shares at \$20 = \$2,000 |
+| **B** | 2,000 call options (**20 contracts**) at \$1 = \$2,000 |
+
+### The two outcomes
+
+| December stock price | **A: 100 shares** | **B: 20 call contracts** |
+| --- | --- | --- |
+| **\$15** (down) | −\$500 | **−\$2,000** |
+| **\$27** (up) | +\$700 | **+\$7,000** |
+
+The same \$2,000, the same view, and wildly different consequences. On the way
+up the option returns **ten times** what the shares do. On the way down it loses
+**everything**, while the shareholder is down only a quarter of their stake.
+
+### Across the range
+
+$$
+\begin{aligned}
+\text{Option P/L} \;&=\; \max(S - 22.5,\, 0) \times 2000 \;-\; 2000\\[2pt]
+\text{Stock P/L} \;&=\; (S - 20) \times 100
+\end{aligned}
+$$
+
+| $S$ | Option P/L (\$) | Stock P/L (\$) |
+| --- | --- | --- |
+| 15.5 | −2,000 | −450 |
+| 16.5 | −2,000 | −350 |
+| 17.5 | −2,000 | −250 |
+| 18.5 | −2,000 | −150 |
+| 19.5 | −2,000 | −50 |
+| 20.5 | −2,000 | +50 |
+| 21.5 | −2,000 | +150 |
+| 22.5 | −2,000 | +250 |
+| **23.5** | **0** | +350 |
+| 24.5 | +2,000 | +450 |
+| 25.5 | +4,000 | +550 |
+| 26.5 | +6,000 | +650 |
+| 27.5 | +8,000 | +750 |
+
+Note the shape. The option line is **flat at −\$2,000** for every price below the
+\$22.50 strike — the speculator is wiped out identically whether the stock ends
+at 15.5 or 22.5. Then it turns and climbs at 2,000 per dollar, twenty times the
+slope of the share position. Breakeven is at
+
+$$
+S = K + \text{premium} = 22.50 + 1 = \$23.50
+$$
+
+which is where the option column crosses zero.
+
+### The lesson
+
+> **Leverage the position with options.**
+
+The option gives exposure to **2,000 shares** for the price of 100. That is the
+leverage: a large exposure for a small outlay. It amplifies the return — and
+amplifies the loss in exactly the same proportion. The shareholder needs the
+stock to fall to zero to lose everything; the option holder only needs it to
+finish a cent below \$22.50.
+
+## Summary
+
+- The **same instrument** hedges or speculates depending on how it is used
+  against the position you already hold.
+- A **protective put** buys a floor: the 1,000-share holder converted an
+  \$8,000 loss at \$20 into a capped **\$1,500**, at a cost of \$1,000, while
+  keeping the upside.
+- A **long call** used for speculation gives leverage: \$2,000 controlled 2,000
+  shares instead of 100, turning a \$700 gain into \$7,000 — and a \$500 loss
+  into a total \$2,000 loss.
+- Breakeven in both cases is the strike adjusted by the premium: $K - P$ for the
+  put leg, $K + P$ for the call.
