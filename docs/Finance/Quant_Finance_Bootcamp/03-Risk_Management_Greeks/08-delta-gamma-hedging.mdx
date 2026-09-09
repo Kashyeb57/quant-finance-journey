@@ -1,0 +1,154 @@
+---
+title: Delta-Gamma Hedging
+description: 'Neutralising delta and gamma together — the worked 200-call example, and why the option leg must come first and the stock leg second.'
+---
+
+[Delta hedging](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/delta-hedging)
+kills direction but leaves gamma.
+[Gamma hedging](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/gamma-hedging)
+stabilises delta but leaves direction. **Delta-gamma hedging does both.**
+
+## Definition
+
+> Delta-gamma neutral hedging is a risk-management strategy which aims to
+> **neutralise both delta and gamma**.
+
+$$
+\Delta_p = 0 \qquad\text{and}\qquad \Gamma_p = 0
+$$
+
+And each of the two conditions has a plain-English reading:
+
+| Condition | What it means |
+| --- | --- |
+| **Delta neutral** ($\Delta_p = 0$) | The portfolio's total delta is zero — it is **not sensitive to small price changes** in the underlying asset |
+| **Gamma neutral** ($\Gamma_p = 0$) | The portfolio's total gamma is zero — **delta does not change** with a change in the underlying asset |
+
+Put together, the portfolio is protected against **small *and* large** moves.
+Delta neutrality handles the small ones; gamma neutrality is what keeps that
+protection standing when the move is big.
+
+## Worked example
+
+**Long 200 call options on XYZ stock**, with:
+
+- **Delta = 0.4**
+- **Gamma = 0.05**
+
+Goal: make the portfolio **delta-gamma neutral.**
+
+### Step 1 — the portfolio's Greeks
+
+$$
+\Delta_p = 200 \times 0.4 = \mathbf{80}
+\qquad\qquad
+\Gamma_p = 200 \times 0.05 = \mathbf{10}
+$$
+
+### Step 2 — make the portfolio delta neutral
+
+Delta is +80, so **sell 80 shares** (delta −80):
+
+$$
+\text{Portfolio} = \text{long 200 calls} \;+\; \text{short 80 stock}
+$$
+
+$$
+\Delta_p = 80 - 80 = \mathbf{0} \quad \Rightarrow\ \textbf{delta neutral}
+$$
+
+### Step 3 — make the portfolio gamma neutral
+
+The portfolio gamma is still **+10**, and stock contributes nothing to it. To
+cancel +10 we need **−10**, and negative gamma comes only from the short side:
+
+| Gamma | Position |
+| --- | --- |
+| **Positive** | **Long call, long put** |
+| **Negative** | **Short call, short put** |
+
+From the market we find a **call option contract** which, taken **short**,
+carries:
+
+$$
+\Delta = -0.3 \qquad\qquad \Gamma = -0.05
+$$
+
+Short **200** of them:
+
+$$
+200 \times (-0.05) = \mathbf{-10}
+$$
+
+The portfolio's gamma, leg by leg:
+
+$$
+\Gamma_p = \underbrace{+10}_{\text{long 200 calls}}
+\;+\; \underbrace{0}_{\text{short 80 stock}}
+\;+\; \underbrace{-10}_{\text{short 200 calls}}
+\;=\; \mathbf{0}
+$$
+
+**Gamma neutrality achieved.**
+
+### Step 4 — the option leg broke the delta, so fix it again
+
+This is the step people forget. Entering that call option contract **changed the
+portfolio's delta**, because the option we just shorted carries delta as well as
+gamma:
+
+$$
+\Delta_p = \underbrace{200 \times (-0.3)}_{\text{the new short calls}} \;+\; \underbrace{0}_{\text{already-neutral portfolio}} = \mathbf{-60}
+$$
+
+We were at zero; we are now at **−60**. So **buy 60 shares** (+60 delta):
+
+$$
+\Delta_p = -60 + 60 = \mathbf{0}
+$$
+
+And buying stock does not disturb gamma, because stock has none. Final state:
+
+$$
+\Delta_p = 0 \qquad\text{and}\qquad \Gamma_p = 0
+$$
+
+**That is delta-gamma hedging.**
+
+## The ordering rule
+
+The example teaches a sequence, and the sequence is not arbitrary:
+
+1. **Hedge gamma first, with options.** Only an option can change gamma.
+2. **Hedge delta second, with stock.** Stock changes delta and *nothing else*.
+
+The reason is that the two instruments are not symmetric:
+
+| Instrument | Affects delta | Affects gamma |
+| --- | --- | --- |
+| **Stock** | ✅ (±1 per share) | ❌ (always 0) |
+| **Option** | ✅ | ✅ |
+
+Because the option leg moves **both** Greeks, it must be sized first — from the
+gamma requirement, which stock cannot help with. The stock leg is then a pure
+correction: it mops up whatever delta the option leg left behind, without
+touching the gamma you just fixed.
+
+Do it the other way around — delta first, then gamma — and the gamma trade
+knocks your delta back out of neutral, which is exactly what happened between
+Step 2 and Step 4 above. Step 2 was not wasted (it is how the bookkeeping is
+kept legible), but the *final* delta number can only be computed once the option
+leg is set.
+
+## Summary
+
+- **Delta-gamma hedging neutralises both Greeks at once**: $\Delta_p = 0$ and
+  $\Gamma_p = 0$, protecting against **small and large** moves in the underlying.
+- **Delta neutral** = insensitive to small price changes. **Gamma neutral** =
+  delta itself stops changing.
+- Worked: long 200 calls at $\Delta$ 0.4 / $\Gamma$ 0.05 → $\Delta_p = 80$,
+  $\Gamma_p = 10$; short 80 stock; short 200 calls at $\Delta$ −0.3 /
+  $\Gamma$ −0.05 to zero the gamma; then **buy 60 stock** to re-zero the delta
+  the option leg introduced.
+- **Gamma is hedged with options, delta with stock** — and because options carry
+  delta too, the **option leg is sized first and the stock leg last**.

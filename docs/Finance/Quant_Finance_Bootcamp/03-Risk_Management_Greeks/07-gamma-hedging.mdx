@@ -134,7 +134,60 @@ Which means gamma hedging on its own leaves you **still carrying directional
 bias**: you can have $\Gamma = 0$ while $\Delta \neq 0$. A stable delta is not
 the same as no delta.
 
-Hedging both at once is the subject of the next note.
+## Why gamma hedging is important
+
+> While delta hedging neutralises the exposure to **small** price movements in
+> the underlying asset, it **does not account for gamma risk** — delta itself
+> can change significantly as the underlying asset moves.
+
+That is the whole case, and it splits into three benefits.
+
+**a) Stabilise delta.** A gamma hedge **reduces the fluctuation in delta**,
+making the portfolio **less sensitive to large price changes** in the underlying
+asset.
+
+The division of labour between the two hedges is a question of size:
+
+| Move in the asset price | Handled by |
+| --- | --- |
+| **Small** fluctuation | **Delta hedging** |
+| **Large** fluctuation | **Gamma hedging** — delta hedging *fails* here |
+
+Delta hedging is a local approximation. It is correct for the next penny and
+increasingly wrong after that; the bigger the move, the more of the error is
+gamma.
+
+**b) Protects against larger price movements.** By addressing gamma risk
+directly, the hedge **protects the portfolio from large fluctuations** rather
+than only from small ones.
+
+**c) Reduces rebalancing cost.** This is the one that pays for itself. Gamma
+hedging makes delta **more stable**, which means traders **do not need to
+rebalance delta as frequently** → **lower transaction costs**.
+
+Recall [delta hedging's](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/delta-hedging)
+second challenge: continuous rebalancing is expensive precisely because delta
+keeps moving. Gamma hedging attacks the cause instead of paying the symptom.
+
+## Practical considerations
+
+**a) Most effective in volatile markets.** Gamma hedging is generally **more
+effective during volatile market conditions**, or when you see **large price
+fluctuations**. In **calm markets it may not be necessary at all** — if the
+asset is barely moving, delta is barely moving, and there is little gamma risk
+to pay for removing.
+
+**b) Cost.** Gamma hedging means **buying or selling options**, and that comes
+with a cost. It **can be costly**, since it requires both the **frequent
+adjustment** and the **cost of purchasing additional options**. Options carry
+spread and premium in a way that shares do not — hedging gamma is structurally
+more expensive than hedging delta.
+
+So the decision is a trade: pay the option premium to stop paying the
+rebalancing bill, and only when the market is moving enough for that to be worth
+it.
+
+Hedging both delta and gamma at once is the subject of the next note.
 
 ## Summary
 
@@ -149,3 +202,8 @@ Hedging both at once is the subject of the next note.
   derivative of a constant is zero — so **gamma must be hedged with options.**
 - Delta hedging makes delta **zero**; gamma hedging makes delta **stable**. They
   are different goals, and $\Gamma = 0$ does not imply $\Delta = 0$.
+- It matters because it **stabilises delta, protects against large moves, and
+  cuts rebalancing costs** — delta hedging alone only covers *small* moves.
+- It is **most effective in volatile markets** and often unnecessary in calm
+  ones, and it **costs more than delta hedging** because the instrument is an
+  option, not a share.
