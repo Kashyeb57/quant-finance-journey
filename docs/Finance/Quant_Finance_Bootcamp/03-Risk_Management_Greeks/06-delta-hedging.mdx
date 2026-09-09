@@ -1,0 +1,152 @@
+---
+title: Delta Hedging
+description: 'Making a portfolio delta neutral — the worked 100-call example, why a call is hedged by selling stock and a put by buying it, and the four things that make it hard in practice.'
+---
+
+Knowing the Greeks is one thing; **doing something about them** is another. That
+is hedging, and there are six Greek-based varieties:
+
+| | Hedge |
+| --- | --- |
+| a) | **Delta hedging** |
+| b) | **Gamma hedging** |
+| c) | **Delta-Gamma hedging** |
+| d) | **Vega hedging** |
+| e) | **Theta hedging** |
+| f) | **Rho hedging** |
+
+This note is the first — and the foundation for the rest.
+
+## What delta hedging is
+
+> Delta hedging is an option trading strategy that aims to make the portfolio
+> **"delta neutral"** — so that a **change in the underlying asset will not
+> impact the option position's value**.
+
+Recall the definition it is built on:
+
+$$
+\Delta = \frac{\text{change in option price}}{\$1 \text{ change in the underlying asset}}
+$$
+
+An option derives its price from the stock, so the stock moving up or down drags
+the option with it. Delta hedging severs that link: **the stock price can
+change and it will not affect our position.**
+
+For reference: $\Delta_{\text{call}}$ runs 0 to 1, and $\Delta_{\text{put}}$
+runs −1 to 0.
+
+## The key fact: a share has a delta of 1
+
+This is what makes the hedge possible.
+
+| Position | Delta |
+| --- | --- |
+| **Buy** a stock | **+1** |
+| **Sell (short)** a stock | **−1** |
+
+A share moves dollar-for-dollar with itself. So shares are the instrument you
+use to add or subtract delta from a portfolio at will.
+
+## Worked example
+
+Assume:
+
+- You own **100 call options**
+- The underlying asset is the **stock**
+- **Delta of the call option = 0.5**
+
+### Step 1 — calculate the portfolio delta
+
+$$
+1 \text{ call} = 0.5
+\qquad\Longrightarrow\qquad
+100 \text{ calls} = 0.5 \times 100 = \mathbf{50}
+$$
+
+So $\Delta_p = 50$, which reads: **if the stock price changes by \$1, the
+position's value changes by \$50.**
+
+### Step 2 — create a delta-neutral position
+
+You need to add −50 of delta. Since a short share carries −1:
+
+$$
+\underbrace{+50}_{100 \text{ calls}} \;+\; \underbrace{(-50)}_{\text{short 50 shares}} \;=\; \mathbf{0}
+$$
+
+**Short 50 shares** and the portfolio is delta neutral.
+
+### Checking it — impact of a price movement
+
+Suppose the stock price **rises by \$1**:
+
+| Leg | Effect |
+| --- | --- |
+| 100 call options | $0.5 \times 100 \times 1 =$ **gain \$50** |
+| Short 50 shares | **loss \$50** |
+| **Net** | $+50 - 50 =$ **0 — no impact** |
+
+The position is immunised against the move. That is the whole idea.
+
+## Which way to hedge
+
+The hedge always takes the **opposite sign** of the position's delta:
+
+| You hold | Its delta | Hedge with |
+| --- | --- | --- |
+| **Call option** | positive | **Sell** stock |
+| **Put option** | negative (−1 to 0) | **Buy** stock |
+
+A put already carries negative delta, so you add **positive** delta by buying
+shares to bring the total to zero.
+
+## Benefit
+
+> Delta hedging **protects the option portfolio from price changes in the
+> underlying asset.**
+
+It removes *directional* risk — you stop caring which way the stock goes.
+
+## Challenges
+
+Four, and they are the reason delta hedging is a job rather than a one-off
+trade.
+
+**a) Continuous rebalancing.** Delta is not constant — it **changes with every
+fluctuation in the underlying asset price**. The moment the stock moves, your
+carefully constructed 50-share hedge is no longer the right size, so you must
+buy or sell stock again to restore neutrality. That is why the strategy needs
+**frequent delta-hedging adjustments**.
+
+**b) Transaction cost.** Regular rebalancing **incurs cost**, because it means
+frequently buying and selling the underlying asset. A hedge that must be
+adjusted constantly is a hedge that is constantly paying fees and spread.
+
+**c) Market condition.** Delta hedging is **less effective in a highly volatile
+environment** — precisely when the stock is jumping around, delta moves fastest
+and the hedge is stalest.
+
+**d) Gamma risk.** The deepest one:
+
+> Delta hedging **reduces directional risk but introduces gamma risk.**
+
+Because gamma measures **the rate of change of delta with respect to the
+underlying price**, a delta-neutral portfolio is only neutral *at this instant
+and at this stock price*. Move the stock, and gamma tells you how fast your
+neutrality decays. You have not eliminated risk — you have **traded delta risk
+for gamma risk.**
+
+Which is exactly why the next hedge exists.
+
+## Summary
+
+- **Delta hedging** makes a portfolio **delta neutral**, so the underlying's
+  moves stop affecting it.
+- **A share has delta 1** (+1 long, −1 short) — that is the lever you use.
+- 100 calls at delta 0.5 gives a portfolio delta of **50**, neutralised by
+  **shorting 50 shares**; a \$1 move then nets to exactly zero.
+- **Calls are hedged by selling stock; puts by buying it.**
+- The costs are real: **continuous rebalancing, transaction costs, weakness in
+  volatile markets**, and above all **gamma risk** — delta neutrality is
+  instantaneous, not permanent.
