@@ -1,0 +1,121 @@
+---
+title: 'Greeks for Options – Part B (Gamma)'
+description: 'Gamma as the sensitivity of delta — why it peaks at the money, why it is always positive, why it favours the long and punishes the short, and why its relationship with time is the opposite of delta''s.'
+---
+
+Delta answers "how much does the option move when the stock moves?" But delta
+itself is not constant — it changes as the stock moves. **Gamma measures that.**
+
+## Definition
+
+> Gamma tells how sensitive your **delta** is with respect to the change in the
+> underlying asset.
+
+$$
+\Gamma = \frac{\partial \Delta}{\partial S} = \frac{\partial^2 V}{\partial S^2}
+$$
+
+Since delta is already the first derivative of the option price, gamma is the
+**second** derivative — the curvature of the option's price curve.
+
+| | Consequence |
+| --- | --- |
+| **Gamma is higher** | Delta is **more** sensitive to the underlying — when the stock fluctuates, **delta changes rapidly** |
+| **Gamma is lower** | Delta is **less** sensitive — **delta adjusts slowly**, even if the stock price moves a lot |
+
+Read geometrically, $\partial \Delta / \partial S$ is the **slope of the delta
+curve**. Where the delta curve is steep, gamma is high; where it is flat, gamma
+is near zero.
+
+## Gamma and moneyness
+
+This is the shape to remember. Delta traces an S-curve against the stock price;
+its slope — gamma — is therefore a **bell**, peaking exactly where the delta
+curve is steepest:
+
+<svg viewBox="0 0 640 300" role="img" aria-label="Delta traces an S-curve against stock price; gamma, its slope, is a bell peaking at the money" style={{width: '100%', height: 'auto'}}>
+  <g stroke="currentColor" strokeWidth="1" opacity="0.35" fill="none">
+    <line x1="45" y1="120" x2="290" y2="120" /><line x1="60" y1="20" x2="60" y2="130" />
+    <line x1="355" y1="255" x2="600" y2="255" /><line x1="370" y1="150" x2="370" y2="265" />
+  </g>
+  <path d="M60,110 C120,108 150,100 167,65 C185,30 215,25 275,24" fill="none" stroke="#25c2a0" strokeWidth="2.5" />
+  <path d="M370,250 C430,248 452,240 477,175 C502,240 524,248 585,250" fill="none" stroke="#e0a44a" strokeWidth="2.5" />
+  <line x1="167" y1="20" x2="167" y2="130" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+  <line x1="477" y1="150" x2="477" y2="265" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="45" y="14">Delta (call)</text><text x="292" y="124">S</text>
+    <text x="150" y="146" opacity="0.7">ATM</text>
+    <text x="355" y="144">Gamma</text><text x="602" y="259">S</text>
+    <text x="460" y="281" opacity="0.7">ATM</text>
+    <text x="378" y="170" opacity="0.7">highest</text>
+    <text x="352" y="232" opacity="0.7">OTM</text><text x="556" y="232" opacity="0.7">ITM</text>
+  </g>
+</svg>
+
+- **Gamma is highest at ATM.**
+- **Gamma is lowest at ITM and OTM** — at both extremes the delta curve
+  flattens out (delta is pinned near 0 or near ±1), so it has almost no slope
+  left to give.
+
+And note: **the gamma curve is the same for a call and a put.** The delta curves
+are different (0 to 1 versus 0 to −1) but they have the same *slope* at every
+stock price, and gamma is that slope.
+
+## Gamma is always positive
+
+> **Gamma is always positive** — for both call options and put options.
+
+This trips people up, because delta's sign depends on call versus put. Gamma's
+does not: buying either a call or a put buys curvature.
+
+What *does* differ is who benefits.
+
+## Who gamma favours
+
+**Long call.** As the underlying price rises, the delta rises (say 0.5 → 0.7),
+so the option becomes **more sensitive to price changes** in the direction you
+want. A \$1 rise now earns \$0.70 instead of \$0.50. Positive gamma
+**benefits the long position**.
+
+**Short call.** Gamma is still positive, but your **exposure is negative**. As
+the underlying rises, the delta of the short call moves further negative
+(−0.5 → −0.7) — so each additional \$1 rise costs you \$0.70 instead of \$0.50.
+The position loses money at an *accelerating* rate.
+
+$$
+\text{Long position} \Rightarrow \text{gamma favours you}
+\qquad
+\text{Short position} \Rightarrow \text{gamma works against you}
+$$
+
+That asymmetry is the reason short option positions are dangerous in a fast
+market: the loss rate itself increases as the move continues.
+
+## Gamma and time to expiry
+
+Here is the part that surprises people, because it runs **opposite to delta**:
+
+| Maturity | Gamma | Effect on delta |
+| --- | --- | --- |
+| **Short-term** | **Higher** gamma | Delta changes **pretty fast** |
+| **Long-term** | **Lower** gamma | Delta changes **slowly** over time |
+
+Intuitively: near expiry, an at-the-money option is on a knife edge — a small
+move in the stock flips it from "probably worthless" to "probably exercised", so
+its delta swings violently from near 0 to near 1. That violent swing *is* high
+gamma. A long-dated option has time to absorb the same move, so its delta barely
+reacts.
+
+Compare with Part A: **more time raises delta but lowers gamma.**
+
+## Summary
+
+- $\Gamma = \dfrac{\text{change in delta}}{\text{change in the asset}} = \dfrac{\partial^2 V}{\partial S^2}$ — the second derivative, the curvature.
+- **Gamma is always positive**, for calls and puts alike, and the gamma curve is
+  the same for both.
+- **Highest at ATM; lowest at ITM and OTM** — a bell, because it is the slope of
+  delta's S-curve.
+- **Gamma favours the long position and works against the short**, because the
+  short's losses accelerate.
+- **Short-dated options have high gamma; long-dated have low gamma** — the
+  reverse of delta's relationship with time.
