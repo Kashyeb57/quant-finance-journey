@@ -1,0 +1,167 @@
+---
+title: 'Greeks for Options – Part D (Vega)'
+description: 'Vega and implied volatility — why volatility is a friend to every long option and an enemy to every short, why vega peaks at the money, and why long-dated options carry more of it.'
+---
+
+Delta and gamma track the stock. Theta tracks the calendar. **Vega tracks
+uncertainty itself.**
+
+## Definition
+
+> Vega measures the sensitivity of the option price with respect to **implied
+> volatility** — how much the price of the option will change for a **1% change
+> in the implied volatility** of the asset.
+
+$$
+\mathcal{V} = \frac{\partial V}{\partial \sigma}
+$$
+
+where $V$ is the option price and $\sigma$ the volatility, so $\partial \sigma$
+is the change in volatility.
+
+### Implied versus historical volatility
+
+The distinction is simply which direction in time you are looking:
+
+| | |
+| --- | --- |
+| **Historical volatility** | Volatility of the **past** — what the asset actually did |
+| **Implied volatility** | Volatility of the **future** — what the market currently expects |
+
+Vega is about the **implied** one. Historical volatility is measured; implied
+volatility is a market expectation baked into today's option prices, and it can
+sit above or below the historical figure.
+
+Volatility itself gets modelled two broad ways:
+
+| Family | Models |
+| --- | --- |
+| **Time-series models** | ARCH, GARCH, EWMA (and the wider AR, MA, ARIMA, ARIMAX, SARIMA, VAR family) |
+| **Stochastic-volatility models** | Heston, SABR, the 3/2 model |
+
+### A worked reading
+
+A call option:
+
+| | |
+| --- | --- |
+| Stock price | \$100 |
+| Strike | \$100 |
+| Time to expiry | 30 days |
+| **Vega** | **0.15** |
+
+> For every **1% increase in implied volatility**, the option price will
+> **increase by \$0.15**.
+
+| | Meaning |
+| --- | --- |
+| **High vega** | The option price is **very sensitive** to volatility — a small increase in volatility raises the option price significantly |
+| **Low vega** | Changes in volatility have only a **small impact** on the price |
+
+## Vega is never negative
+
+> Vega is **always non-negative**.
+
+Rising volatility **always** raises an option's value — call or put, in or out
+of the money. The reason is the payoff's asymmetry, and it is worth doing
+properly because it explains the entire Greek.
+
+### Why volatility helps the long — a call
+
+A long call pays $\max(S_T - K,\, 0)$, with $K = 100$. Suppose higher volatility
+means the stock could land at **120** or **80** instead of staying near 100:
+
+| Outcome | Payoff |
+| --- | --- |
+| $S_T = 120$ | $\max(120 - 100,\, 0) = \mathbf{20}$ |
+| $S_T = 80$ | $\max(80 - 100,\, 0) = \mathbf{0}$ |
+
+Up, you exercise and profit. Down, you simply **do not exercise** — no profit,
+no loss beyond the premium already paid. The upside is open-ended; **the
+downside is floored at zero**. More volatility therefore adds only upside.
+
+### And a put
+
+A long put pays $\max(K - S_T,\, 0)$, same $K = 100$:
+
+| Outcome | Payoff |
+| --- | --- |
+| $S_T = 120$ | $\max(100 - 120,\, 0) = \mathbf{0}$ |
+| $S_T = 80$ | $\max(100 - 80,\, 0) = \mathbf{20}$ |
+
+Identical logic, mirrored. Which gives the rule:
+
+$$
+\text{Long position (call or put)} \Rightarrow \text{vega is your friend}
+$$
+$$
+\text{Short position} \Rightarrow \text{vega works against you}
+$$
+
+The short side wrote that floored payoff, so every increase in volatility hands
+value to the buyer at the seller's expense.
+
+## Vega and moneyness
+
+| Moneyness | Vega |
+| --- | --- |
+| **ATM** | **Highest** |
+| **ITM** | Low |
+| **OTM** | Low |
+
+**Why ATM.** At the money, $S_T = K$ — the option sits exactly on the knife
+edge. Even a small change in volatility can tip it either way: to 101 and it is
+ITM, to 99 and it is OTM. That balance is where extra uncertainty is worth the
+most.
+
+**Why not ITM.** A deep in-the-money option is already going to be exercised;
+its value is mostly intrinsic. More volatility barely moves that, so the impact
+on the option price is small.
+
+**Why not OTM.** Far out of the money, the option is unlikely to be exercised
+regardless, so extra volatility changes little.
+
+Note this is the **same bell shape as gamma** — both peak at the money, for the
+same underlying reason: that is where the option's fate is least decided.
+
+## Vega and time to expiry
+
+| Maturity | Vega |
+| --- | --- |
+| **Long-term** (e.g. 3 months) | **High** |
+| **Short-term** (e.g. 5 days) | **Low** |
+
+Short duration means the stock has less room to travel, so the option price is
+**less impacted** by a change in volatility.
+
+> Think of **bouncing a ball**. Dropped from high up it bounces high — that is
+> **high vega**. Held near the floor and released, it barely bounces — **low
+> vega**. Volatility needs *room*, and room is time.
+
+## How vega compares with the others
+
+Worth holding the four together, because their behaviour with time diverges:
+
+| | More time to expiry | Peak at |
+| --- | --- | --- |
+| **Delta** | Higher | — (monotonic S-curve) |
+| **Gamma** | **Lower** | **ATM** |
+| **Theta** | Lower per day (until it accelerates near expiry) | **ATM** |
+| **Vega** | **Higher** | **ATM** |
+
+Gamma and vega share the ATM peak but move in **opposite** directions with time:
+a short-dated ATM option is a gamma instrument, a long-dated ATM option is a
+vega instrument.
+
+## Summary
+
+- $\mathcal{V} = \partial V / \partial \sigma$ — the price change per **1%**
+  move in **implied** volatility. Vega 0.15 means +\$0.15 per point of IV.
+- **Implied** volatility is the market's view of the future; **historical** is
+  the measured past.
+- **Vega is always non-negative**, because the option payoff is floored at zero:
+  volatility adds upside without adding downside.
+- **Long is long vega** (calls and puts alike); **short is short vega**.
+- **Vega is highest ATM** — the knife edge — and low both ITM and OTM.
+- **Long-dated options carry high vega; short-dated carry little** — the
+  bouncing ball needs height.
