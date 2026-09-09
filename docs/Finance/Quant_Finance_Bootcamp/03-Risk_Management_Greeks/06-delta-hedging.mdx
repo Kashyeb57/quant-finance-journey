@@ -139,6 +139,45 @@ for gamma risk.**
 
 Which is exactly why the next hedge exists.
 
+## How often is delta hedging actually performed?
+
+In a financial institution the frequency depends on several factors:
+
+- **market condition**
+- **volatility of the asset**
+- the option's **time to expiry**
+- the firm's own **risk-management policies**
+
+And note the link back to gamma: **high gamma means delta moves rapidly, which
+requires more frequent adjustment.** In practice five regimes are used.
+
+**1. End-of-day hedging.** Many institutions rebalance once, at the end of each
+trading day. It is the **cost-effective** approach — it manages the risk without
+incurring excessive transaction costs.
+
+**2. Intra-day hedging.** Hedging **multiple times within a day**. Used during
+periods of significant volatility — a market event, an announcement, the release
+of economic data — when **the delta of the option can shift quickly**. The cost
+is obvious: hedging repeatedly means paying transaction costs repeatedly, and in
+a volatile stock the option price is moving a lot while you do it.
+
+**3. Threshold-based hedging.** Some institutions use a **threshold or bands**
+approach: they rebalance **only when the delta exposure exceeds a certain
+threshold**. This is the compromise between the two above — you tolerate a small
+amount of drift in exchange for far fewer trades.
+
+**4. Real-time hedging (automated).** The **HFT** end of the spectrum:
+systems execute millions of transactions within a second. Appropriate where
+**sensitivity to fluctuations in the stock price is high**.
+
+**5. Less frequently — weekly or monthly.** Suitable for a **less volatile
+market** and **longer-dated options**, where delta simply does not move fast
+enough to justify more.
+
+The through-line: rebalancing frequency is a trade against transaction cost.
+Hedge too rarely and you carry unwanted delta; hedge too often and the fees eat
+the protection.
+
 ## Summary
 
 - **Delta hedging** makes a portfolio **delta neutral**, so the underlying's

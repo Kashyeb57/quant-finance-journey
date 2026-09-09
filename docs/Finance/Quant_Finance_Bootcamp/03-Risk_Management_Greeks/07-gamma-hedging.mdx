@@ -1,0 +1,151 @@
+---
+title: Gamma Hedging
+description: 'Neutralising gamma risk — the worked 10-call example, and the proof that stock cannot hedge gamma because the derivative of a constant is zero.'
+---
+
+[Delta hedging](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/delta-hedging)
+ended on a problem: it removes directional risk but **introduces gamma risk**,
+because a delta-neutral portfolio is only neutral at the current price. Gamma
+hedging attacks that.
+
+## What gamma hedging is
+
+> Gamma hedging is a risk-management strategy that aims to **neutralize or
+> reduce gamma risk** in an option position.
+
+**Gamma risk** is the sensitivity of an option's **delta** with respect to a
+change in the underlying asset price:
+
+$$
+\Gamma = \frac{\text{change in delta}}{\text{change in the underlying asset}}
+$$
+
+The goal, stated plainly: *even though my asset price changes, it should not
+affect my gamma* — that is, my delta should stay put.
+
+### Position gamma
+
+An option's own gamma is positive, but the **position's** gamma takes the sign
+of the side you are on:
+
+| Position gamma | Positions |
+| --- | --- |
+| **Positive** | **Long call, long put** |
+| **Negative** | **Short call, short put** |
+
+That is the lever: to cancel positive gamma you need to **sell** options.
+
+## Worked example
+
+You own **10 call option contracts** with:
+
+- **Delta = 0.5**
+- **Gamma = 0.02**
+
+### Step 1 — portfolio delta and gamma
+
+$$
+\text{Total delta} = 10 \times 0.5 = \mathbf{5}
+\qquad\qquad
+\text{Total gamma} = 10 \times 0.02 = \mathbf{0.2}
+$$
+
+### Step 2 — neutralise delta
+
+Delta is 5, so **sell 5 shares** (delta −5):
+
+$$
+\Delta_p = 5 - 5 = \mathbf{0}
+$$
+
+Portfolio so far: **long 10 calls + short 5 stock**.
+
+### Step 3 — neutralise gamma
+
+The portfolio gamma is **+0.2**, so we need **−0.2**, which means going **short
+an option**. Suppose we short **put option contracts** with **gamma = −0.04**
+each:
+
+$$
+5 \times (-0.04) = \mathbf{-0.2}
+$$
+
+So short **5 put option contracts**. The full portfolio is now:
+
+$$
+P = \underbrace{10 \text{ calls}}_{\Gamma = +0.2}
+\;+\; \underbrace{\text{short 5 stock}}_{\Gamma = 0}
+\;+\; \underbrace{\text{short 5 puts}}_{\Gamma = -0.2}
+$$
+
+$$
+\Gamma_p = 0.2 + 0 + (-0.2) = \mathbf{0}
+$$
+
+**The portfolio is gamma neutral.**
+
+Note the shape of the solution: the stock leg fixed **delta** and contributed
+nothing to gamma; the option leg fixed **gamma**. Which raises the obvious
+question.
+
+## Why stock cannot hedge gamma
+
+> **Stocks do not have gamma — but they do have delta.**
+
+And this is provable in one line. Gamma is the rate of change of delta with
+respect to the underlying:
+
+$$
+\Gamma = \frac{\partial (\Delta)}{\partial S}
+$$
+
+For a share, the delta is **always ±1** — +1 if you buy it, −1 if you sell it.
+It never changes, no matter what the price does. So the delta is a **constant**,
+and the derivative of a constant is zero:
+
+$$
+\Gamma_{\text{stock}} = \frac{\partial (\pm 1)}{\partial S} = \mathbf{0}
+$$
+
+The practical consequence:
+
+- **Buying or selling stock has no impact on the portfolio's gamma.**
+- **But it does affect the portfolio's delta**, by ±1 per share.
+
+Compare with an option, whose delta of (say) 0.5 *does* move as the stock moves
+— that changing delta is exactly what gamma measures. So gamma can only be
+hedged with **another option**, never with the underlying.
+
+## Delta hedging versus gamma hedging
+
+They are not the same objective, and conflating them is the common mistake:
+
+| | **Delta hedging** | **Gamma hedging** |
+| --- | --- | --- |
+| **Aim** | Make the delta of the portfolio **zero** ($\Delta = 0$) | **Stabilise** the delta ($\Gamma = 0$) — the delta may stay at 0.4, it just stops moving |
+| **Directional bias** | **Eliminates** directional risk | **Reduces the sensitivity** of delta to changes in the asset |
+| **Instrument** | Stock | **Another option** |
+
+> The primary goal of gamma hedging is to **neutralise gamma** — to neutralise
+> the change in delta with respect to a change in the underlying — **rather than
+> to make delta zero.**
+
+Which means gamma hedging on its own leaves you **still carrying directional
+bias**: you can have $\Gamma = 0$ while $\Delta \neq 0$. A stable delta is not
+the same as no delta.
+
+Hedging both at once is the subject of the next note.
+
+## Summary
+
+- **Gamma hedging neutralises gamma risk** — the risk that your delta itself
+  moves as the underlying moves.
+- **Position gamma is positive when long options, negative when short**, so
+  positive gamma is cancelled by **selling** options.
+- Worked: 10 calls at $\Delta$ 0.5 / $\Gamma$ 0.02 → portfolio $\Delta = 5$,
+  $\Gamma = 0.2$; short 5 stock zeroes delta; short 5 puts at $\Gamma = -0.04$
+  zeroes gamma.
+- **Stock has zero gamma** because its delta is the constant ±1 and the
+  derivative of a constant is zero — so **gamma must be hedged with options.**
+- Delta hedging makes delta **zero**; gamma hedging makes delta **stable**. They
+  are different goals, and $\Gamma = 0$ does not imply $\Delta = 0$.
