@@ -1,0 +1,146 @@
+---
+title: Rho Hedging
+description: 'Neutralising interest-rate exposure — the worked 200-rho example, why the sign table crosses call/put with long/short, and when a rate hedge is worth doing. Closes the module with all six hedges side by side.'
+---
+
+The last hedge, for the Greek traders think about least — and the one that
+becomes urgent the moment a central bank starts moving.
+
+## Definition
+
+> Rho hedging is a risk-management strategy which is used to manage an option's
+> **exposure to changes in the interest rate.**
+
+Rho itself **measures the sensitivity of the option price with respect to a 1%
+change in the risk-free rate.** The mechanism is direct: **when the interest
+rate changes, the option price also changes** — because the rate is what
+discounts the strike.
+
+### The goal
+
+> The goal is to **neutralise the portfolio's rho exposure** to prevent
+> fluctuations coming from changes in the interest rate.
+
+$$
+\rho_p = 0
+$$
+
+So that **even if the interest rate changes, there is no change in the option
+price.**
+
+## The sign of rho
+
+Rho's sign table is the one that does **not** split cleanly along long/short.
+Gamma, vega and theta all key off which side of the trade you are on. Rho keys
+off **the option type as well**:
+
+| Rho | Positions |
+| --- | --- |
+| **Positive** | **Long call, short put** |
+| **Negative** | **Short call, long put** |
+
+The reason is in
+[the rho note](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/greeks-for-options-part-e):
+a **call holder pays** the strike, so a falling present value of that strike
+helps them; a **put holder receives** it, so the same fall hurts. Take either
+side short and the sign flips again. Two flips, two dimensions — hence the
+crossed table.
+
+## Worked example
+
+Suppose you are a trader and you hold a portfolio with a **long call option**:
+
+$$
+\rho_p = 200
+$$
+
+Reading it in both directions:
+
+| Change in the risk-free rate | Effect on the portfolio |
+| --- | --- |
+| **Rises by 1%** | The portfolio value will **rise by \$200** |
+| **Falls by 1%** | The portfolio value will **decrease by \$200** |
+
+Now suppose you are **anticipating a drop in the interest rate**. That would
+**reduce your portfolio value** — \$200 for every point of cut, with nothing you
+can do about the decision itself.
+
+### Solution — rho hedging
+
+Rho is **+200**, so you need **−200**. From the sign table, negative rho comes
+from a **short call** or a **long put**. Enter a **long put contract**, whose
+rho is negative:
+
+$$
+1 \text{ put} \Rightarrow \rho = -2
+\qquad\Longrightarrow\qquad
+100 \text{ puts} \Rightarrow 100 \times (-2) = \mathbf{-200}
+$$
+
+### Combine
+
+$$
+\rho_p = 200 - 200 = \mathbf{0}
+$$
+
+After adding the **100 put option contracts**, the portfolio is **rho neutral**
+— **even if you see fluctuations in the interest rate, it will have no effect on
+your portfolio.**
+
+Note what makes this hedge different from the others: the offsetting leg is a
+**long** position, not a short one. Because rho's sign depends on option type,
+you can buy your way to neutrality rather than having to sell.
+
+## When is rho hedging done?
+
+**a) Interest-rate volatility.** If interest rates **are about to fluctuate
+significantly**, rho hedging is useful — it means **no effect of those
+fluctuations on your portfolio.** This is the rate-regime analogue of vega
+hedging around earnings.
+
+**b) High rho exposure.** A portfolio which **has a high rho measure** will be
+**impacted a lot** by a rate move. The difference between a **0.5%** and a
+**1%** move is small in the abstract and large on a book carrying size, so **rho
+hedging can be useful** here even in a calm rate environment.
+
+**c) Long-term options.** **Long-dated option contracts are more sensitive to
+the interest rate** than short-dated ones — compare **1 week** against **6
+months**. Over a week the rate barely has time to move; over six months it can
+move a great deal, and the discounting acts on the strike for the whole period.
+So **rho hedging is useful** on the long end of the curve.
+
+## The six hedges, side by side
+
+That completes the set. What the module has been building toward:
+
+| Hedge | Neutralises | Instrument | Matters when |
+| --- | --- | --- | --- |
+| **Delta** | Directional risk, $\Delta_p = 0$ | **Stock** | Always — but only for *small* moves |
+| **Gamma** | Delta's own movement, $\Gamma_p = 0$ | **Another option** | Volatile markets, large moves |
+| **Delta-gamma** | Both at once | **Option, then stock** | Small *and* large moves |
+| **Vega** | Implied-volatility risk | **Short option** | Earnings, market events |
+| **Theta** | Time decay | **Opposite side** | Very long or very short dated |
+| **Rho** | Interest-rate risk | **Long put / short call** | Rates moving, long-dated books |
+
+Two patterns run through all six:
+
+- **Only stock has a Greek it cannot touch.** Stock moves delta and nothing
+  else, which is why every other hedge needs an option — and why the option leg
+  is always sized first.
+- **Every hedge is a trade against cost.** None of them is free, and each is
+  worth doing only when the risk it removes is actually live. That is why every
+  one of these notes ends with a "when it matters" section rather than a rule to
+  always apply it.
+
+## Summary
+
+- **Rho hedging neutralises interest-rate exposure**: $\rho_p = 0$ means a rate
+  change has **no effect on the portfolio.**
+- **Rho is positive for a long call or a short put**, negative for a **short
+  call or a long put** — the only Greek whose sign depends on option type as
+  well as side.
+- Worked: a long call portfolio at $\rho = 200$ (±\$200 per point of rate),
+  neutralised by **buying 100 puts at $\rho = -2$** → $200 - 200 = 0$.
+- Do it when **rates are about to move**, when the book carries **high rho**, or
+  when the options are **long-dated** — long maturities give the rate room to
+  work on the strike.
