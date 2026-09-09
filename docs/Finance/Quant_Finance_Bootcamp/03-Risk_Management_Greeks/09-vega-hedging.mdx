@@ -1,0 +1,144 @@
+---
+title: Vega Hedging
+description: 'Neutralising exposure to implied volatility — the worked 200-contract example, why the hedge must be a short option, and why it matters around earnings and not in a quiet market.'
+---
+
+Delta, gamma and delta-gamma hedging all defend against the **price** of the
+underlying. Vega hedging defends against something else entirely: **the market's
+expectation of how much that price will move.**
+
+## Definition
+
+> Vega hedging is a risk-management strategy which is used to manage the
+> sensitivity of options to a **change in the implied volatility** of the
+> underlying asset.
+
+Hedging vega means the trader is trying to **eliminate the impact of volatility
+fluctuations on the option price / portfolio.**
+
+The transmission chain is worth stating, because it is why vega exists at all:
+
+$$
+\text{volatility} \;\longrightarrow\; \text{stock price} \;\longrightarrow\; \text{option price}
+$$
+
+Volatility moves the stock around, and the stock's movement is what the option
+is priced on. Vega hedging cuts the link at the first arrow.
+
+> **The goal is to neutralise the vega** — meaning the portfolio value should not
+> be impacted by the change in implied volatility.
+
+$$
+\mathcal{V}_p = 0
+$$
+
+## The sign of vega
+
+Same structure as gamma, and for the same reason — it is the *side* you are on
+that sets the sign:
+
+| Vega | Positions |
+| --- | --- |
+| **Positive** | **Long call, long put** |
+| **Negative** | **Short call, short put** |
+
+The payoff algebra makes it obvious. A long call pays
+
+$$
+\max(S_T - K,\, 0)
+$$
+
+and the short call is simply the negative of it:
+
+$$
+-\max(S_T - K,\, 0)
+$$
+
+The buyer's floored, open-ended payoff is exactly what makes
+[vega non-negative](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/greeks-for-options-part-d)
+for the long — so the seller, holding the mirror image, has the sign flipped.
+
+### When vega is negative
+
+> **When you sell an option (call or put), you lose money if volatility rises.**
+
+That is the entire meaning of negative vega, and it is also what makes the hedge
+possible: to cancel a positive vega you need somebody's negative vega, and the
+only way to get it is to **sell an option**.
+
+## Worked example
+
+A portfolio holds **200 option contracts** with a **vega of 5** each.
+
+### Step 1 — the portfolio vega
+
+$$
+\mathcal{V}_p = 200 \times 5 = \mathbf{1000}
+$$
+
+Which reads, in both directions:
+
+| Change in implied volatility | Effect on the portfolio |
+| --- | --- |
+| **Increases by 1%** | The option price would **increase by \$1,000** |
+| **Decreases by 1%** | The option price would **decrease by \$1,000** |
+
+Note that this is a risk, not a bonus. A position that gains \$1,000 on a
+one-point rise in IV loses \$1,000 on a one-point fall — and IV is not something
+you control.
+
+### Step 2 — find negative vega
+
+The portfolio vega is **+1000**, so we need **−1000**. From the sign table, a
+negative-vega exposure means a **short call** or a **short put**.
+
+Suppose we go **short a put option** with **vega = −2**, and short **500** of
+them:
+
+$$
+500 \times (-2) = \mathbf{-1000}
+$$
+
+### Step 3 — total
+
+$$
+\mathcal{V}_{\text{total}} = +1000 - 1000 = \mathbf{0}
+$$
+
+**The portfolio is vega neutral.** A change in implied volatility now has no
+effect on its value.
+
+## When vega hedging matters
+
+The same conditional logic as gamma hedging, driven this time by the volatility
+regime rather than the size of price moves.
+
+**In a low-volatility market**, option prices are small, so the **gains and
+losses are small** too. There is not much vega exposure to remove, and paying to
+remove it is hard to justify.
+
+**In a higher-volatility environment** — an **earnings announcement**, or some
+other market event — vega neutrality earns its keep by **protecting the
+portfolio from sudden volatility changes.** These are precisely the moments when
+implied volatility gaps rather than drifts.
+
+**Market stability.** When markets are stable (a low-volatility environment),
+**vega hedging may not be necessary.** It is **high uncertainty** that calls for
+it.
+
+Which is a familiar shape by now: every Greek hedge is worth its cost only when
+the thing it protects against is actually moving.
+
+## Summary
+
+- **Vega hedging neutralises exposure to implied volatility**: $\mathcal{V}_p = 0$
+  means the **portfolio value will not change even if implied volatility does.**
+- **Vega is positive when long** (long call, long put) and **negative when
+  short** (short call, short put) — selling an option means **losing money if
+  volatility rises.**
+- Worked: 200 contracts at vega 5 → $\mathcal{V}_p = 1000$ (±\$1,000 per point of
+  IV), neutralised by shorting **500 puts at vega −2**.
+- The hedge instrument must be an **option** — and specifically a **short**
+  one, since that is the only source of negative vega.
+- It matters around **earnings and market events**, and is largely unnecessary
+  in a **stable, low-volatility market.**
