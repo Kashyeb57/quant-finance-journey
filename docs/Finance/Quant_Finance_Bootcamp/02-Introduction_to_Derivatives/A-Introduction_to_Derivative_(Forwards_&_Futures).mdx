@@ -1,6 +1,391 @@
 ---
 title: 'Introduction to Derivative (Forwards & Futures)'
 slug: /Forwards-and-Futures
+description: 'Derivatives from first principles — what an underlying is, exchange vs OTC, the clearing house and CCP, futures and forwards, and the long/short payoff.'
 ---
 
-<iframe src={require('./1.pdf').default} width="100%" height="600px" />
+:::note Where these notes come from
+Session 1 of the **Quant Finance Bootcamp** (Krish Naik). These are my own
+written-up notes from that session — the explanations here are mine; the
+teaching sequence, worked examples and framing are his. The standard reference
+used throughout is **John C. Hull**, *Options, Futures, and Other Derivatives*.
+:::
+
+## Where derivatives sit in quantitative finance
+
+Quantitative finance draws on five things at once:
+
+1. Mathematics
+2. Statistics
+3. Finance
+4. Economics
+5. Programming
+
+Within that, the working areas are **derivatives**, **risk management** (market
+risk in particular), and **quantitative modelling**. This session is the first
+step into the first of those.
+
+**Objectives for the session**
+
+- What a derivative is
+- Exchange vs Over-the-Counter (OTC)
+- The four types of derivative: forward, future, option, swap
+- The payoff diagram
+- The three types of trader: hedgers, speculators, arbitrageurs
+
+---
+
+## What is a derivative?
+
+The intuition first. Think about **orange juice** and **oranges**.
+
+- If oranges are very expensive, orange juice is expensive.
+- If oranges are cheap, orange juice is cheap.
+
+Orange juice is *deriving its value from oranges*. It has no independent value —
+it moves because the thing it is made from moves.
+
+| Term | In the analogy |
+| --- | --- |
+| **Derivative** | Orange juice |
+| **Underlying asset** | Oranges |
+
+> **Definition.** A derivative is a financial instrument whose value is derived
+> from the value of an underlying asset.
+
+### What can be the underlying asset?
+
+- Stocks
+- Bonds
+- Commodities
+- Currencies
+- Interest rates
+- Market indices
+
+---
+
+## Where derivatives trade: Exchange vs OTC
+
+There are exactly two venues:
+
+- **Exchange**
+- **Over the Counter (OTC)**
+
+### Exchange
+
+> An exchange is a marketplace or platform where various financial instruments
+> are traded.
+
+Examples: **BSE**, **NYSE**, **ICE** (Intercontinental Exchange, USA). What
+trades there: stocks, bonds, currencies, commodities and derivatives.
+
+**Key features of an exchange**
+
+**a) Standardization.** Contracts are standardized in terms of size, expiration
+date and other specifications. If the exchange defines the contract as *100 kg
+of oranges*, everyone trades that same unit — only the price varies (102.5,
+107.8, …).
+
+**b) Regulation.** Exchange markets are heavily regulated, which gives greater
+transparency between market participants.
+
+**c) Clearing house.** A clearing house acts as an intermediary between buyer
+and seller, guaranteeing that both parties honour the contract. Because it
+stands in the middle, there is far **less default risk**.
+
+**d) Liquidity.** Highly liquid instruments — contracts trade in large volume.
+
+### Over the Counter (OTC)
+
+> The OTC market is a decentralized marketplace where financial instruments are
+> traded directly between two parties — a buyer and a seller.
+
+**Key features of OTC**
+
+**a) Customization.** Contracts can be customized to the specific needs of the
+two parties, including size, maturity and underlying asset. Where an exchange
+sells you a fixed 1,000 kg lot at \$1/kg, OTC lets you shape the deal.
+
+**b) Regulation.** These are *less* regulated, which can lead to a lack of
+transparency.
+
+**c) Clearing house.** Historically there was **no** clearing house in OTC — the
+two parties faced each other directly, so if one defaulted the other simply lost.
+
+**d) Liquidity.** Because contracts are customized in nature, they are
+**illiquid** — a bespoke contract is hard to hand on to someone else.
+
+### What changed after 2007–08
+
+The financial crisis changed the structure of OTC markets. Traditionally OTC was
+a web of **bilateral agreements**: every participant faced every other
+participant directly, and one failure propagated through the web.
+
+Afterwards (in the USA first), a **CCP — Central Counter Party** was introduced
+in the middle of OTC trades as well:
+
+```
+Before:   A ←──────────────→ B        (bilateral; if B defaults, A wears it)
+
+After:    A ────→ [ CCP ] ←──── B     (both face the CCP, not each other)
+```
+
+With a CCP in between, **both parties are obligated to the contract** and the
+chance of the other party defaulting is very low.
+
+*(Hull sets this out in Figure 2.2 — the traditional web of bilateral OTC
+agreements versus a single central counterparty acting as clearing house.)*
+
+Swaps are the classic OTC example — **IRS** (interest-rate swaps) and
+**CS** (currency swaps), traded between parties such as commercial banks.
+
+---
+
+## The four types of derivative
+
+- **a) Forward**
+- **b) Future**
+- **c) Option**
+- **d) Swap**
+
+The rest of this note covers futures and forwards. Options are covered in the
+[practical-example note](/docs/practical-example).
+
+---
+
+## Future contracts
+
+Futures trade **on an exchange**.
+
+> A future contract is a **standardized** financial derivative that **obligates**
+> the buyer to purchase, and the seller to sell, the asset at a **predetermined
+> future date** and a **predetermined price**.
+
+Note the three words that carry all the weight: *standardized*, *obligates*,
+*predetermined*.
+
+### Worked example — 100 barrels of oil
+
+An investor enters a future contract to buy **100 barrels of oil at \$70 per
+barrel**, expiring **3 months** from now.
+
+- **A** buys 100 barrels of oil at \$70 (from B)
+- **B** sells 100 barrels of oil at \$70
+
+At $t = 0$ the agreed price is \$70. At $t = 3$ months, whatever the market
+does, the deal happens at \$70:
+
+| Market price at $t=3$ | Contract price | Outcome for the buyer (A) |
+| --- | --- | --- |
+| \$65 | \$70 | **Loss** — paying 70 for something worth 65 |
+| \$70 | \$70 | No profit, no loss |
+| \$75 | \$70 | **Profit** — paying 70 for something worth 75 |
+
+Whatever A loses, B gains, and vice versa. A future is a zero-sum contract.
+
+### Worked example — the farmer
+
+The same idea from the seller's side. Participants can be **individuals**
+(a farmer) or **financial institutions**.
+
+A farmer agrees to sell **1,000 kg of corn at \$2/kg** to Company A, three
+months from now.
+
+| Market price at $t=3$ | Locked price | Result for the farmer |
+| --- | --- | --- |
+| \$1 | \$2 | Profit — sells at 2 what is worth 1 |
+| \$2 | \$2 | No profit, no loss |
+| \$5 | \$2 | Loss — could have sold at 5 |
+
+### Characteristics of a future contract
+
+**a) Standardized agreement** — fixed in terms of size, expiration date,
+underlying asset, quantity and quality.
+
+**b) Clearing house** acts as an intermediary between buyer and seller, making
+sure the contract is honoured.
+
+**c) Marked to market daily.** Gains and losses that occur in the contract are
+settled **every day**, not just at expiry. If you hold 100 shares' worth at \$90
+and the price moves to \$91, that difference is settled that day.
+
+**d) Highly liquid** instrument.
+
+**e) CCP in between** → **less counterparty risk**: the chance of the other
+party defaulting is very small.
+
+### Why mark-to-market matters
+
+Marking to market is what stops a large loss from accumulating silently until
+expiry. Consider a position that drifts against you over three months: on a
+\$100 contract × 1,000 units, a \$10 adverse move is
+
+$$
+\$10 \times 1{,}000 = \$10{,}000
+$$
+
+If none of that is settled until the end, the losing party may simply be unable
+to pay — and a default happens. Settling daily keeps the exposure small.
+
+This is enforced through margin:
+
+- **Initial margin** — money posted up front to open the position
+- **Margin call** — a demand for more money when the daily settlement erodes it
+
+---
+
+## Payoff of a future contract
+
+Two directions:
+
+| You | Position |
+| --- | --- |
+| **Buy** the contract | **Long** position |
+| **Sell** the contract | **Short** position |
+
+$$
+\text{Long payoff} = S_T - K
+\qquad\qquad
+\text{Short payoff} = K - S_T
+$$
+
+where
+
+- $S_T$ — the price of the underlying **at maturity**
+- $K$ — the **strike** (the predetermined price)
+
+The two are exact mirror images: $K - S_T = -(S_T - K)$. One side's gain is the
+other side's loss.
+
+### Worked payoff table
+
+A agrees to buy stock XYZ from B at **\$100**, six months from now. So $K = 100$.
+
+| $S_T$ | $K$ | Long payoff $S_T - K$ |
+| --- | --- | --- |
+| 95 | 100 | −5 |
+| 96 | 100 | −4 |
+| 97 | 100 | −3 |
+| 98 | 100 | −2 |
+| 99 | 100 | −1 |
+| **100** | 100 | **0** |
+| 101 | 100 | +1 |
+| 102 | 100 | +2 |
+| 103 | 100 | +3 |
+| 104 | 100 | +4 |
+| 105 | 100 | +5 |
+
+Plotting payoff against $S_T$ gives a **straight line at 45°** crossing zero at
+$S_T = K$:
+
+<svg viewBox="0 0 640 260" role="img" aria-label="Long and short future payoff diagrams" style={{width: '100%', height: 'auto'}}>
+  <g stroke="currentColor" fill="none" strokeWidth="1" opacity="0.35">
+    <line x1="40" y1="130" x2="290" y2="130" />
+    <line x1="165" y1="20" x2="165" y2="240" />
+    <line x1="350" y1="130" x2="600" y2="130" />
+    <line x1="475" y1="20" x2="475" y2="240" />
+  </g>
+  <g stroke="#25c2a0" fill="none" strokeWidth="2.5">
+    <line x1="55" y1="215" x2="280" y2="45" />
+  </g>
+  <g stroke="#e0a44a" fill="none" strokeWidth="2.5">
+    <line x1="365" y1="45" x2="590" y2="215" />
+  </g>
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="150" y="252">K</text>
+    <text x="292" y="126">S_T</text>
+    <text x="60" y="32">Payoff</text>
+    <text x="55" y="60">Long — upside unlimited</text>
+    <text x="460" y="252">K</text>
+    <text x="602" y="126">S_T</text>
+    <text x="370" y="32">Payoff</text>
+    <text x="365" y="228">Short — mirror image</text>
+  </g>
+</svg>
+
+For the **long** position the upside is unlimited (the price can keep rising)
+while the downside is limited — the price cannot fall below zero, so the worst
+case is $-K$. For the **short** position it is exactly reversed.
+
+---
+
+## Forward contracts
+
+> A forward contract is a **customized** agreement between two parties to buy or
+> sell an asset at a **predetermined price** on a **predetermined date**.
+
+Two things follow immediately:
+
+- Forward contracts are traded **OTC only**.
+- A forward is also an **obligation** — like a future, both sides must perform.
+
+### What "customized" actually means
+
+Everything is negotiable between the two parties:
+
+- **Quality** can be changed
+- **Quantity** can be changed
+- **Price** can be negotiated
+
+### Key characteristics of a forward contract
+
+**a) Customizable agreement** between two parties.
+
+**b) Traded OTC only.**
+
+**c) Less liquid** — a bespoke contract is hard to pass on.
+
+**d) Higher counterparty risk.**
+
+**e) No margin requirement**, because there is no CCP in between. (On an
+exchange, the CCP demands collateral/cash; in a plain forward there is nobody to
+demand it.)
+
+**f) Priced only at maturity** — there is no daily settlement.
+
+---
+
+## Futures vs Forwards
+
+| | **Future** | **Forward** |
+| --- | --- | --- |
+| Agreement | Standardized | Customized |
+| Venue | Exchange | OTC |
+| Counterparty | CCP in between | No CCP (sometimes there can be one) |
+| Liquidity | Highly liquid | Less liquid |
+| Settlement | **Marked to market daily** | **Priced at maturity** |
+| Margin | Required (initial margin, margin calls) | None |
+
+Because the two instruments price differently, the same exposure can quote
+differently in each market — e.g. \$1 at **Rs 84** in the futures market versus
+**Rs 85** on a forward.
+
+### Payoff (forward contract)
+
+Identical in form to the future:
+
+$$
+\text{Long} = S_T - K
+\qquad\qquad
+\text{Short} = K - S_T
+$$
+
+The difference between forwards and futures is *not* the payoff — it is the
+venue, the standardization, the counterparty and when the cash actually moves.
+
+---
+
+## Summary
+
+- A derivative takes its value from an **underlying asset**.
+- It trades either on an **exchange** (standardized, regulated, clearing house,
+  liquid) or **OTC** (customized, lightly regulated, historically no clearing
+  house, illiquid).
+- After 2007–08 a **CCP** was introduced into OTC markets, cutting default risk.
+- A **future** is a standardized, exchange-traded obligation, marked to market
+  daily with a CCP in between.
+- A **forward** is a customized, OTC obligation, priced only at maturity, with
+  higher counterparty risk and no margin.
+- Long payoff is $S_T - K$; short payoff is $K - S_T$. They are mirror images.
+
+Next: [why we use derivatives, and options](/docs/practical-example).

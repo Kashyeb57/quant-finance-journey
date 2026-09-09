@@ -1,7 +1,278 @@
 ---
 title: 'Introduction to Derivative (Practical Example)'
 slug: /practical-example
+description: 'Why derivatives exist — hedging, speculation, arbitrage and leverage — with worked FX and commodity examples, then options: premium, exercise style, calls, puts and the four positions.'
 ---
 
+:::note Where these notes come from
+The practical half of Session 1 of the **Quant Finance Bootcamp** (Krish Naik).
+These are my own written-up notes — the explanations are mine, the teaching
+sequence and worked examples are his. Reference: **John C. Hull**, *Options,
+Futures, and Other Derivatives*.
+:::
 
-<iframe src={require('./2.pdf').default} width="100%" height="600px" />   
+## Recap: forwards and futures
+
+| **Forward** | **Future** |
+| --- | --- |
+| Customized agreement between 2 parties | Standardized agreement between 2 parties |
+| Buy or sell the contract at a predetermined **date** and predetermined **price** ($K$, the strike) | Buy or sell the underlying asset at a predetermined date and price |
+| **OTC** | **Exchange** |
+
+$$
+\text{Long position} = S_T - K
+\qquad
+\text{Short position} = K - S_T = -(S_T - K)
+$$
+
+Long (**buy**) and short (**sell**) are exact opposites — see the
+[forwards and futures note](/docs/Forwards-and-Futures) for the payoff diagrams.
+
+---
+
+## Why do we use derivatives?
+
+Four reasons:
+
+1. **Risk management** (hedging)
+2. **Speculation**
+3. **Arbitrage**
+4. **Leverage**
+
+---
+
+### 1. Hedging — managing or mitigating risk
+
+The farmer again. He will have **1,000 kg of corn** to sell in three months.
+
+- **His risk:** the price could *decline* by the time he harvests.
+- **His action:** sell a future contract now — 1,000 kg of corn at a strike of
+  **\$2 per kg**, three months from now.
+
+At $t = 3$ the market price is **\$1/kg**. But he is contractually selling at
+**\$2/kg**. He has protected himself against exactly the fall he was worried
+about. The uncertainty is gone.
+
+That is what hedging is: giving up the upside in order to remove the downside.
+
+Note the structural point — with a **forward or future, both parties are
+obligated**. A buys at $F_0$, B sells at $F_0$, and neither can walk away. (An
+**option** is the instrument where the buyer is *not* obligated — that is the
+whole difference, and it is the subject of the second half of this note.)
+
+### 2. Speculation
+
+> Investors and traders use derivatives to speculate on the future price
+> movement of the asset. This allows for **potential profit if the price moves
+> in their favour**, though it also carries a **high level of risk**.
+
+You are betting on a certain position. If XYZ moves from \$50 to \$100 and you
+had bought exposure for \$25, the gain is large relative to what you put up —
+and the loss would have been just as sharp in the other direction.
+
+### The three types of trader
+
+| Trader | What they are doing |
+| --- | --- |
+| **Hedgers** | Risk management |
+| **Speculators** | Betting on a certain position |
+| **Arbitrageurs** | Finding price discrepancies |
+
+### 3. Arbitrage
+
+> Price discrepancies between the underlying asset and the derivative — or for
+> the same asset across venues.
+
+Stock XYZ quotes at:
+
+- **NYSE:** \$100 → **buy** here
+- **ICE:** \$105 → **sell** here
+
+That is a **\$5 arbitrage opportunity**, locked in with no view on direction.
+The same thing happens across currencies and borders — XYZ at **\$100** on NYSE
+against **£84** on the LSE.
+
+An arbitrageur's job is to find those discrepancies. In an efficient market they
+close quickly, which is precisely *because* arbitrageurs act on them.
+
+### 4. Leverage
+
+> Derivatives allow an investor to gain a **large exposure** to an asset with a
+> **relatively small initial investment** — known as leverage. This can amplify
+> potential returns, but can increase the risk of losses.
+
+With \$2,000 to deploy:
+
+- Buying the **stock** directly might get you \$1,500 of exposure.
+- Buying a **derivative (option)** on it could get you \$7,000 of exposure.
+
+The same move in the underlying is now worth several times more to you — in both
+directions. Leverage is not free money; it is a magnifier.
+
+---
+
+## Worked hedging example — currency risk
+
+**Question.** A US-based company expects to receive **€1 million in 3 months**.
+
+**Risk:** the Euro might weaken against the Dollar. If it does, that €1M converts
+into fewer dollars than it would today. The company's revenue is exposed to
+something that has nothing to do with its business.
+
+**Action:** enter a **forward contract** to lock the exchange rate. That
+**eliminates the uncertainty of the exchange-rate movement**.
+
+### The same idea in numbers
+
+Today, **1 USD → Rs 84**, and you hold **1,000 USD**. Your worry is that the
+Rupee strengthens (so each dollar buys fewer rupees), say to **1 USD → Rs 80**.
+
+| Rate | USD | Rupees received |
+| --- | --- | --- |
+| 84 | 1,000 | 84 × 1,000 = **84,000** |
+| 80 | 1,000 | 80 × 1,000 = **80,000** |
+
+A Rs 4,000 swing purely from the exchange rate. Now lock it with a
+future/forward at **1 USD = Rs 83.5**:
+
+$$
+83.5 \times 1{,}000 = \text{Rs } 83{,}500
+$$
+
+You have given up the gain if the rate moves to Rs 85, in exchange for
+certainty. That is the trade every hedger makes.
+
+---
+
+## Options
+
+> An option is a type of financial derivative which gives the holder the
+> **right, but not the obligation**, to buy or sell the underlying asset at a
+> **predetermined price** on a **predetermined date**.
+
+That single phrase — *right but not the obligation* — is the entire difference
+from a forward or a future.
+
+### Why that matters
+
+You hold an option contract expiring at $t = 3$. At expiry you look at the
+market:
+
+- The deal is **profitable** → you **exercise** it and buy.
+- The deal is a **loss** → you simply **do not execute the deal**. You walk away.
+
+With a forward or a future there is **no concept of not executing**. You are
+obligated; you execute the contract. With an option you have a **choice**.
+
+| | Forward / Future | Option |
+| --- | --- | --- |
+| At expiry | **Obligation** — must execute | **Choice** — exercise or not |
+
+### Key characteristics of an option contract
+
+**a) Underlying asset** — stocks, commodities, currencies, bonds, etc.
+
+**b) Strike price** — the price at which the holder can buy or sell the
+underlying asset. This is the predetermined price, $K$.
+
+**c) Premium** — the price **paid by the buyer (long position) to the seller
+(short position)**. This is what you pay for the privilege of having a choice.
+It flows one way, at the start:
+
+```
+   Buyer of option  ──── premium ────→  Seller of option
+     (long)                                (short)
+```
+
+**d) Expiration date** — the date at which the option must be exercised;
+otherwise it **expires worthless**.
+
+**e) Exercise style** — see below.
+
+### Exercise style
+
+| Style | When it can be exercised |
+| --- | --- |
+| **American option** | At **any point** in time up to expiry |
+| **European option** | **Only at maturity** |
+| **Asian option** | (Path-dependent — payoff depends on an average price) |
+
+So for a 3-month option: an American option can be exercised at $t=1$, $t=1.5$,
+or anywhere along the way if it is profitable; a European option can only be
+exercised at $t=3$.
+
+---
+
+## Types of option
+
+There are two: the **call** and the **put**.
+
+### Call option
+
+> A call option gives the holder the **right to buy** the underlying asset at
+> the strike price $K$ on a predetermined date.
+
+Since you would only want the right to *buy* at a fixed price if you expect the
+price to rise, a call is a view that **the price of the asset will go up**.
+
+| Position | What you did | What you hold | Expectation |
+| --- | --- | --- | --- |
+| **Long call** | *Bought* the right to buy | The **right** to buy the underlying | Price will **go up** |
+| **Short call** | *Sold* the right to buy | An **obligation** to sell if exercised | Price will **decline** |
+
+### Put option
+
+> A put option gives the holder the **right to sell** the underlying asset.
+
+| Position | What you did | What you hold | Expectation |
+| --- | --- | --- | --- |
+| **Long put** | *Bought* the right to sell | The **right** to sell the underlying | Price will **go down** |
+| **Short put** | *Sold* the right to sell | An **obligation** to buy if exercised | Price will hold up |
+
+### The general rule
+
+$$
+\textbf{Call} \rightarrow \text{right to \textbf{buy}}
+\qquad
+\textbf{Put} \rightarrow \text{right to \textbf{sell}}
+$$
+
+and, cutting across both:
+
+- **Long position** → you hold the **right** to buy/sell the underlying asset.
+- **Short position** → you are **obligated** to buy/sell if the holder exercises.
+
+### The four positions
+
+Two option types × two directions = **four** positions. This table is the one
+worth memorising:
+
+| # | Position | You have |
+| --- | --- | --- |
+| 1 | **Long call** | The **right to buy** |
+| 2 | **Short call** | The **obligation to sell** |
+| 3 | **Long put** | The **right to sell** |
+| 4 | **Short put** | The **obligation to buy** |
+
+In every case the **premium flows from the long to the short**. The short side
+is being paid to take on an obligation; the long side is paying for a choice.
+
+---
+
+## Summary
+
+- Derivatives are used for **hedging**, **speculation**, **arbitrage** and
+  **leverage**.
+- Hedging removes uncertainty by locking a price — the farmer locking \$2/kg,
+  the exporter locking an FX rate — at the cost of the upside.
+- The three trader types are **hedgers**, **speculators** and **arbitrageurs**.
+- An **option** gives the holder a **right, not an obligation** — the one thing
+  a forward or future never does.
+- An option is defined by five things: **underlying asset, strike price,
+  premium, expiration date, exercise style**.
+- **American** = exercise any time; **European** = exercise only at maturity.
+- **Call** = right to buy; **Put** = right to sell. **Long** = holds the right;
+  **Short** = carries the obligation, and receives the premium.
+
+**Next:** the option **payoff diagram** — the mathematical calculation, and
+implementing it in a spreadsheet.
