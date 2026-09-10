@@ -1,0 +1,205 @@
+---
+title: Monte Carlo VaR in Excel
+description: 'Simulating 1,000 correlated paths with a verified 3x3 Cholesky — and a live formula chain that no longer reproduces the VaR the sheet reports.'
+---
+
+The most elaborate sheet in the workbook, and the one where the
+[theory](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-monte-carlo-theory)
+actually needs all its machinery: 1,000 simulations of three correlated stocks.
+
+## Inputs
+
+Estimated from the same 251 daily returns:
+
+| | JPM | MS | BAC |
+| --- | --- | --- | --- |
+| **Drift** $\mu$ `=AVERAGE(...)` | 0.00152743 | 0.00059988 | 0.00001693 |
+| **Volatility** $\sigma$ `=STDEV.S(...)` | 0.01625597 | 0.01716490 | 0.01821889 |
+| **$S_0$** (as of 8/1/2023) | 157.179993 | 90.940002 | 31.358679 |
+
+The volatilities match the
+[variance-covariance sheet](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-variance-covariance-excel)
+exactly, as they should — same data, same estimator. Weights are again
+**0.3 / 0.4 / 0.3** on **\$1M**.
+
+## The correlation matrix and its Cholesky factor
+
+$$
+\Sigma =
+\begin{bmatrix}
+1 & 0.66461117 & 0.81987838 \\
+0.66461117 & 1 & 0.75292400 \\
+0.81987838 & 0.75292400 & 1
+\end{bmatrix}
+$$
+
+The sheet builds $L$ with the standard recursion, one cell per entry:
+
+```excel
+AS15 = SQRT(AS10)                          ' L11
+AS16 = AS11/AS15                           ' L21
+AT16 = SQRT(AT11 - AS16^2)                 ' L22
+AS17 = AS12/AS15                           ' L31
+AT17 = (AT12 - AS17*AS16)/AT16             ' L32
+AU17 = SQRT(AU12 - AS17^2 - AT17^2)        ' L33
+```
+
+$$
+L =
+\begin{bmatrix}
+1 & 0 & 0 \\
+0.66461117 & 0.74718940 & 0 \\
+0.81987838 & 0.27840822 & 0.50028822
+\end{bmatrix}
+$$
+
+**Verified independently: $LL^T$ reproduces $\Sigma$ to eight decimal places.**
+This is the 2×2 case from the
+[theory note](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-monte-carlo-theory)
+generalised to three assets, and it is built correctly.
+
+## The simulation chain
+
+| Range | Holds | Formula |
+| --- | --- | --- |
+| **Q6:S1005** | **3,000 uncorrelated draws** (1,000 sims × 3 stocks) | `=NORM.S.INV(RAND())*SQRT(1/252)` |
+| **AC6** | **Correlated draws**, all at once | `=TRANSPOSE(MMULT(AS15:AU17, TRANSPOSE(Q6:S1005)))` |
+| **AX:AZ** | Simulated prices | `=$AS$7*EXP(($AS$5-(($AS$6^2)/2))*(1/252)+$AS$6*AC6)` |
+| **BH:BJ** | Per-stock returns | `=AX6/$AX$2-1` |
+| **BK** | Portfolio return | `=SUMPRODUCT($BC$6:$BE$6, BH6:BJ6)` |
+| **BM:BN** | Rank and sorted return | — |
+
+The single array formula in `AC6` is elegant: `MMULT` multiplies the whole
+1000×3 block of independent draws by $L$ in one operation, turning the entire
+simulation correlated at a stroke.
+
+## The two VaR blocks
+
+**Rank method** — and here the position lands exactly, no rounding needed:
+
+| | 99% | 95% | 90% |
+| --- | --- | --- | --- |
+| Total returns | 1,000 | 1,000 | 1,000 |
+| Alpha | 0.01 | 0.05 | 0.10 |
+| **Position** `=1000*alpha` | **10** | **50** | **100** |
+| Return at that position | −0.03544727 | −0.02720183 | −0.02011471 |
+| **1-day VaR** | **−\$35,447.27** | **−\$27,201.83** | **−\$20,114.71** |
+
+**Percentile method** — `PERCENTILE.EXC(BN7:BN1006, alpha)`:
+
+| CI | Percentile | vs rank method |
+| --- | --- | --- |
+| 99% | −\$35,441.69 | **\$5.58 apart** |
+| 95% | −\$27,185.40 | \$16.43 |
+| 90% | −\$20,095.05 | \$19.66 |
+
+:::tip Why the two methods nearly agree here, but not in the historical sheet
+
+In the [historical sheet](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-historical-excel)
+the same two approaches differed by **\$527**. Here they differ by **\$5.58** —
+nearly a hundred times less.
+
+The reason is **sample size**. `PERCENTILE.EXC` interpolates at rank
+$p(n+1)$:
+
+| | $n$ | $p(n+1)$ at 99% | Interpolates |
+| --- | --- | --- | --- |
+| Historical | 251 | 2.52 | **52% of the way** between order stats 2 and 3 |
+| Monte Carlo | 1,000 | 10.01 | **1% of the way** between order stats 10 and 11 |
+
+With 1,000 observations the tail is densely packed and the interpolation barely
+moves. **More simulations make the choice of estimator stop mattering** — which
+is one more argument for running a lot of them.
+
+:::
+
+:::danger The live formulas no longer reproduce the reported VaR
+
+The sorted column `BN` — the one both VaR blocks read from — contains
+**hardcoded numbers, not formulas.** The live calculation chain
+(`Q → AC → AX → BH → BK`) still runs, and it produces something very different:
+
+| | Standard deviation of portfolio returns |
+| --- | --- |
+| **Frozen values in `BN`** (used for VaR) | **0.016325** |
+| **Live chain in `BK`** (recalculates) | **0.001003** |
+| Historical portfolio $\sigma$ (cov matrix) | 0.015624 |
+
+The frozen values are right — 0.0163 against a historical 0.0156 is ordinary
+sampling variation on 1,000 draws, and their mean (0.000723) matches the
+portfolio mean (0.000737).
+
+**The live chain is wrong by a factor of about $\sqrt{252}$.** Sorting what it
+currently produces would give:
+
+| CI | Reported (frozen) | Live chain would give |
+| --- | --- | --- |
+| **99%** | −\$35,447.27 | **−\$2,430.01** |
+| 95% | −\$27,201.83 | −\$1,720.68 |
+| 90% | −\$20,114.71 | −\$1,280.47 |
+
+**The cause.** $\mu$ and $\sigma$ come from `AVERAGE` and `STDEV.S` of **daily**
+returns — they are already per-day quantities. But the GBM formula then applies
+a time step of $1/252$:
+
+$$
+S_0 \exp\left[\left(\mu_{\text{daily}} - \frac{\sigma_{\text{daily}}^2}{2}\right)\times\frac{1}{252} + \sigma_{\text{daily}}\, Z \sqrt{\tfrac{1}{252}}\right]
+$$
+
+In daily units, one day is $dt = 1$, not $1/252$. Either **drop the $1/252$ and
+the $\sqrt{1/252}$**, or **annualise first** ($\mu_{ann} = 252\mu_d$,
+$\sigma_{ann} = \sqrt{252}\,\sigma_d$) and keep them. Doing neither shrinks the
+shock by $\sqrt{252} \approx 15.9$.
+
+This is **the same units error** found in the
+[Module 4 Monte Carlo sheets](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-european-option)
+and the
+[Module 5 simulation sheets](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/vasicek-excel-calibration)
+— a per-period parameter re-scaled as though it were annual. It is the single
+most common defect in this course's workbooks.
+
+**What to take from the sheet:** the structure — the Cholesky construction, the
+`MMULT` correlation step, the sort-and-rank blocks — is correct and worth
+copying. The frozen results are correct. The live GBM line is not.
+
+:::
+
+## The three methods, finally compared
+
+| 1-day VaR @ | 99% CI | 95% CI | 90% CI |
+| --- | --- | --- | --- |
+| **Variance-Covariance** | −\$35,609.28 | −\$24,961.76 | −\$19,285.60 |
+| **Historical Simulation** | −\$36,253.51 | −\$24,160.85 | −\$19,101.28 |
+| **Monte Carlo Simulation** | −\$35,447.27 | −\$27,201.83 | −\$20,114.71 |
+| **Spread** | **\$806 (2.2%)** | **\$3,041 (12.6%)** | **\$1,013 (5.3%)** |
+
+At **99%** the three agree within about 2% — three quite different assumptions
+converging on the same answer, which is the reassuring case.
+
+At **95%** they do not: Monte Carlo says \$27,202 where historical says
+\$24,161. The reason is instructive. Monte Carlo draws from a **normal**
+distribution, so its 95% quantile sits where normality says it should. The
+historical method uses the **actual** returns, whose shape near the 5% mark
+apparently differs from normal. Variance-covariance, which *also* assumes
+normality, lands close to Monte Carlo — as you would expect from two methods
+sharing an assumption.
+
+So the disagreement is not noise: **it is the normality assumption showing up**,
+and it shows up more at 95% than at 99% on this data.
+
+## Summary
+
+- 1,000 simulations of three correlated stocks, driven by GBM, on the same
+  JPM/MS/BAC portfolio.
+- The **3×3 Cholesky factor is built correctly** and **verified** — $LL^T$
+  reproduces the correlation matrix exactly.
+- One array formula, `TRANSPOSE(MMULT(L, TRANSPOSE(draws)))`, correlates all
+  3,000 draws at once.
+- Rank and percentile methods differ by only **\$5.58** here versus **\$527** in
+  the historical sheet — because **1,000 observations make the interpolation
+  irrelevant.**
+- **The sorted returns are frozen values; the live formula chain is
+  $\sqrt{252}$ too small** because daily $\mu$ and $\sigma$ are scaled by
+  $1/252$. Re-sorting the live output would report \$2,430 instead of \$35,447.
+- Across all three methods the **99% figures agree within 2.2%**, but the **95%
+  figures differ by 12.6%** — the normality assumption, made visible.

@@ -1,0 +1,198 @@
+---
+title: VaR — the Monte Carlo Method
+description: 'Simulating the portfolio forward with GBM — why the random draws must be correlated, how Cholesky supplies that correlation, and the two things this method buys you that the other two cannot.'
+---
+
+The third and most general method. Where variance-covariance assumes a shape and
+the historical method reuses the past, Monte Carlo **generates the future** —
+thousands of times.
+
+## Why reach for it
+
+The deciding factor is the **kind of instrument** in the portfolio:
+
+| Instrument type | Examples | Method |
+| --- | --- | --- |
+| **Linear** | Forwards, futures | Simpler models suffice |
+| **Non-linear** | **Options** | **Monte Carlo** |
+
+> The Monte Carlo method for calculating VaR involves **simulation techniques to
+> model the stock price (GBM)**, providing a **probabilistic assessment of the
+> prices that the stock can take.**
+
+> The Monte Carlo method is useful when dealing with **complex portfolios (e.g.
+> options)** for which the market risks are **not captured by simpler models.**
+
+## The engine — geometric Brownian motion
+
+$$
+S_t = S_0 \exp\left[\left(\mu - \frac{\sigma^2}{2}\right)t + \sigma W_t\right]
+$$
+
+the same equation built in
+[Module 4](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/model-stock-gbm-excel):
+
+| Term | Meaning |
+| --- | --- |
+| $\mu$ **(drift)** | **Average return of the asset over time** |
+| $\sigma$ **(volatility)** | **Measures the variation or dispersion of the asset's return** |
+| $W_t$ **(Wiener process / Brownian motion)** | **Random variable generated from a standard normal distribution** |
+
+### Why generate random variables at all?
+
+> The random variable **represents the random fluctuation in the stock price.**
+
+And those fluctuations are **driven by market sentiment, news and other
+unpredictable factors** — the same list the
+[Vasicek note](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/vasicek-theory)
+gave for interest rates. Unpredictable by definition, so modelled as noise
+rather than forecast.
+
+## The part that is specific to portfolios: correlation
+
+Simulating one stock is straightforward. Simulating **three at once** is where
+this method earns its complexity.
+
+> It is **very important to model the correlation between different assets
+> (stocks).**
+>
+> **Ignore correlation between assets → inaccurate result.**
+
+A standard normal generator gives **uncorrelated** draws. If you feed three
+independent random numbers into three GBMs, you get three stocks that wander
+independently — which is not the portfolio you own. JPM, MS and BAC move
+together, and a simulation that pretends otherwise will understate the chance
+that they all fall on the same day.
+
+### How: Cholesky decomposition
+
+> **Using Cholesky decomposition.**
+
+$$
+\Sigma = L \cdot L^{T}
+$$
+
+where $\Sigma$ is the **correlation matrix** and $L$ the **Cholesky
+decomposition matrix** — a **lower triangular matrix.**
+
+For two stocks:
+
+$$
+\Sigma = \begin{bmatrix} 1 & \rho \\ \rho & 1 \end{bmatrix}
+\qquad\qquad
+L = \begin{bmatrix} L_{11} & 0 \\ L_{21} & L_{22} \end{bmatrix}
+$$
+
+Multiplying out $L L^T$ and matching entries gives three equations:
+
+$$
+L_{11}^2 = 1 \;\Longrightarrow\; L_{11} = 1
+$$
+
+$$
+L_{11} \cdot L_{21} = \rho \;\Longrightarrow\; L_{21} = \rho
+$$
+
+$$
+L_{21}^2 + L_{22}^2 = 1 \;\Longrightarrow\; \rho^2 + L_{22}^2 = 1 \;\Longrightarrow\; L_{22} = \sqrt{1 - \rho^2}
+$$
+
+$$
+\boxed{\;L = \begin{bmatrix} 1 & 0 \\ \rho & \sqrt{1-\rho^2} \end{bmatrix}\;}
+$$
+
+This is the identical derivation done in
+[Module 4's Cholesky note](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/cholesky-decomposition-gbm),
+now put to a different use — there it correlated two simulated stocks, here it
+correlates the risk factors inside a VaR calculation.
+
+### The pipeline
+
+$$
+\text{stock price} \rightarrow \text{GBM} \rightarrow \underbrace{\text{uncorrelated random numbers}}_{\text{standard normal}} \rightarrow \times\, L \rightarrow \underbrace{\text{correlated random variables}}_{\text{feed into GBM}}
+$$
+
+Generate independent noise, multiply by $L$, and the output carries the
+correlation structure measured from the historical data.
+
+## Advantages
+
+**a) Flexibility.** The method **can model complex portfolios with multiple risk
+factors and capture the interaction between them.** Nothing in the procedure
+cares whether the payoff is linear — you simulate the path and read the value
+off it.
+
+**b) Tail risk.** It is **effective in estimating the risk of extreme losses,
+especially when the portfolio includes non-linear instruments.** Unlike the
+historical method, it is not limited to losses that have already happened; it
+can generate a worse day than any in the sample.
+
+## Limitations
+
+**a) Computationally intensive.** It **requires significant computational
+resources, especially as the number of simulations and portfolio complexity
+increase.** Going from 1,000 to 100,000 simulations, or from 3 stocks to 8, is
+a cost and a **time factor** — and unlike the other two methods, the answer is
+not instant.
+
+**b) Model risk.**
+
+> **Assuming something in a model = a chance of failing = model risk.**
+
+> The Monte Carlo method is **heavily dependent on the assumption of the
+> probability distribution and the correlation between the risk factors.
+> Incorrect assumptions can lead to misleading results.**
+
+This is the honest cost of the flexibility. The historical method assumes only
+that the past repeats. Monte Carlo assumes a *distribution*, a *correlation
+structure*, and a *process* — three places to be wrong instead of one.
+
+## The full procedure
+
+| Step | |
+| --- | --- |
+| **a** | **Download the data** (JPM, MS, BOA from Yahoo Finance) |
+| **b** | **Calculate the returns** → gives the **mean** and **standard deviation** |
+| **c** | **Generate random variables from the standard normal distribution** — these are **uncorrelated** |
+| **d** | **Convert uncorrelated into correlated** by **multiplying the Cholesky matrix with the uncorrelated random variables** |
+| **e** | **Simulate the stock price** with GBM |
+| **f** | **Calculate the returns** of each simulated path, then the **portfolio return** $w_1 r_1 + w_2 r_2$ |
+| **g** | **Arrange the returns in ascending order** → take the **VaR return** by the percentile approach (99%, 95%, 90%) |
+| **h** | **VaR return × portfolio value = VaR** |
+
+Note where this lands: steps **g** and **h** are **exactly the historical
+method.** Once the simulation has produced its cloud of returns, they are sorted
+and read off in the same way. The difference is only in **where the returns came
+from** — generated rather than observed.
+
+Which is the neat summary of all three methods:
+
+| Method | Source of the return distribution |
+| --- | --- |
+| **Historical** | The returns that **actually happened** |
+| **Variance-covariance** | A **normal curve** fitted to mean and variance |
+| **Monte Carlo** | Returns **generated** from a simulated process |
+
+Three different answers to the same question, and the
+[Excel note](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-monte-carlo-excel)
+shows how far apart they land.
+
+## Summary
+
+- Monte Carlo VaR **simulates the stock price with GBM** to get a
+  **probabilistic assessment of the prices the stock can take**, then reads VaR
+  off the simulated distribution.
+- It is the method for **non-linear instruments (options)**, where simpler
+  models do not capture the risk.
+- **The random draws must be correlated.** Independent noise would produce a
+  portfolio whose stocks never fall together — **ignoring correlation gives an
+  inaccurate result.**
+- **Cholesky supplies the correlation**: $\Sigma = LL^T$, giving
+  $L = \begin{bmatrix} 1 & 0 \\ \rho & \sqrt{1-\rho^2}\end{bmatrix}$ for two
+  assets; multiply the uncorrelated draws by $L$.
+- **Advantages:** flexibility with multiple interacting risk factors, and real
+  **tail-risk** estimation — it can generate losses worse than any observed.
+- **Limitations:** **computationally intensive**, and **model risk** — it
+  assumes a distribution *and* a correlation structure *and* a process.
+- The **last two steps are identical to the historical method** — sort and
+  multiply. Only the origin of the returns differs.
