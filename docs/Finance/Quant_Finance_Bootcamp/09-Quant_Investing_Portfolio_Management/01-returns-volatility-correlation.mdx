@@ -1,0 +1,275 @@
+---
+title: Returns, Volatility and Correlation
+description: 'The building blocks of portfolio analysis — simple versus log returns and when each is appropriate, volatility and its square-root-of-time scaling, downside deviation, and correlation.'
+---
+
+The final module of the bootcamp, and the one that measures whether an
+investment was actually any good. It starts with three quantities everything
+else is built from.
+
+## What is a return?
+
+> A return is the **money made or lost on an investment over a period of time.**
+
+**Returns are expressed in percentage.** A **positive return represents a
+profit**, a **negative return represents a loss** — \$100 falling to \$98 is a
+return of **−2%**.
+
+There are two ways to compute one.
+
+### Simple return
+
+$$
+\text{Simple return} = \frac{S_t - S_{t-1}}{S_{t-1}}
+\qquad\text{or equivalently}\qquad
+\boxed{\;\frac{S_t}{S_{t-1}} - 1\;}
+$$
+
+### Log return
+
+$$
+\boxed{\;\text{Log return} = \ln\left(\frac{S_t}{S_{t-1}}\right)\;}
+$$
+
+:::note In Excel, LN is the one you want
+
+The notes flag a trap: **Excel's `LN` is the natural logarithm** — that is what
+"log return" means here. Excel's `LOG` is base 10 and is **not** what you want.
+
+:::
+
+## When to use which
+
+> **Performing short-term analysis → simple return.**
+
+Simple returns are the default for **short-term investment analysis**, because
+they are what people actually understand. But they have three limitations.
+
+**1) Less accurate with large price fluctuations.**
+
+The notes' example is **Bitcoin** — with moves that large, simple returns
+distort, and **log returns** are the right choice.
+
+**2) Not suitable for statistical modelling.**
+
+This is the substantive one, and it connects back through the whole course:
+
+| Model | Assumes |
+| --- | --- |
+| [**Black-Scholes**](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/black-scholes-theory) | the stock price follows **log returns** |
+| **Time series volatility models** — ARCH, GARCH | log returns |
+| **Linear regression** | **normality of residuals** |
+
+> **Log returns are preferred because they are stable and often closer to a
+> normal distribution.**
+
+Which is exactly the point Black-Scholes rests on: **returns are normal, the
+price is log-normal.** Feed a model simple returns when it assumes log returns
+and you have created
+[model risk](/docs/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7/overview)
+of the "used incorrectly" kind.
+
+**3) Not suitable for high-frequency data.**
+
+Second-by-second data — 15-second, 10-second, 1-second bars — should use **log
+returns.**
+
+### So why not always use log returns?
+
+> **It is less interpretable for a non-technical audience.**
+
+A 2% simple return means you have 2% more money. A 1.98% log return does not
+mean that, quite. When the audience is not quantitative, interpretability wins.
+
+## Volatility
+
+> **Volatility (or standard deviation) is a statistical measure that quantifies
+> the amount of variation in a stock.** In the context of finance it measures
+> **the volatility of an asset or portfolio.**
+
+$$
+\sigma_i = \sqrt{\frac{\sum_{i=1}^{n}\left(R_i - \bar{R}\right)^2}{n-1}}
+$$
+
+| | |
+| --- | --- |
+| $R_i$ | **individual return** |
+| $\bar{R}$ | **average return** |
+| $n$ | **number of periods** |
+
+**What 20% volatility means**: a \$100 portfolio moves to
+$100 \times (1 + 20\%) = \$120$ on the upside, or
+$100 \times (1 - 20\%) = \$80$ on the downside.
+
+| Volatility | Meaning |
+| --- | --- |
+| **High** | **More risk** — more deviation in the stock price |
+| **Low** | **Less risk** |
+
+In Excel it is simply `STDEV.S(daily returns)`.
+
+### Annualising
+
+$$
+\boxed{\;\sigma_{\text{annual}} = \sigma_{\text{daily}} \times \sqrt{252}\;}
+$$
+
+And the notes derive it rather than asserting it, which is worth following:
+
+**Variance is the square of standard deviation**, $V = \sigma^2$, so
+$\sigma = \sqrt{V}$. **Variance increases linearly with time:**
+
+$$
+V_{\text{annual}} = V_{\text{daily}} \times 252
+$$
+
+Take the square root of both sides:
+
+$$
+\sqrt{V_{\text{annual}}} = \sqrt{V_{\text{daily}}} \times \sqrt{252}
+\qquad\Longrightarrow\qquad
+\sigma_{\text{annual}} = \sigma_{\text{daily}} \times \sqrt{252}
+$$
+
+**252** because a year has 365 days minus **Saturdays, Sundays and holidays**.
+
+This is the same $\sqrt{T}$ rule that scaled
+[VaR across horizons](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-historical-theory)
+and the same $\sqrt{\Delta t}$ that scaled the Brownian shock in GBM — **it is
+variance that adds, so standard deviation grows with the square root.**
+
+## Downside standard deviation
+
+> **Downside standard deviation is a measure of the downside risk of an
+> investment. It focuses only on negative deviations.**
+
+> **Unlike standard deviation**, which captures **both upside volatility and
+> downside volatility.**
+
+That distinction matters because ordinary volatility treats a \$100 stock going
+to \$120 as exactly as "risky" as it going to \$80. An investor does not.
+
+> Downside standard deviation considers **only downside volatility. This is
+> particularly useful for risk-averse investors.**
+
+$$
+\boxed{\;\text{Downside std dev} = \sqrt{\frac{\sum \min\left(R_i - T,\; 0\right)^2}{n}}\;}
+$$
+
+| | |
+| --- | --- |
+| $R_i$ | return of the stock / portfolio |
+| $T$ | **target return / threshold** |
+| $n$ | number of periods |
+
+### How the min() does the work
+
+With a threshold of $T = 0\%$:
+
+| $R_i$ | $\min(R_i - T,\, 0)$ | Counted? |
+| --- | --- | --- |
+| **+2%** | $\min(2\%,\, 0) = \mathbf{0}$ | **No** |
+| **−2%** | $\min(-2\%,\, 0) = \mathbf{-2\%}$ | **Yes** |
+
+$$
+\text{positive return} \rightarrow 0
+\qquad\qquad
+\text{negative return} \rightarrow \text{counted}
+$$
+
+The `min` is a filter. Good days contribute nothing to the risk measure; only
+shortfalls below the threshold do.
+
+## Correlation
+
+> **Correlation is a statistical measure that quantifies the relationship
+> between 2 variables, showing how they move relative to each other.**
+
+It is **always between −1 and 1**:
+
+| Correlation | Meaning |
+| --- | --- |
+| **+1** | **Perfect positive correlation** — the stocks **move in the same direction** |
+| **−1** | **Perfect negative correlation** — the stocks **move in opposite directions** |
+| **0** | **No correlation** — the stocks are **independent of each other** |
+
+**Why sector matters**: **AAPL and MSFT** are both **technology**, so their
+correlation is **higher** — because **they are influenced by similar industry
+trends.**
+
+:::warning Correlations are not fixed
+
+> **NOTE: Correlations are not fixed. They can change over time.**
+
+This is the assumption that breaks in a crisis, and it broke expensively in
+2008. A portfolio diversified on historical correlations can find those
+correlations converging toward 1 exactly when diversification was supposed to
+help.
+
+It is also why the
+[variance-covariance VaR note](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-variance-covariance-excel)
+measured a **10.14% diversification benefit** on a bank portfolio and then noted
+that all three banks correlated at ~0.66 *because they were the same sector*.
+The benefit is real, and it is not guaranteed to persist.
+
+:::
+
+## The real portfolio
+
+The workbook runs all of this on a **50/50 JPM + MS portfolio** benchmarked
+against **SPY**, over **1,256 daily returns** from 2020.
+
+| | JPM | MS | **Portfolio** |
+| --- | --- | --- | --- |
+| Mean daily return | 0.000745 | 0.001083 | **0.000914** |
+| **Annualised return** | 18.78% | 27.29% | **23.03%** |
+| Daily volatility | 0.020498 | 0.022507 | **0.020451** |
+| **Annualised volatility** | 32.54% | 35.73% | **32.47%** |
+| **Downside deviation** (annualised) | | | **21.61%** |
+
+Two things are visible immediately.
+
+**The portfolio's volatility (32.47%) is below both constituents** (32.54% and
+35.73%) even though its return sits between them. That gap is the
+diversification benefit, produced by a **JPM-MS correlation of 0.8088** — high,
+because both are banks, but still below 1.
+
+**Downside deviation (21.61%) is well below total volatility (32.47%)** — about
+two-thirds. Much of what ordinary volatility was penalising was upside movement.
+
+The correlations:
+
+| Pair | Correlation |
+| --- | --- |
+| **JPM - MS** | **0.8088** |
+| JPM - SPY | 0.7063 |
+| MS - SPY | 0.7537 |
+
+### Cumulative return
+
+$$
+\text{Cumulative return} = \prod\left(1 + r_t\right) - 1 = \mathbf{142.67\%}
+$$
+
+Computed as `=PRODUCT(L3:L1258)-1`, chaining every daily return geometrically —
+not by summing them. Summing daily returns would overstate the result, because
+returns compound.
+
+## Summary
+
+- A **return is money made or lost over a period**, expressed as a percentage.
+- **Simple return** $= S_t/S_{t-1} - 1$; **log return** $= \ln(S_t/S_{t-1})$ —
+  and in Excel that is **`LN`**, not `LOG`.
+- **Simple for short-term analysis and non-technical audiences**; **log for
+  large fluctuations, statistical modelling and high-frequency data**, because
+  log returns are **more stable and closer to normal.**
+- **Volatility** is the standard deviation of returns; **high volatility means
+  more risk.** Annualise with $\sigma_{\text{annual}} = \sigma_{\text{daily}}\sqrt{252}$,
+  which follows from **variance growing linearly with time.**
+- **Downside deviation** counts only returns **below a threshold** — the `min`
+  zeroes out good days — and matters to **risk-averse investors.**
+- **Correlation runs −1 to +1**; same-sector stocks correlate highly, and
+  **correlations change over time.**
+- On the real 50/50 JPM/MS portfolio: **23.03% annualised return, 32.47%
+  volatility, 21.61% downside deviation, 142.67% cumulative** — with portfolio
+  volatility **below both constituents** thanks to a 0.8088 correlation.

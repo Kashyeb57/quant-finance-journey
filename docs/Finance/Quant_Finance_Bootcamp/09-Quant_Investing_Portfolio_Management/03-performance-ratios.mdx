@@ -1,0 +1,198 @@
+---
+title: Sharpe, Sortino and Treynor Ratios
+description: 'Three risk-adjusted return measures with the same numerator and three different denominators — total risk, downside risk, and market risk. Worked on the real portfolio, and the closing note of the bootcamp.'
+---
+
+Return alone says nothing. **23% earned by taking enormous risk is not the same
+achievement as 23% earned quietly**, and these three ratios are how that
+difference is made visible.
+
+All three share the same numerator — **excess return** — and differ only in what
+they divide it by.
+
+## 1 — Sharpe ratio
+
+> The Sharpe ratio measures the **excess return earned per unit of total risk.**
+
+$$
+\boxed{\;\text{Sharpe ratio} = \frac{R_p - R_f}{\sigma_p}\;}
+$$
+
+| | |
+| --- | --- |
+| $R_p$ | **Portfolio return** |
+| $R_f$ | **Risk-free rate** |
+| $\sigma_p$ | **Standard deviation of the portfolio** |
+
+The numerator $R_p - R_f$ is the **excess return** — what you earned *above*
+what you could have had risk-free. There is no credit for matching the Treasury
+rate.
+
+> A **higher Sharpe ratio indicates better risk-adjusted return.**
+
+| Sharpe | Reading |
+| --- | --- |
+| **> 1** | **Good investment** — generating decent return relative to the risk |
+| **< 1** | **Bad investment** — poor; the return you are generating **does not justify the level of risk you are taking** |
+
+The notes' illustration: a portfolio returning **12%** with **20% volatility**
+has a Sharpe below 1 — you are being paid 12 for carrying 20.
+
+## 2 — Sortino ratio
+
+> The Sortino ratio **refines the Sharpe ratio by considering only the downside
+> risk** — negative volatility.
+
+$$
+\boxed{\;\text{Sortino ratio} = \frac{R_p - R_f}{\sigma_d}\;}
+$$
+
+where $\sigma_d$ is the
+[**downside volatility**](/docs/Finance/Quant_Finance_Bootcamp/Quant_Investing_Portfolio_Management/returns-volatility-correlation).
+
+> **This metric is more significant for risk-averse investors.**
+
+> A **high Sortino ratio indicates better return relative to the downside
+> risk.**
+>
+> **Reason: it penalises the investment only for negative deviation from the
+> threshold.**
+
+That is the whole argument for it. Sharpe's denominator punishes a portfolio for
+going *up* unexpectedly, which no investor actually minds. Sortino removes that
+penalty.
+
+## 3 — Treynor ratio
+
+> The Treynor ratio measures the **excess return per unit of systematic risk
+> (beta).**
+
+$$
+\boxed{\;\text{Treynor ratio} = \frac{R_p - R_f}{\beta_p}\;}
+$$
+
+where $\beta_p$ is the
+[**portfolio beta**](/docs/Finance/Quant_Finance_Bootcamp/Quant_Investing_Portfolio_Management/alpha-beta-r-square).
+
+> **Goal: the Treynor ratio focuses on how well the portfolio compensates the
+> investor for market risk rather than total risk.**
+
+The distinction matters for anyone holding more than one portfolio. Risk
+specific to a holding can be diversified away across a wider book; **market risk
+cannot.** So for a portfolio that is one sleeve of something larger, market risk
+is the only risk that genuinely survives — and Treynor is the ratio that prices
+it.
+
+## The three side by side
+
+The deck closes with this comparison, and it is the cleanest summary of the
+module:
+
+| Ratio | Risk measured | Formula | Denominator is |
+| --- | --- | --- | --- |
+| **Sharpe** | **Total risk** ($\sigma$) | $\dfrac{R_p - R_f}{\sigma}$ | Standard deviation |
+| **Sortino** | **Downside risk** ($\sigma_d$) | $\dfrac{R_p - R_f}{\sigma_d}$ | Downside standard deviation |
+| **Treynor** | **Market risk** ($\beta$) | $\dfrac{R_p - R_f}{\beta}$ | Beta |
+
+**Same numerator, three denominators.** Choosing between them is choosing which
+risk you think the investor actually bears.
+
+## The real portfolio
+
+Computed on the **50/50 JPM + MS** portfolio, with a **risk-free rate of
+4.323%**:
+
+| Input | Value |
+| --- | --- |
+| Annualised return $R_p$ | **23.031%** |
+| Risk-free rate $R_f$ | **4.323%** |
+| **Excess return** | **18.708%** |
+| Annualised volatility $\sigma$ | 32.465% |
+| Annualised downside deviation $\sigma_d$ | 21.608% |
+| Beta $\beta$ | 1.188091 |
+
+$$
+\text{Sharpe} = \frac{0.23031 - 0.04323}{0.324653} = \mathbf{0.5762}
+$$
+
+$$
+\text{Sortino} = \frac{0.23031 - 0.04323}{0.216081} = \mathbf{0.8658}
+$$
+
+$$
+\text{Treynor} = \frac{0.23031 - 0.04323}{1.188091} = \mathbf{0.1575}
+$$
+
+All three reproduce when recomputed independently from the return series.
+
+### What they say
+
+**Sharpe of 0.576 is below 1** — by the deck's own rule of thumb, the return
+does not justify the total risk taken. 23% sounds excellent until you notice it
+came with 32% volatility.
+
+**Sortino of 0.866 is markedly higher than Sharpe** — a 50% improvement. That
+gap is informative: it means **a large share of this portfolio's volatility was
+upside**, which Sharpe penalised and Sortino does not. Downside deviation
+(21.6%) is only two-thirds of total volatility (32.5%).
+
+**Treynor of 0.158 is not comparable to the other two** — its denominator is a
+beta, not a percentage, so the number lives on a different scale entirely.
+Treynor is only meaningful **compared against another portfolio's Treynor**,
+never against a Sharpe.
+
+:::note One number to check before you compare anything
+
+These three ratios are internally consistent — all use **annualised** return,
+volatility and risk-free rate.
+
+But as the [previous note](/docs/Finance/Quant_Finance_Bootcamp/Quant_Investing_Portfolio_Management/alpha-beta-r-square)
+flagged, **alpha in the same summary table is left in daily units** (0.0176%,
+or 4.44% annualised). Mixing conventions inside one table is the kind of quiet
+error that survives review, because every individual number looks reasonable.
+
+It is precisely what
+[SR 11-7's process verification](/docs/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7/model-validation)
+is meant to catch.
+
+:::
+
+## Module 9, and the bootcamp, in closing
+
+This module measured investments; the previous eight built the things being
+measured. The through-line across all nine is narrower than it looks:
+
+$$
+\textbf{return is only meaningful once divided by the risk taken to get it}
+$$
+
+- **Modules 1-3** priced derivatives and hedged the Greeks — managing risk one
+  exposure at a time.
+- **Modules 4-5** modelled the processes underneath, and found that
+  [three pricing methods agree to within a cent](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-barrier-option)
+  when built correctly.
+- **Module 6** put a number on the tail, and showed
+  [what VaR refuses to tell you](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/expected-shortfall-theory).
+- **Module 7** valued the swaps that convert one risk into another.
+- **Module 8** asked who is accountable when the model is wrong.
+- **Module 9** asks, finally, whether any of it was worth doing — and answers
+  with a ratio.
+
+## Summary
+
+- All three ratios share the numerator **excess return $R_p - R_f$** and differ
+  only in the denominator.
+- **Sharpe** divides by **total risk** ($\sigma$): **above 1 is good, below 1
+  means the return does not justify the risk.**
+- **Sortino** divides by **downside risk** ($\sigma_d$), penalising **only
+  negative deviation from the threshold** — better suited to **risk-averse
+  investors.**
+- **Treynor** divides by **beta**, pricing **market risk rather than total
+  risk** — the right measure when the portfolio sits inside a larger,
+  diversified book.
+- On the real portfolio: **Sharpe 0.576, Sortino 0.866, Treynor 0.158**, from a
+  23.03% return against a 4.323% risk-free rate.
+- **Sortino exceeding Sharpe by 50%** shows much of the volatility was
+  **upside** — which Sharpe wrongly penalised.
+- **Treynor is not comparable to Sharpe or Sortino** — different denominator,
+  different scale.

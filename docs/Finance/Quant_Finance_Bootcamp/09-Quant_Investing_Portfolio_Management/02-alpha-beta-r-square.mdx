@@ -1,0 +1,188 @@
+---
+title: Alpha, Beta and R-Squared
+description: 'Measuring a portfolio against its benchmark — excess return, market sensitivity, and how much of the movement the benchmark explains. Worked on a real regression against SPY.'
+---
+
+The previous note measured a portfolio **on its own terms**. These three
+measure it **against a benchmark** — and all three come out of a single
+regression of portfolio returns on market returns.
+
+## Alpha
+
+> **Alpha measures the excess return of an investment relative to a benchmark
+> index.**
+
+> It indicates whether the investment **outperformed or underperformed the
+> market, after accounting for risk.**
+
+| Alpha | Meaning |
+| --- | --- |
+| **Positive** | The investment **outperformed the market** |
+| **Negative** | The investment **underperformed the market** |
+| **Zero** | The investment **performed in line with the market** |
+
+Alpha is the part of the return the benchmark does not account for. If the S&P
+500 returned 15% and your portfolio returned 15%, you produced no alpha —
+whatever skill you applied, the market would have given you the same result.
+
+## Beta
+
+> **Beta measures the sensitivity of the investment return to the market's
+> movement.**
+
+| Beta | Meaning |
+| --- | --- |
+| $\beta > 1$ | The investment is **more volatile than the market** |
+| $\beta < 1$ | The investment is **less volatile than the market** |
+| $\beta = 1$ | The investment **moves in line with the market** |
+
+**Worked**: a stock with $\beta = 1.2$ —
+
+- when the market **rises by 10%**, the stock is expected to **rise by 12%**
+- when the market **falls by 10%**, the stock is expected to **fall by 12%**
+
+Beta cuts both ways. It is **amplification, not advantage** — a high-beta
+portfolio in a rising market looks like skill and is not.
+
+:::note Beta is the systematic risk from Module 6
+
+This is the same quantity that
+[Treynor's ratio](/docs/Finance/Quant_Finance_Bootcamp/Quant_Investing_Portfolio_Management/performance-ratios)
+divides by in the next note, and conceptually the same split the
+[variance-covariance VaR note](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-variance-covariance-theory)
+relied on: risk that comes from the market as a whole cannot be diversified
+away, and risk specific to the holding can be.
+
+Beta measures only the first kind.
+
+:::
+
+## R-squared
+
+> **R-squared measures the percentage of an investment's movement that can be
+> explained by the movement in the benchmark index.**
+
+It comes from the same **linear regression** of portfolio returns against the
+benchmark.
+
+| $R^2$ | Meaning |
+| --- | --- |
+| **100%** (or 1) | The portfolio's returns are **fully explained by the benchmark** |
+| **0** | The portfolio's returns **aren't explained by the benchmark at all** |
+| **85%** (or 0.85) | **85% of the portfolio's returns are explained by the benchmark, while 15% are due to unique factors** |
+
+$R^2$ is the honesty check on the other two. **A beta computed against a
+benchmark that explains almost nothing is not telling you much** — the
+regression line exists, but the relationship it describes is weak.
+
+## The real regression
+
+The workbook regresses the **50/50 JPM + MS portfolio** against **SPY** over
+1,256 daily observations:
+
+| Regression statistic | Value |
+| --- | --- |
+| **Multiple R** | 0.768685 |
+| **R Square** | **0.590877** |
+| Adjusted R Square | 0.590551 |
+| Standard Error | 0.013086 |
+| **Observations** | **1,256** |
+
+| Coefficient | Value | Standard error | t Stat |
+| --- | --- | --- | --- |
+| **Intercept** | 1.000176 | 0.00037 | 2705.66 |
+| **X Variable 1 (beta)** | **1.188091** | 0.027918 | **42.56** |
+
+Recomputed independently from the underlying return columns: **β = 1.1881,
+R² = 0.5911, correlation = 0.7689** — matching the sheet to three decimals (the
+small difference is a two-row range discrepancy).
+
+### Reading the results
+
+**β = 1.1881.** The portfolio is **19% more volatile than the market.** When SPY
+moves 10%, this portfolio is expected to move about 11.9%. That is unsurprising
+for two investment banks — they are levered to the economic cycle in a way the
+broad index is not.
+
+**R² = 0.5909.** **59% of the portfolio's movement is explained by SPY**, and
+**41% comes from factors specific to JPM and MS** — bank-sector news, earnings,
+regulation. So the benchmark explains most of the story but nowhere near all of
+it.
+
+**α = 0.0176% per day.**
+
+:::note Where the intercept of 1.0002 comes from
+
+The regression intercept is **1.000176**, not the near-zero you would expect,
+and the sheet then computes alpha as `=(Y51-1)*100`.
+
+The reason: the regression was run with **(1 + portfolio return)** as the
+dependent variable against the **market return** as the independent one. So
+
+$$
+1 + r_p = a + \beta r_m
+\qquad\Longrightarrow\qquad
+r_p = (a - 1) + \beta r_m
+$$
+
+which makes the true alpha $a - 1 = 0.000176$. Verified directly:
+regressing $r_p$ on $r_m$ gives an intercept of **0.000167**, and $1 + 0.000167
+= 1.000167$ against the sheet's 1.000176.
+
+It is a valid setup, just an unusual one — and it means **the intercept must
+have 1 subtracted before it means anything.** Reading 1.000176 as "alpha" would
+be wildly wrong.
+
+:::
+
+:::warning Alpha is daily; everything beside it is annualised
+
+The summary table reports **α = 0.0176%** alongside an **annualised return of
+23.03%**, **annualised volatility of 32.47%** and a Sharpe ratio built from
+annual figures.
+
+But that alpha is a **daily** number. Annualised it is
+
+$$
+0.00017612 \times 252 = 0.0444 = \mathbf{4.44\%}
+$$
+
+which is a materially different claim — 4.44% of annual outperformance, not
+0.018%. The ratios in the
+[next note](/docs/Finance/Quant_Finance_Bootcamp/Quant_Investing_Portfolio_Management/performance-ratios)
+are internally consistent (all annual); **alpha is the one figure left in daily
+units** while sitting in an annual table.
+
+Worth knowing which convention a reported alpha is in before comparing it to
+anything.
+
+:::
+
+## Putting the three together
+
+| Measure | Question it answers |
+| --- | --- |
+| **Alpha** | Did we beat the benchmark? |
+| **Beta** | How much market risk did we take to do it? |
+| **R²** | Is the benchmark even the right comparison? |
+
+Read alone, each is misleading. A high alpha with a beta of 1.9 is mostly
+leverage. A confident beta with an R² of 0.1 is a number computed against an
+irrelevant index. **The three are one answer, not three.**
+
+## Summary
+
+- **Alpha** is **excess return relative to a benchmark** — positive means
+  outperformance, negative underperformance, zero means in line.
+- **Beta** is **sensitivity to market movement**: $\beta > 1$ more volatile,
+  $\beta < 1$ less, $\beta = 1$ in line. A **β of 1.2 moves 12% when the market
+  moves 10%** — in both directions.
+- **R²** is the **percentage of movement explained by the benchmark**; the
+  remainder is **unique factors.**
+- On the real JPM/MS portfolio against SPY: **β = 1.1881** (19% more volatile
+  than the market), **R² = 0.5909** (59% explained, 41% bank-specific), and
+  **α = 0.0176% daily**, all independently verified.
+- The **intercept is 1.000176 because (1 + rₚ) was regressed on r_m** — subtract
+  1 to get alpha.
+- **That alpha is daily while the rest of the table is annualised**; annualised
+  it is **4.44%.**
