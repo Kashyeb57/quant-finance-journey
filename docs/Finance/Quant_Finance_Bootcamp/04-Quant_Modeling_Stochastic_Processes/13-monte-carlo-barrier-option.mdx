@@ -1,0 +1,257 @@
+---
+title: Monte Carlo — Barrier Option
+description: 'Options that switch on or off when a price level is touched — knock-in, knock-out, double barriers, and the in-out parity that proves the simulation is right. Closes Module 4.'
+---
+
+The [Asian option](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-asian-option)
+was path-dependent through an **average**. A barrier option is path-dependent
+through a **threshold** — and the whole contract can be switched on or off by a
+single moment along the way.
+
+## Definition
+
+> Barrier options are a type of **exotic contract** where the payoff depends on
+> **whether the underlying asset price reaches a predetermined barrier level or
+> not** — at any point **during the life of the option contract.**
+
+That last clause is what makes it path-dependent. Not the price at expiry; the
+price at *every* moment.
+
+<svg viewBox="0 0 640 250" role="img" aria-label="Three simulated paths from a common start: one crosses the barrier level and activates a knock-in option, one approaches but never touches it, and one falls away entirely" style={{width: '100%', height: 'auto'}}>
+  <line x1="50" y1="70" x2="600" y2="70" stroke="currentColor" strokeWidth="1.6" strokeDasharray="6 4" opacity="0.7" />
+  <path d="M70,165 C120,150 150,120 200,95 C250,70 280,52 330,45 C390,37 440,42 520,32" fill="none" stroke="#25c2a0" strokeWidth="2.4" />
+  <path d="M70,165 C120,158 155,142 200,132 C250,122 290,108 340,100 C400,92 450,88 520,82" fill="none" stroke="#e0a44a" strokeWidth="2" opacity="0.85" />
+  <path d="M70,165 C120,175 155,182 200,180 C250,178 300,192 350,198 C410,205 460,208 520,212" fill="none" stroke="#e0a44a" strokeWidth="2" opacity="0.6" />
+  <circle cx="70" cy="165" r="5" fill="currentColor" />
+  <circle cx="286" cy="70" r="6" fill="none" stroke="#25c2a0" strokeWidth="2.5" />
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="50" y="62" opacity="0.75">Barrier B</text>
+    <text x="36" y="170">S₀</text>
+    <text x="530" y="30" fill="#25c2a0">crosses → ACTIVE</text>
+    <text x="530" y="86" opacity="0.8">never touches</text>
+    <text x="530" y="216" opacity="0.8">never touches</text>
+  </g>
+  <text x="230" y="60" fill="#25c2a0" fontSize="11" fontFamily="monospace">hit</text>
+</svg>
+
+## The three types
+
+| Type | Variants |
+| --- | --- |
+| **1. Knock-in** | **Up & In**, **Down & In** |
+| **2. Knock-out** | **Up & Out**, **Down & Out** |
+| **3. Double barrier** | **Double knock-in**, **Double knock-out** |
+
+And the rule that governs all six:
+
+$$
+\textbf{In} \longrightarrow \text{Active}
+\qquad\qquad
+\textbf{Out} \longrightarrow \text{Deactivate}
+$$
+
+### Knock-in — off until touched
+
+> These options **become active (knock in) only if the underlying asset hits a
+> certain barrier level during the life of the option contract.**
+
+> **If the barrier is never reached, the option expires worthless.**
+
+| Path | Result | Payoff |
+| --- | --- | --- |
+| **Hits the barrier** | **Active** | $\max(S_T - K,\, 0)$ for a call, $\max(K - S_T,\, 0)$ for a put |
+| **Never touches it** | Inactive | **0** |
+
+- **Up & In** — the path crosses an **up barrier from below** → active.
+- **Down & In** — the path crosses a **down barrier from above** → active.
+
+> The contract becomes active when the barrier is crossed (up or down),
+> otherwise the contract will **expire worthless.**
+
+### Knock-out — on until touched
+
+The mirror image: **the option deactivates when the barrier is crossed.**
+
+| | Crosses the barrier | Never crosses |
+| --- | --- | --- |
+| **Up & Out** | **Inactive** | Active |
+| **Down & Out** | **Inactive** | Active |
+
+So a knock-out holder is *hoping the level never trades*, and a knock-in holder
+is hoping it does.
+
+### Double barrier — two levels at once
+
+There is both an **up barrier and a down barrier**.
+
+| | Rule |
+| --- | --- |
+| **Double knock-in** | If **either** barrier is crossed, the contract becomes **active**; otherwise inactive, **payoff = 0** |
+| **Double knock-out** | If **either** barrier is breached, the contract becomes **inactive**; if not breached, **active** |
+
+For a double knock-in, a path that wanders quietly **between** the two barriers
+is worth nothing — it needed to break out in one direction or the other. For a
+double knock-out, that same quiet path is the only one that pays.
+
+## Testing the barrier
+
+In a simulation, "did it touch?" is just a question about the **range of the
+path**:
+
+| Barrier | Test |
+| --- | --- |
+| **Up barrier** | $\max(\text{range}) \ge B$ |
+| **Down barrier** | $\min(\text{range}) \le B$ |
+
+The notes work a down-barrier example: with $B = 100$, a path that drifts down
+to **90** gives $\min(\text{range}) = 90 \le 100$ → **barrier crossed.**
+
+Two lines of logic, and they are the entire difference between a barrier option
+and a vanilla one.
+
+## Valuing it with Monte Carlo
+
+Seven steps, of which only step 4 and 5 are new:
+
+| # | Step |
+| --- | --- |
+| 1 | **Initialise the parameters** |
+| 2 | **Generate random numbers** using the **standard normal distribution** |
+| 3 | Use those numbers in the **GBM equation and simulate the stock price** |
+| 4 | **Check if, during the life of the option, any barrier is crossed or not** |
+| 5 | Apply the **knock-in / knock-out** rule to get the payoff |
+| 6 | **Average the payoffs** |
+| 7 | **Discount** the average |
+
+Step 5 branches:
+
+$$
+\text{Crossed} \Rightarrow \text{Active} \Rightarrow \max(S_T - K,\, 0)
+\qquad\qquad
+\text{Not crossed} \Rightarrow \text{Inactive} \Rightarrow \text{Payoff} = 0
+$$
+
+and then it is the familiar ending:
+
+$$
+\text{Avg payoff} = \frac{\text{Payoff}_1 + \text{Payoff}_2 + \cdots + \text{Payoff}_{10{,}000}}{10{,}000}
+$$
+
+$$
+\text{Price of barrier option} = e^{-rT}\left[\text{Avg payoff}\right]
+$$
+
+## The Excel sheet
+
+Same 100-path, 6-step grid as before. The barrier logic is four rows:
+
+| Cell | Label | Formula |
+| --- | --- | --- |
+| K7 | **Up barrier** | **557** |
+| O9 | Max value | `=MAX(O3:O8)` |
+| O10 | Barrier crossed (?) | `=IF(O9>$K$7,"Yes","No")` |
+| **O11** | **Check barrier (call)** | **`=IF(MAX(O3:O8)>=$K$7, MAX(O8-$B$6,0), 0)`** |
+| O12 | Check barrier (put) | `=IF(MAX(O3:O8)>=$K$7, MAX($B$6-O8,0), 0)` |
+| O13 | Average payoff (call) | `=AVERAGE(O11:DJ11)` |
+| O14 | Discounted price (call) | `=O13*EXP(-B8*B7)` |
+
+`O11` is the whole contract in one cell: **if the path's maximum reached the
+barrier, pay the ordinary call payoff; otherwise pay nothing.** With an up
+barrier and payment *on* crossing, this sheet implements an **up-and-in call**.
+
+:::note Two small inconsistencies in the sheet
+
+`O10` — the human-readable "Yes/No" — tests `O9 > K7` (strictly greater), while
+the payoff cells `O11`/`O12` test `>= K7`. A path whose maximum lands exactly on
+557 is reported as **"No"** but paid as though it crossed. Harmless in floating
+point, but the two should agree.
+
+The path generator also carries the **same drift error** flagged in the
+[European note](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-european-option)
+— drift multiplied by `SQRT(N3)` instead of `N3`, and a daily mean return in
+place of the risk-free rate. The barrier logic above is correct; the prices it
+produces are not.
+
+:::
+
+## Checking it: in + out must equal the vanilla
+
+There is no closed form here either — but barrier options come with an identity
+that makes them self-checking:
+
+$$
+\text{Up-and-in} + \text{Up-and-out} = \text{Vanilla European}
+$$
+
+Every path either touches the barrier or it doesn't. The knock-in collects the
+payoff in the first case, the knock-out collects it in the second, and between
+them they collect every payoff exactly once. Simulated over 400,000 paths on the
+SPY contract, barrier 557:
+
+| | Call |
+| --- | --- |
+| **Up-and-in** | 1.6658 |
+| **Up-and-out** | 0.0357 |
+| **Sum** | **1.7015** |
+| **European** | **1.7015** |
+
+Exact. That identity is the barrier equivalent of the European note's
+Black-Scholes check — a way to know the simulation is right when no formula is
+available to compare against.
+
+Two things it reveals about *this* contract:
+
+**31% of paths reach the barrier.** With six trading days, an 11.1% volatility
+and the barrier only 8 points above spot, most paths never get there.
+
+**The up-and-out call is nearly worthless** — 0.0357 against the vanilla's
+1.7015. To pay anything it must finish **above 555** while never having touched
+**557**: a two-dollar window it has to land in and stay in. Almost every path
+that finishes in the money got there by going through the barrier first, and
+knocked itself out on the way.
+
+Which is the general lesson about barriers. Moving a barrier a couple of points
+can take most of the value out of an option, because it is not the destination
+being priced — it is every step of the route.
+
+## Module 4, end to end
+
+That completes the module's four pricing methods on the same SPY contract:
+
+| Method | Handles | Call price | How it works |
+| --- | --- | --- | --- |
+| **Binomial tree** | European, American | 1.7131 | Discrete up/down lattice, valued backwards |
+| **Black-Scholes** | European only | 1.7054 | Closed-form formula |
+| **Monte Carlo** | European, American, **exotic** | 1.7065 | Simulate, payoff, discount, average |
+| **Monte Carlo**, up-and-in | **Barrier** | 1.6658 | The same, plus a path condition |
+
+The three methods that price the vanilla call **agree to within a cent** — a
+lattice, a formula and 400,000 random walks converging on the same number from
+three unrelated directions.
+
+And the progression through the module is one of increasing generality bought
+with increasing computation. Black-Scholes is instant but only handles one
+contract type. The binomial tree adds early exercise. Monte Carlo is the
+slowest and handles everything, because it does not need a formula for the
+payoff — it only needs to be able to *simulate the path and read the payoff off
+it.* Averaging, thresholds, or anything else you can express as a rule on a
+price series.
+
+## Summary
+
+- **Barrier options** are exotic contracts whose payoff depends on **whether the
+  price reaches a predetermined level during the life of the contract.**
+- **Knock-in** options are **inactive until the barrier is touched** — if it is
+  never reached, the option **expires worthless**. **Knock-out** options are
+  **active until the barrier is touched**, then deactivate.
+- Six variants: **Up/Down × In/Out**, plus **double knock-in and double
+  knock-out**, which trigger on **either** of two barriers.
+- The test is on the **range of the path**: $\max(\text{range}) \ge B$ for an up
+  barrier, $\min(\text{range}) \le B$ for a down barrier.
+- Valuation adds two steps to Monte Carlo — **check the barrier, apply the
+  in/out rule** — then average and discount as always.
+- The Excel sheet builds an **up-and-in call** in a single `IF`.
+- **In + out = vanilla** is the identity that verifies the simulation; here
+  $1.6658 + 0.0357 = 1.7015$, matching the European exactly.
+- A barrier a few points away can remove almost all of an option's value — the
+  **route** is being priced, not just the destination.
