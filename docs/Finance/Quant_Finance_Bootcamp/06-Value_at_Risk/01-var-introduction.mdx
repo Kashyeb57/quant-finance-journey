@@ -1,0 +1,152 @@
+---
+title: What is Value at Risk?
+description: 'The question VaR answers, its two components, what it is used for — and the one thing it deliberately does not tell you, which is what the rest of the module is about.'
+---
+
+> **VaR is a risk measure that quantifies the extent of potential financial
+> losses within a firm or portfolio over a specific time frame at a specific
+> confidence interval.**
+
+Or, put as the question a risk manager actually asks:
+
+> **What is the maximum loss I might expect over a given period, at a specific
+> confidence interval?**
+
+## Reading a VaR number
+
+**1-day VaR at 95% CI is \$1M.**
+
+Two pieces of that sentence are the settings, and one is the answer:
+
+| Piece | Role |
+| --- | --- |
+| **1 day** | the **time frame** |
+| **95%** | the **confidence interval** |
+| **\$1M** | the **VaR** — the number you were solving for |
+
+And it splits into a pair of statements that are two sides of the same coin:
+
+- There is a **95% chance** that in 1 day losses will be **at most \$1M.**
+- There is a **5% chance** that losses can be **more than \$1M.**
+
+because $100\% = 1$, so the two probabilities have to sum to one.
+
+**A second example.** **1-day VaR at 99% CI = \$5M.**
+
+- **99% probability** that my losses will be **less than \$5M.**
+- **But 1% probability** that my losses **can exceed \$5M.**
+
+<svg viewBox="0 0 640 260" role="img" aria-label="A loss distribution with VaR marked at the 95th percentile; 95 percent of outcomes fall below it and a 5 percent tail extends beyond, with the size of that tail left undefined" style={{width: '100%', height: 'auto'}}>
+  <defs>
+    <clipPath id="tailclip"><rect x="430" y="20" width="180" height="175" /></clipPath>
+  </defs>
+  <path d="M60,195 C130,193 175,186 215,150 C255,112 285,55 330,55 C375,55 405,112 445,150 C485,186 540,193 600,195" fill="none" stroke="#25c2a0" strokeWidth="2.5" />
+  <path d="M60,195 C130,193 175,186 215,150 C255,112 285,55 330,55 C375,55 405,112 445,150 C485,186 540,193 600,195 Z" fill="#e0a44a" opacity="0.35" clipPath="url(#tailclip)" />
+  <line x1="430" y1="40" x2="430" y2="205" stroke="#e0a44a" strokeWidth="2.5" />
+  <line x1="60" y1="195" x2="600" y2="195" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="200" y="130" opacity="0.85">95% of outcomes</text>
+    <text x="196" y="147" opacity="0.6">losses ≤ VaR</text>
+    <text x="396" y="30" fill="#e0a44a">VaR</text>
+    <text x="470" y="120" fill="#e0a44a">5% tail</text>
+    <text x="470" y="138" fill="#e0a44a" opacity="0.75">losses &gt; VaR</text>
+    <text x="500" y="176" opacity="0.6">how big?</text>
+    <text x="300" y="228" opacity="0.7">loss →</text>
+  </g>
+</svg>
+
+## The thing VaR does not tell you
+
+This is the most important line on the page, and the module is built around it.
+
+Take the 99% example. There is a 1% chance losses exceed \$5M — but **exceed it
+by how much?**
+
+$$
+\$10\text{M?} \qquad \$100\text{M?} \qquad \$1\text{B?}
+$$
+
+> **That is something that VaR doesn't tell you.**
+
+VaR marks **where the tail begins**. It says nothing about **how far the tail
+goes.** A portfolio whose worst 1% of days lose \$5.1M and one whose worst 1%
+lose \$1B have **identical VaR** — and are not remotely the same portfolio.
+
+That gap is exactly what
+[Expected Shortfall](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/expected-shortfall-theory)
+exists to close, at the end of this module. Everything between here and there is
+about computing the VaR number itself.
+
+## Components of VaR
+
+Only two inputs have to be chosen:
+
+| | Component | Typical values |
+| --- | --- | --- |
+| 1 | **Time period** | **1 day**, **10 day** |
+| 2 | **Confidence interval** | **99.9%**, **99%**, **95%** |
+
+Change either and the number changes. A VaR figure quoted without both is
+meaningless.
+
+## Applications
+
+**a) Risk management.** **Banks and financial institutions use VaR to determine
+the capital reserve required to withstand the potential loss.** This is the
+regulatory use — the number feeds directly into how much capital must be held.
+
+**b) Portfolio management.** A **portfolio manager uses the concept of VaR to
+understand the extent of financial loss in the portfolio**, which **helps them
+adjust their portfolio so that they can maximise their profit and minimise their
+losses.**
+
+It also makes portfolios comparable. Two portfolios — $P_1$ holding ABC and XYZ,
+$P_2$ holding A and E — can be set side by side on both **return** and **loss**,
+rather than on return alone.
+
+**c) Stress testing.** VaR is **used to understand how your portfolio will
+perform in stressful situations** — extreme market conditions.
+
+Running the model over a crisis window, such as **2007-08**, gives what is
+called **Stressed VaR (S-VaR)**: the same calculation, fed deliberately
+catastrophic data.
+
+## The objective, and the three routes to it
+
+Given **1-day VaR at 95% CI**, the objective is simply: **find the VaR number.**
+
+There are three ways to do it:
+
+| | Method |
+| --- | --- |
+| 1 | **Variance-Covariance method** |
+| 2 | **Historical method** |
+| 3 | **Monte Carlo simulation method** |
+
+Each gets a theory note and an Excel note in what follows. And an obvious
+question, worth settling now:
+
+> **Will all the methods give you the same VaR?**
+>
+> **No.** Three different methods → **three different VaR numbers.**
+
+They make different assumptions about the shape of the return distribution, so
+they disagree — sometimes materially. Part of the work in this module is seeing
+*how much* they disagree on the same portfolio, and understanding which
+assumption caused it.
+
+## Summary
+
+- **VaR quantifies potential financial loss** over a **specific time frame** at
+  a **specific confidence interval.**
+- "1-day VaR at 95% CI = \$1M" means **95% chance losses are at most \$1M**, and
+  **5% chance they exceed it.**
+- **Two components**: the **time period** (1 day, 10 day) and the **confidence
+  interval** (95%, 99%, 99.9%).
+- **Applications**: capital reserves for banks, portfolio adjustment for
+  managers, and **stress testing** (Stressed VaR over a crisis window like
+  2007-08).
+- **Three methods** — variance-covariance, historical, Monte Carlo — and they
+  **do not agree** with each other.
+- **VaR tells you where the tail starts, not how deep it goes.** That is its
+  defining limitation, and the reason Expected Shortfall closes the module.

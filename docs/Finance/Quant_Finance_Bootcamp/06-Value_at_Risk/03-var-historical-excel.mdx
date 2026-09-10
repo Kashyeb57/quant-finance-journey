@@ -1,0 +1,157 @@
+---
+title: Historical VaR in Excel
+description: 'Building the historical method on real JPM/MS/BAC data — the SUMPRODUCT that collapses three stocks into one return, and two routes to the answer that disagree by $527.'
+---
+
+The [theory note](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-historical-theory)
+described the method. This is it built, on a real three-bank portfolio.
+
+## The setup
+
+| | |
+| --- | --- |
+| **Holdings** | **JPM**, **MS**, **BAC** |
+| **Data** | Daily closes from **2022-08-01**, 252 rows → **251 returns** |
+| **Portfolio value** | **\$1,000,000** |
+
+with weights stored in `T2:V2`:
+
+| | JPM | MS | BAC |
+| --- | --- | --- | --- |
+| **Weight** | **0.3** | **0.4** | **0.3** |
+
+(The theory note's worked example used 0.2 / 0.4 / 0.4 — the workbook uses
+0.3 / 0.4 / 0.3. They are different illustrations, not a contradiction.)
+
+## The columns
+
+| Range | Holds | Formula |
+| --- | --- | --- |
+| A:D | Date and the three price series | — |
+| N:P | **Individual stock returns** | `=B3/B2-1` |
+| **Q** | **Portfolio return** | **`=SUMPRODUCT(N3:P3,$T$2:$V$2)`** |
+| AB | **The same returns, sorted ascending** | — |
+
+Column Q is the whole portfolio step in one function.
+`SUMPRODUCT(N3:P3, $T$2:$V$2)` multiplies each stock's return by its weight and
+adds them:
+
+$$
+r_p = w_1 r_1 + w_2 r_2 + w_3 r_3
+$$
+
+which is exactly the weighted-return formula from the theory note. Three columns
+of returns become one column of portfolio returns, and from there the method is
+identical to the single-asset case.
+
+## Route 1 — the rank method
+
+The manual approach, laid out as a block in `AE:AH`:
+
+| Row | Label | 99% | 95% | 90% |
+| --- | --- | --- | --- | --- |
+| AE4 | Total no. of data | 251 | 251 | 251 |
+| AE5 | CI | 0.99 | 0.95 | 0.90 |
+| AE6 | **Alpha** `=100%-AF5` | 0.01 | 0.05 | 0.10 |
+| AE7 | **Position** `=AF4*AF6` | **2.51** | **12.55** | **25.1** |
+| AE8 | **Rounded** `=ROUNDUP(AF7,0)` | **3** | **13** | **26** |
+| AE9 | Return at that position | −0.036254 | −0.024161 | −0.019101 |
+| AE10 | Portfolio value | \$1M | \$1M | \$1M |
+| **AE11** | **1-day VaR** `=AF10*AF9` | **−\$36,253.51** | **−\$24,160.85** | **−\$19,101.28** |
+
+Note `ROUNDUP` — this is where the theory note's open rounding question gets
+settled in code. 25.1 becomes **26**, not 25.
+
+The lookups confirm it: `AF9 = AB5` (the 3rd sorted return, since `AB3` is rank
+1), `AG9 = AB15` (rank 13), `AH9 = AB28` (rank 26).
+
+## Route 2 — Excel's percentile function
+
+The same sheet computes it a second way, in `AJ:AM`:
+
+```excel
+AK9 = PERCENTILE.EXC(AB3:AB253, 0.01)
+AL9 = PERCENTILE.EXC(AB3:AB253, 0.05)
+AM9 = PERCENTILE.EXC(AB3:AB253, 0.10)
+```
+
+| CI | Percentile approach |
+| --- | --- |
+| 99% | **−\$36,780.77** |
+| 95% | **−\$24,284.88** |
+| 90% | **−\$19,936.96** |
+
+## The two routes disagree
+
+| CI | Rank method | Percentile method | Difference |
+| --- | --- | --- | --- |
+| **99%** | −\$36,253.51 | −\$36,780.77 | **\$527.26** |
+| **95%** | −\$24,160.85 | −\$24,284.88 | \$124.03 |
+| **90%** | −\$19,101.28 | −\$19,936.96 | \$835.68 |
+
+Not a mistake in either — they are answering the question slightly differently,
+and it is worth knowing which one you are using.
+
+**The rank method picks an actual observed return.** Round 2.51 up to 3, take
+the 3rd worst day, done. The answer is always a return that genuinely happened.
+
+**`PERCENTILE.EXC` interpolates between two of them.** It places the percentile
+at rank
+
+$$
+p \times (n + 1) = 0.01 \times 252 = 2.52
+$$
+
+and then linearly interpolates 52% of the way from the 2nd worst return to the
+3rd:
+
+$$
+-0.03735197 + 0.52 \times \left(-0.036253507 - (-0.03735197)\right) = -0.036780769
+$$
+
+which reproduces the sheet's `AK9` exactly. **The percentile method returns a
+number no day in the sample actually produced** — a blend of two neighbouring
+days.
+
+Neither is wrong. The rank method is more literal and more in the spirit of a
+non-parametric estimate; the percentile method is smoother and less jumpy when a
+new observation shifts the ordering. **The difference is about 1.5% of the VaR
+figure here**, which matters if the number feeds a capital requirement.
+
+## All three methods, side by side
+
+The workbook's `Summary Table` sheet collects the results of all three
+approaches on this same portfolio:
+
+| 1-day VaR @ | 99% CI | 95% CI | 90% CI |
+| --- | --- | --- | --- |
+| **Variance-Covariance** | −\$35,609.28 | −\$24,961.76 | −\$19,285.60 |
+| **Historical Simulation** | −\$36,253.51 | −\$24,160.85 | −\$19,101.28 |
+| **Monte Carlo Simulation** | −\$35,447.27 | −\$27,201.83 | −\$20,114.71 |
+
+> **Note: the negative sign indicates the loss in the portfolio.**
+
+This is the concrete answer to the question the
+[introduction](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-introduction)
+posed — *will all the methods give you the same VaR?* At 99% they land within
+about **\$800** of each other (2%), which is reassuring. At 95% the spread is
+wider — Monte Carlo says \$27,202 where historical says \$24,161, a **12.6%**
+difference on the same portfolio and the same data.
+
+The remaining notes in this module explain where that spread comes from: each
+method makes a different assumption about the shape of the return distribution,
+and they disagree most where the assumption bites hardest.
+
+## Summary
+
+- Real portfolio: **JPM / MS / BAC**, weights **0.3 / 0.4 / 0.3**, value
+  **\$1M**, **251 daily returns.**
+- **`SUMPRODUCT(returns, weights)`** collapses three return columns into one
+  portfolio return — the weighted-return formula in a single function.
+- **Rank method**: alpha × n → `ROUNDUP` → look up that sorted return → × portfolio
+  value. **99% CI gives −\$36,253.51.**
+- **`PERCENTILE.EXC`** gives **−\$36,780.77** for the same data, because it
+  **interpolates** at rank $p(n+1) = 2.52$ rather than picking an observed day.
+- The two differ by **\$527 (1.5%)** at 99% — pick one deliberately.
+- Across all three methods the 99% figures agree within ~2%, but the **95%
+  figures differ by 12.6%.**

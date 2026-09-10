@@ -1,0 +1,307 @@
+---
+title: VaR — the Historical Method
+description: 'The non-parametric approach: sort the actual returns, count to the right rank, multiply by portfolio value. Plus the portfolio-weighting step and the rounding choice the notes leave open.'
+---
+
+The first of the
+[three methods](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-introduction),
+and the one that assumes least.
+
+## Definition
+
+> The historical method of VaR is a **non-parametric approach** that estimates
+> the potential loss in a portfolio based on the **actual historical market
+> data.**
+
+**Non-parametric** is the key word: it fits **no distribution.** It does not
+assume returns are normal, or anything else. It simply takes what actually
+happened and reads the answer off it.
+
+The price of that is a single assumption, and it is a strong one:
+
+> **The past will reflect the future.**
+
+## Step 1 — gather data and calculate the returns
+
+Say you hold **three different stocks** — the notes use **JPM** (JP Morgan),
+**MS** (Morgan Stanley) and **BOFA** (Bank of America) — and pull **1 year** of
+data from Yahoo Finance.
+
+$$
+\text{Return} = \frac{S_{\text{today}}}{S_{\text{yesterday}}} - 1
+$$
+
+| Date | Stock price | Return |
+| --- | --- | --- |
+| 6 Dec 2024 | 100 | $(100 / 100.5) - 1$ |
+| 5 Dec 2024 | 100.5 | $(100.5 / 100.7) - 1$ |
+| 4 Dec 2024 | 100.7 | $(100.7 / 100.5) - 1$ |
+| 3 Dec 2024 | 100.5 | $(100.5 / 100) - 1$ |
+| 2 Dec 2024 | 100 | ⋮ |
+| ⋮ | | |
+| 2 Jan 2024 | 100 | $(100 / 99) - 1$ |
+| **1 Jan 2024** | **99** | **— can't** |
+
+:::note One data point buys you no return
+
+The oldest row has **nothing before it**, so it produces no return. Hence:
+
+$$
+n \text{ data points} \longrightarrow n - 1 \text{ returns}
+$$
+
+501 data points give 500 returns. And since **1 year = 252 trading days**, a
+year of prices gives **251 returns** — which is the number every rank
+calculation below uses.
+
+:::
+
+## Step 2 — sort the data
+
+> **Arrange the historical daily returns in ascending order** — smallest return
+> to largest return.
+
+Smallest first means **worst first**. Rank 1 is the worst day in the sample,
+rank 251 the best.
+
+| Return | Rank | |
+| --- | --- | --- |
+| −2% | 1 | **worst return** |
+| −1.1% | 2 | |
+| **−1%** | **3** | ← **the VaR return** |
+| 1.2% | 4 | |
+| 2.5% | 5 | |
+| ⋮ | ⋮ | |
+| | 251 | **best return** |
+
+## Step 3 — select the confidence interval
+
+**99% CI** or **95% CI.** The worked example uses **99%.**
+
+## Step 4 — calculate VaR
+
+**a) Determine the number of observation points (returns)** → **251.**
+
+**b) Calculate the rank that corresponds to the specific CI.** The rank is the
+tail probability times the number of observations:
+
+$$
+\text{Rank} = (100\% - \text{CI}) \times n
+$$
+
+| CI | Rank calculation | Rank |
+| --- | --- | --- |
+| **99%** | $1\% \times 251 = 2.51$ | **3** |
+| **95%** | $5\% \times 251 = 12.55$ | **13** |
+| **90%** | $10\% \times 251 = 25.1$ | **25 or 26** |
+
+:::note The rounding rule — and which way it cuts
+
+For 99% and 95% the fractional ranks (2.51, 12.55) go to 3 and 13 without
+argument. At 90% the notes first write **25.1** and show **both**
+`round(25.1) = 25` **and** `round up = 26`, each ticked — but the later summary
+settles on **26**, so the convention in use is **round up.**
+
+The direction matters. Because the list is sorted **worst first**, a **lower
+rank is a more negative return**:
+
+| Rank | Return | Loss | VaR |
+| --- | --- | --- | --- |
+| **25** | more negative | **larger** | **more conservative** |
+| **26** | less negative | smaller | less conservative |
+
+So the source's round-up convention is the **less** conservative of the two. Not
+wrong — just worth knowing which way your own rounding leans, and applying it
+consistently, because a VaR number whose rounding convention drifts is not
+comparable across dates.
+
+:::
+
+**c) Find the return at that rank.** At rank 3 the return is **−1%.**
+
+**d) Multiply the VaR return by the portfolio value.**
+
+$$
+\boxed{\;\text{VaR} = \text{Portfolio value} \times \text{VaR return}\;}
+$$
+
+$$
+= \$1\text{M} \times (-1\%) = 1{,}000{,}000 \times \frac{-1}{100} = -\$10{,}000
+$$
+
+> **1-day 99% CI VaR = \$10,000.**
+>
+> There is a **99% probability that my losses will be less than or equal to
+> \$10,000**, but there is a **1% chance that my losses can be greater.**
+
+## Doing it for a portfolio
+
+A portfolio is not one return series, it is several — and they have to be
+combined into one before sorting.
+
+$$
+r_p = w_1 r_1 + w_2 r_2 + w_3 r_3
+$$
+
+$$
+\boxed{\;\text{weight} = \frac{\text{investment in the stock}}{\text{total portfolio value}}\;}
+$$
+
+**Worked.** A **\$1M** portfolio: **A = \$200K, B = \$400K, C = \$400K.**
+
+| | Calculation | Weight |
+| --- | --- | --- |
+| $w_1$ | \$200K / \$1M | **20% = 0.2** |
+| $w_2$ | \$400K / \$1M | **40% = 0.4** |
+| $w_3$ | \$400K / \$1M | **40% = 0.4** |
+
+So for every day in the sample:
+
+$$
+r_p = 0.2\,r_1 + 0.4\,r_2 + 0.4\,r_3
+$$
+
+**Each day's three stock returns collapse into one portfolio return.** Do that
+for all 251 days and you are back to a single column — exactly the situation
+Step 2 onward already handles.
+
+### The full worked example
+
+Portfolio returns, unsorted:
+
+$$
+-5\%,\; 5\%,\; 3\%,\; 2\%,\; 1\%,\; -4.7\%,\; -4.5\%,\; -5.5\%,\; -7\%,\; -10\%
+$$
+
+**Sorted ascending, with ranks:**
+
+| Rank | 1 | 2 | **3** | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Return | −10% | −7% | **−5.5%** | −5% | −4.7% | −4.5% | 1% | 2% | 3% | 5% |
+
+Select **99% CI**, which gives **rank 3**, and the return there is **−5.5%.**
+
+$$
+\text{VaR} = \text{PV} \times r_{\text{rank }3} = \$1\text{M} \times (-5.5\%) = 1{,}000{,}000 \times \frac{-5.5}{100}
+$$
+
+$$
+\boxed{\;\text{VaR} = -\$55{,}000\;}
+$$
+
+> **1-day VaR at 99% CI = \$55,000.**
+
+:::note Two slips in the source's worked example
+
+**The rank label.** Step (d) is written as "PV × return **@ 5th rank**", but the
+value used is **−5.5%**, which is **rank 3** in the list directly above it —
+consistent with the 99% CI that was selected. Rank 5 would be −4.7%. The
+arithmetic is right; the label is wrong.
+
+**The sample size.** The rank formula uses **251 observations**
+($1\% \times 251 = 2.51 \to 3$), but the illustrative list has only **10
+returns.** With 10 observations, 99% CI would give
+$1\% \times 10 = 0.1 \to \text{rank } 1$, i.e. −10%. The list is a teaching
+prop, not the dataset the rank came from — worth knowing so you don't try to
+reconcile them.
+
+:::
+
+## Scaling to a longer horizon
+
+Everything above produced a **1-day** VaR. Regulators and desks routinely want
+10-day. You do not have to redo the calculation:
+
+$$
+\boxed{\;\text{1-day VaR} \times \sqrt{T} = T\text{-day VaR}\;}
+$$
+
+$$
+\text{1-day VaR at 99\%} \times \sqrt{10} = \text{10-day VaR at 99\%}
+$$
+
+So a 1-day 95% VaR of \$10,000 becomes a 10-day figure of
+$10{,}000 \times \sqrt{10}$.
+
+:::note It is the square root of time, not time
+
+The notes underline this: $\sqrt{10} \neq 10$. Scaling by 10 would overstate the
+10-day loss by a factor of about 3.2.
+
+The square root comes from the same place it does everywhere else in this
+course — variance grows linearly with time, so **standard deviation grows with
+its square root.** It is the identical $\sqrt{\Delta t}$ that scaled the
+Brownian shock in
+[GBM](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/model-stock-gbm-excel).
+
+:::
+
+**The alternative is to compute multi-day returns directly.** From a price
+series 100, 99, 98, 97, 96, …, 91, 90 you can form:
+
+| Horizon | Return |
+| --- | --- |
+| 1-day | $(100/99) - 1$, $(99/98) - 1$, … |
+| 5-day | $(100/96) - 1$, $(96/92) - 1$, … |
+| 10-day | $(100/91) - 1$, … |
+
+That is more honest, but it costs you observations — a year of data gives 251
+one-day returns and only about 25 non-overlapping 10-day returns. The $\sqrt{T}$
+rule buys horizon coverage without shrinking the sample.
+
+## Advantages
+
+**1) Easy to implement** — **no complex calculation.** Sort, count, multiply.
+
+**2) Reflects market realities** — it uses the **actual historical data of the
+stock**, so whatever really happened is in the answer.
+
+**3) No distribution assumption.**
+
+> In the historical method **we don't assume that returns follow a normal
+> distribution**, making it **suitable for portfolios with non-linear
+> instruments.**
+
+The notes give the concrete case: during the **COVID 2020 pandemic period** the
+distribution of stock returns was **not normal.** A method that assumed normality
+would have mispriced the risk; the historical method simply used what happened.
+
+## Disadvantages
+
+**a) It relies solely on historical data.** The assumption is that **the past
+will reflect the future** — that **the future will resemble the past.**
+
+> **Condition: it is not necessary that this is always true.**
+
+**b) It ignores extreme events.**
+
+This is the sharpest criticism, and it is about **window length.** Suppose you
+calibrate on the most recent **5 years, 2019-2024.** Then **2007-08 — the
+defining extreme event in recent finance — is outside your window entirely.**
+The method cannot produce a loss it has never seen.
+
+Lengthen the window to capture 2007-08 and you import a decade of stale market
+structure. Shorten it for relevance and you lose the tail. There is no window
+length that solves both, which is the fundamental limitation of a non-parametric
+method: **it can only ever tell you about the sample you gave it.**
+
+## Summary
+
+- The historical method is **non-parametric** — it assumes **no distribution**,
+  only that **the past will reflect the future.**
+- **Gather prices → compute returns** ($S_t/S_{t-1} - 1$). **$n$ prices give
+  $n-1$ returns**; a year of trading days gives **251.**
+- For a portfolio, first collapse each day to a single return using
+  $r_p = \sum w_i r_i$, with **weights = investment / total portfolio value.**
+- **Sort ascending** (worst first), then **rank $= (100\% - \text{CI}) \times n$.**
+- **VaR = portfolio value × the return at that rank.**
+- Worked: 99% CI on 251 returns → rank 3 → −5.5% → **\$1M × −5.5% = \$55,000.**
+- The source **rounds fractional ranks up**, which is the *less* conservative
+  direction — worth knowing and applying consistently.
+- **Scale horizons with $\sqrt{T}$**, not $T$: 1-day VaR $\times \sqrt{10}$ =
+  10-day VaR.
+- **Advantages:** easy, reflects reality, and **assumes no distribution** — so it
+  handled COVID-2020 returns that were far from normal.
+- **Disadvantages:** it **relies entirely on the sample**, and therefore
+  **ignores extreme events outside the window.** A 2019-2024 window cannot see
+  2007-08, and no window length fixes both relevance and tail coverage.
