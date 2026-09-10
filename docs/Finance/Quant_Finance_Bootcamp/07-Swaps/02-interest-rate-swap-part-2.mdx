@@ -1,0 +1,130 @@
+---
+title: The Interest Rate Swap
+description: 'Fixed against floating, worked through the Apple/Citigroup example — the full six-payment cash flow table, and the set-in-advance-paid-in-arrears convention that governs it.'
+---
+
+The most common swap by far: one party pays a **fixed** rate, the other pays a
+**floating** rate, both on the same notional.
+
+$$
+\textbf{Fixed} \rightarrow \text{never changes}
+\qquad\qquad
+\textbf{Floating} \rightarrow \text{always changes}
+$$
+
+**Floating rates** in practice are a benchmark plus a spread — the notes list
+**SOFR**, **SOFR + 0.5%**, **US Treasury + 1%**, **Fed Funds**. (The example
+below uses **LIBOR**, which was the standard benchmark at the time and has since
+been replaced by SOFR.)
+
+## The worked example
+
+A hypothetical **3-year swap initiated on 8 March 2017** between **Apple** and
+**Citigroup**, on a **\$100M** notional:
+
+| | |
+| --- | --- |
+| **Apple agrees to pay** | **3% per annum** on \$100M |
+| **Citigroup agrees to pay** | **6-month LIBOR** on \$100M |
+| **Payments** | **semi-annual** — the first on 8 September 2017 |
+
+So **Apple is the fixed-rate payer** and **Citigroup is the floating-rate
+payer.** Six exchanges over three years.
+
+## The cash flows, from Apple's side
+
+| Date | LIBOR | Floating CF received | Fixed CF paid | **Net** |
+| --- | --- | --- | --- | --- |
+| 8 Mar 2017 | 2.2% | — | — | — |
+| 8 Sep 2017 | 2.8% | +\$1.10M | −\$1.50M | **−\$0.40M** |
+| 8 Mar 2018 | 3.3% | +\$1.40M | −\$1.50M | **−\$0.10M** |
+| 8 Sep 2018 | 3.5% | +\$1.65M | −\$1.50M | **+\$0.15M** |
+| 8 Mar 2019 | 3.6% | +\$1.75M | −\$1.50M | **+\$0.25M** |
+| 8 Sep 2019 | 3.9% | +\$1.80M | −\$1.50M | **+\$0.30M** |
+| 8 Mar 2020 | — | +\$1.95M | −\$1.50M | **+\$0.45M** |
+| | | | **Sum** | **+\$0.65M** |
+
+> **Apple received \$0.65M** over the life of the swap.
+
+### Where each number comes from
+
+**The fixed leg is trivial** and identical every period:
+
+$$
+\text{Fixed CF} = -\frac{3\%}{2} \times \$100\text{M} = -\$1.5\text{M}
+$$
+
+Divided by 2 because payments are **semi-annual** — an annual rate applied to a
+half-year period.
+
+**The floating leg uses the previous period's LIBOR:**
+
+$$
+\text{Floating CF} = \frac{\text{LIBOR}_{\text{previous date}}}{2} \times \$100\text{M}
+$$
+
+So the payment on 8 Sep 2017 uses the **2.2%** observed on 8 Mar 2017, not the
+2.8% observed on the payment date itself: **2.2% / 2 x \$100M = \$1.1M**.
+
+:::note Set in advance, paid in arrears
+
+This one-period lag is the standard convention and it is easy to misread from
+the table. The floating rate for a period is **fixed at the start of that
+period** and **paid at the end of it.**
+
+The reason is practical: both parties need to know what they owe *before* the
+period runs, so the amount is locked in at the beginning. It also means **the
+very first floating payment is known with certainty on day one** — a fact the
+[valuation note](/docs/Finance/Quant_Finance_Bootcamp/Swaps/valuation-of-irs)
+depends on, because that payment needs no forecasting.
+
+It also explains why the **8 Mar 2020 row has no LIBOR** in the table: the swap
+ends there, so no new rate is set. Its payment uses the 3.9% from 8 Sep 2019.
+
+:::
+
+## What the swap actually did
+
+Look at the net column: **negative for the first two periods, positive for the
+last four.** Apple locked in 3% while LIBOR started at 2.2% and climbed to 3.9%.
+
+Apple paid slightly more than it received while rates were low, then received
+more as rates rose past 3%. **The break-even is exactly where LIBOR crosses the
+fixed rate** — below it the fixed payer loses, above it the fixed payer gains.
+
+Which is the whole point of the instrument. Apple was not predicting rates; it
+was **converting a floating exposure into a fixed one** (or vice versa). The
+\$0.65M is what that conversion happened to be worth given how rates actually
+moved — it was not the objective.
+
+## Transforming a liability or an asset
+
+The workbook carries four further scenario sheets —
+`Swap_transform_liability_Eg1` and `Eg2`, `Swap_transform_Asset_Eg1` and `Eg2` —
+which are the two standard uses:
+
+| Use | What the swap does |
+| --- | --- |
+| **Transform a liability** | A firm with **floating-rate debt** pays fixed in the swap → its net obligation becomes **fixed** |
+| **Transform an asset** | A firm holding a **fixed-rate asset** receives floating in the swap → its net income becomes **floating** |
+
+In both cases the underlying debt or asset is untouched. The swap sits on top
+and flips the rate character of the cash flows, which is far cheaper than
+retiring the debt and reissuing it.
+
+## Summary
+
+- An **interest rate swap** exchanges a **fixed** rate for a **floating** rate
+  on the same notional. **Fixed never changes; floating always does.**
+- Worked: **Apple pays 3% fixed, Citigroup pays 6-month LIBOR**, \$100M
+  notional, semi-annual, 3 years. **Apple netted +\$0.65M.**
+- The **fixed leg** is $\text{rate}/2 \times \text{notional}$ every period; the
+  **floating leg** uses the **rate set at the start of the period**, paid at the
+  end.
+- **Set in advance, paid in arrears** — so the **first floating payment is known
+  from day one.**
+- Apple's net turns from negative to positive **exactly where LIBOR crosses
+  3%.**
+- Swaps are used to **transform a liability** (floating debt → fixed) or
+  **transform an asset** (fixed income → floating), without touching the
+  underlying instrument.

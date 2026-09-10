@@ -1,0 +1,224 @@
+---
+title: Valuation of an Interest Rate Swap
+description: 'Five steps from swap terms to NPV, worked on the real spreadsheet — plus the bond-pair method, and a par-repricing claim in the workbook that its own numbers contradict by 39.5 basis points.'
+---
+
+At inception a swap is worth roughly zero to both sides. After that, rates move
+and it acquires value. This note computes that value.
+
+> To value an IRS you typically focus on the **NPV of the future cash flows from
+> the swap's fixed and floating legs.**
+
+## Step 1 — identify the swap terms
+
+| Term | |
+| --- | --- |
+| **Fixed rate** | |
+| **Floating rate** | the **benchmark interest rate used for the floating leg** |
+| **Notional amount** | the **principal upon which interest payments are calculated** |
+| **Payment frequency** | quarterly, semi-annual, annual |
+| **Day count convention** | |
+| **Duration of the swap** | 3 years, 5 years, … |
+
+### Day count conventions
+
+How you convert "between these two dates" into a number to multiply a rate by:
+
+| Convention | Meaning |
+| --- | --- |
+| **ACT/365** | **actual** number of days, over a 365-day year |
+| **ACT/ACT** | actual days over the actual year length — **2024 is a leap year → 366** |
+| **30/360** | **30 days in a month, 360 days in a year** |
+
+15 January to 15 March under **30/360** is $30 \times 2 = 60$ days, so
+$60/360$ of a year. Under **ACT** it would be the true 59 days. Small
+differences, but they compound across a large notional.
+
+$$
+\text{Discounting CF} = e^{-rT}, \quad T = \text{time between two consecutive dates}
+$$
+
+## Step 2 — forecast the future cash flows
+
+| Leg | How |
+| --- | --- |
+| **Fixed leg** | the **rate remains the same for all the cash flows** — trivial |
+| **Floating leg** | **depends on the future value of the floating rate index, usually calculated using the forward curve** |
+
+$$
+\text{spot rate} \longrightarrow \text{forward rate} \longrightarrow \text{CF of the floating leg}
+$$
+
+This is why the
+[forward rate derivation](/docs/Finance/Quant_Finance_Bootcamp/Swaps/spot-rate-forward-rate)
+had to come first. You cannot forecast the floating leg without it.
+
+## Step 3 — determine the discount factors
+
+$$
+\boxed{\;DF = e^{-rt}\;}
+$$
+
+> **Discount factors are used to calculate the present value of the future cash
+> flows.**
+
+## Step 4 — calculate the present values
+
+$$
+PV = DF \times CF
+$$
+
+done **separately for the fixed leg and the floating leg**, then summed across
+all payment dates.
+
+## Step 5 — compute the NPV
+
+$$
+\boxed{\;NPV = PV(\text{floating leg}) - PV(\text{fixed leg})\;}
+$$
+
+| NPV | Meaning |
+| --- | --- |
+| **Positive** | the **value of the floating leg exceeds the fixed leg** → **beneficial for the party receiving floating** |
+| **Negative** | the **fixed leg value exceeds the floating leg** → **beneficial for the party receiving fixed** |
+
+## The worked spreadsheet
+
+A swap with a **remaining life of 1.25 years**, **\$100M notional**, **3%
+fixed**, semi-annual, where the institution **pays fixed and receives LIBOR.**
+
+The LIBOR term structure (continuously compounded):
+
+| Time | −0.25 | 0.25 | 0.75 | 1.25 |
+| --- | --- | --- | --- | --- |
+| **LIBOR** | **2.9%** | 2.8% | 3.2% | 3.4% |
+
+The **−0.25** column is the rate observed **three months ago**, which — by the
+[set-in-advance convention](/docs/Finance/Quant_Finance_Bootcamp/Swaps/interest-rate-swap-part-2)
+— determines the payment due at **+0.25**. It is already known, so it needs no
+forecasting.
+
+**Step 1 — discount factors**, `=EXP(-rate*time)`:
+
+| Time | 0.25 | 0.75 | 1.25 |
+| --- | --- | --- | --- |
+| **DF** | 0.993024 | 0.976286 | 0.958390 |
+
+**Step 2 — implied forward rates**, using the formula from the previous note:
+
+```excel
+D20 = (D19*D18 - C19*C18)/(D18 - C18)
+```
+
+$$
+f(0.25,\,0.75) = \frac{0.032 \times 0.75 - 0.028 \times 0.25}{0.50} = 3.4\%
+$$
+
+$$
+f(0.75,\,1.25) = \frac{0.034 \times 1.25 - 0.032 \times 0.75}{0.50} = 3.7\%
+$$
+
+then converted from continuous to semi-annual compounding:
+
+```excel
+D21 = 2*(EXP(D20/2)-1)
+```
+
+| | f(0.25,0.75) | f(0.75,1.25) |
+| --- | --- | --- |
+| **Continuous** | 3.4000% | 3.7000% |
+| **Semi-annual** | **3.4291%** | **3.7344%** |
+
+That conversion matters: the cash flow is paid semi-annually, so the rate must
+be expressed in the same convention before dividing by 2.
+
+**Steps 3-5 — the cash flows:**
+
+| Time | 0.25 | 0.75 | 1.25 |
+| --- | --- | --- | --- |
+| Floating CF | 1.4500 | 1.714532 | 1.867219 |
+| Fixed CF | 1.5 | 1.5 | 1.5 |
+| **Net CF (FV)** | −0.0500 | +0.214532 | +0.367219 |
+| **Net CF (PV)** | −0.049651 | +0.209445 | +0.351939 |
+| | | **Total** | **+\$0.511732M** |
+
+**The swap is worth +\$511,732** to the party paying fixed and receiving
+floating. Every figure above reproduces exactly when recomputed independently.
+
+The first floating payment, **1.45**, is $2.9\%/2 \times 100$ — the known rate
+from three months ago. The other two come from the forwards.
+
+## The bond-pair method
+
+There is a second route, and the workbook's `Swap Rate of IRS` sheet uses it:
+
+> **An interest rate swap is equivalent to being long one bond and short
+> another.**
+
+Pay fixed, receive floating = **short a fixed-rate bond, long a floating-rate
+bond.** Both bonds have the same notional and dates, so the principals cancel —
+leaving exactly the swap's net interest flows.
+
+On a **2-year, \$10M** swap with the SOFR curve 3%, 4%, 4%, 3.5%:
+
+| | Value |
+| --- | --- |
+| Fixed-rate bond PV | \$9,924,545.11 |
+| Floating-rate bond PV | \$9,924,545.18 |
+| **Value to pay fixed / receive float** | ≈ **0** |
+| **Swap rate** | **3.144490%** |
+
+The **swap rate** is the fixed rate that makes the two bonds equal — i.e. the
+fixed rate at which the swap is worth zero at inception. That is the rate a
+dealer would quote.
+
+:::danger The floating bond does not reprice to par, and the swap rate is 39.5bp off
+
+The sheet carries the note *"Floating rate bond reprices itself back to par."*
+That is a genuine theoretical result — but **this sheet's numbers contradict
+it.**
+
+The floating leg uses **typed-in** rates (2.5%, 3.5%, 3.5%, 3.1%) rather than
+the forwards implied by the SOFR curve it is discounted with. The result:
+
+| | Floating bond PV |
+| --- | --- |
+| **With the sheet's assumed rates** | **\$9,924,545** — **99.245% of par** |
+| **With the forwards implied by the same curve** | **\$10,000,000.00 — exactly par** |
+
+The implied forwards from that curve are **3%, 5%, 4%, 2%** — quite different
+from the ones entered. Using them, the floating bond prices to par to the cent,
+confirming the note's claim.
+
+**This propagates into the swap rate.** Since the swap rate is the fixed rate
+that matches the floating bond's value:
+
+| | Swap rate |
+| --- | --- |
+| Sheet's answer (floating bond below par) | **3.144490%** |
+| Correct (floating bond at par) | **3.539535%** |
+| **Difference** | **39.5 basis points** |
+
+The *method* is right, and the bond-pair framing is standard. But the floating
+leg must be built from the same curve used to discount it — otherwise you are
+quoting a swap rate against a bond mispriced by three quarters of a percent.
+
+:::
+
+## Summary
+
+- Valuing an IRS: **identify terms → forecast cash flows → discount factors →
+  present values → NPV.**
+- $NPV = PV(\text{float}) - PV(\text{fixed})$. **Positive favours the floating
+  receiver; negative favours the fixed receiver.**
+- The **fixed leg is constant**; the **floating leg comes from the forward
+  curve**, which comes from the spot curve.
+- **Day count conventions** (ACT/365, ACT/ACT, 30/360) decide how a date gap
+  becomes a fraction of a year.
+- Worked: 1.25 years remaining, \$100M, 3% fixed → forwards of **3.4291%** and
+  **3.7344%** semi-annual → **NPV +\$511,732**, verified independently.
+- **A swap is a pair of bonds** — pay fixed / receive float = short a fixed
+  bond, long a floating one. The **swap rate** equalises them.
+- **The workbook's floating bond prices at 99.245% of par, not par**, because
+  its floating rates were typed rather than derived from its own discount curve
+  — putting the quoted swap rate **39.5bp** below the correct 3.539535%.

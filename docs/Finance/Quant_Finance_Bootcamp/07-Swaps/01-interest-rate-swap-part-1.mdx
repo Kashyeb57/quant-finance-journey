@@ -1,0 +1,119 @@
+---
+title: What is a Swap?
+description: 'The fourth derivative type — two parties exchanging cash flows on agreed terms. What a swap contains, who trades them, and why they never appear on an exchange.'
+---
+
+Three derivative types have appeared so far in this course — **forwards**,
+**futures** and **options**. This module covers the fourth: **swaps.**
+
+## Definition
+
+> Swaps are **financial derivatives that allow two parties to exchange a
+> sequence of cash flows over a specified period based on predetermined terms.**
+
+**Cash flow** here means simply **the flowing of cash between two parties.**
+
+Party A and Party B agree that, on a schedule, A pays B something and B pays A
+something else. What makes it a *derivative* is that the amounts are not fixed
+sums — they are **derived** from something that moves.
+
+> Typically, a swap involves swapping **cash flows which are based on variables
+> such as interest rates, currencies, equities**, etc.
+
+## Types of swaps
+
+| | Type |
+| --- | --- |
+| a) | **Interest Rate Swap** |
+| b) | **Currency Swap** |
+| c) | **Equity Swap** |
+
+This module covers the first two — the
+[interest rate swap](/docs/Finance/Quant_Finance_Bootcamp/Swaps/interest-rate-swap-part-2)
+in depth, and the
+[currency swap](/docs/Finance/Quant_Finance_Bootcamp/Swaps/currency-swap)
+at the end.
+
+## How a swap is structured
+
+> A swap involves **2 counterparties that agree to exchange cash flow over a
+> certain period of time.**
+
+> The exact terms of the swap agreement are **negotiated by the counterparties**
+> and then **formalised in a legal contract.**
+
+That word *negotiated* is doing real work. A swap is not a standardised product
+you buy off a screen — it is a bilateral agreement, written to fit two specific
+parties.
+
+### What the terms must specify
+
+| | |
+| --- | --- |
+| **What is to be swapped?** | which cash flows, on which variable |
+| **Between whom is the swap?** | the two counterparties |
+| **Notional amount** | e.g. **\$100M** |
+| **Maturity of the swap** | how long it runs |
+| **Any contingencies** | including the **day count convention** |
+
+:::note The notional is notional
+
+The **notional amount** is the number the interest payments are *calculated on*
+— it is generally never exchanged in an interest rate swap. A \$100M notional
+swap does not involve \$100M changing hands; it involves the *difference between
+two interest calculations* on \$100M changing hands.
+
+The [currency swap](/docs/Finance/Quant_Finance_Bootcamp/Swaps/currency-swap)
+is the exception — there the principal genuinely is exchanged, because the two
+sides are in different currencies.
+
+:::
+
+## Who uses swaps
+
+> Swaps are mainly used by **institutional investors** such as **banks** and
+> other **financial institutions**, **governments**, **corporations** and
+> **investment banks.**
+
+And the purpose is consistent:
+
+$$
+\textbf{Manage risk} \longrightarrow
+\begin{cases}
+\text{Interest rate risk} \
+\text{Currency risk} \
+\text{Equity risk}
+\end{cases}
+$$
+
+A corporation with floating-rate debt and a fixed-rate budget has a mismatch. A
+swap converts one into the other without retiring the debt.
+
+## Why you have never seen one quoted
+
+Two facts that follow directly from the "negotiated bilaterally" structure:
+
+> **Swaps do not trade on exchanges.**
+
+> **Retail investors do not engage in swaps.**
+
+**Swaps are always traded OTC** — over the counter. Because each contract is
+negotiated to fit its two counterparties, there is nothing standardised to list.
+That is the trade-off: complete flexibility in the terms, at the cost of no
+central market, no exchange price, and — as
+[Module 1 covered](/docs/Forwards-and-Futures)
+— **counterparty risk** that an exchange-cleared product would not carry.
+
+## Summary
+
+- A **swap** lets **two parties exchange a sequence of cash flows** over a set
+  period on **predetermined terms**, based on variables like **interest rates,
+  currencies or equities.**
+- Three types: **interest rate, currency, equity.**
+- Terms are **negotiated bilaterally and formalised in a legal contract** —
+  what is swapped, between whom, the **notional amount**, the **maturity**, and
+  contingencies such as the **day count convention.**
+- The **notional is a calculation base**, not an amount that changes hands (the
+  currency swap excepted).
+- Used by **institutions to manage interest rate, currency and equity risk.**
+- **Always OTC** — never exchange-traded, and not used by retail investors.

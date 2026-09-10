@@ -1,0 +1,196 @@
+---
+title: The Currency Swap
+description: 'Swapping currencies rather than rate types — why the principal really is exchanged here, the three-stage structure, and a valuation worked in two currencies.'
+---
+
+The [interest rate swap](/docs/Finance/Quant_Finance_Bootcamp/Swaps/interest-rate-swap-part-2)
+exchanged one kind of interest for another in the same currency. A **currency
+swap** crosses the currency boundary, and that one change alters the mechanics
+considerably.
+
+## Definition
+
+> A currency swap is a **financial derivative that commits 2 counterparties to
+> exchange streams of interest payments and principal payments in different
+> currencies.**
+
+> Currency swaps are typically used by institutions to **manage exposure to
+> foreign exchange.**
+
+### The problem it solves
+
+An Indian company owes **\$100,000 three months from now**. Today the bank quotes
+**1 USD = ₹85**, so the obligation is ₹8,500,000. But the rate moves every day —
+82, 84, 85, 86 — and in three months it could be anything.
+
+> The **amount should not be reduced.**
+
+The company does not want its rupee cost floating around with the exchange rate.
+A currency swap fixes the terms of the exchange in advance, converting an
+uncertain FX exposure into a known schedule.
+
+## The three-stage structure
+
+Unlike an IRS, a currency swap exchanges **principal as well as interest** — and
+it does so twice.
+
+**1) Initial exchange of principal.**
+
+> At the **inception of the swap, the principal amounts in 2 different
+> currencies are exchanged between the counterparties at a spot rate.**
+
+**2) Exchange of interest payments.**
+
+> **Interest payments between the 2 counterparties are exchanged** — on each
+> payment date through the life of the swap.
+
+**3) Re-exchange of principal.**
+
+> At the **maturity of the swap, the original principal amounts are swapped back
+> at the same exchange rate as at the inception, regardless of the prevailing
+> market exchange rate.**
+
+$$
+\underbrace{t=0}_{\text{principal exchanged}} \;\rightarrow\;
+\underbrace{t=1,2,3,4}_{\text{interest exchanged}} \;\rightarrow\;
+\underbrace{t=5}_{\text{principal + final interest}}
+$$
+
+:::note This is why the principal is real here
+
+In an interest rate swap both legs are in the same currency, so exchanging
+identical principals would be pointless — they would cancel. Hence "notional".
+
+In a currency swap the two principals are in **different currencies**, so they
+do **not** cancel. Exchanging them is the entire point: it is how each party
+gets the currency it actually needs.
+
+And because the re-exchange happens at the **inception rate regardless of the
+prevailing market rate**, the FX risk over the swap's life is removed — which is
+precisely what the Indian importer above was trying to achieve.
+
+:::
+
+## Types of currency swap
+
+| | Type | Structure |
+| --- | --- | --- |
+| 1 | **Fixed for Fixed** | **Both parties exchange fixed interest payments** |
+| 2 | **Fixed for Floating** | **One party pays a fixed rate, the other pays a floating rate** |
+| 3 | **Floating for Floating** | **Both parties exchange floating interest payments** — in different currencies |
+
+## Worked example — fixed for fixed
+
+A hypothetical **5-year currency swap**, initiated **1 February 2017**:
+
+| | |
+| --- | --- |
+| **British Petroleum pays** | **3% fixed on \$15 million** |
+| **BP receives** | **4% fixed on £10 million** |
+| **Payments** | **once a year** |
+
+Cash flows to BP:
+
+| Date | Dollar cash flow | Sterling cash flow | |
+| --- | --- | --- | --- |
+| 1 Feb 2017 | **+\$15M** | **−£10M** | *initial exchange* |
+| 1 Feb 2018 | −\$0.45M | +£0.40M | |
+| 1 Feb 2019 | −\$0.45M | +£0.40M | |
+| 1 Feb 2020 | −\$0.45M | +£0.40M | |
+| 1 Feb 2021 | −\$0.45M | +£0.40M | |
+| 1 Feb 2022 | **−\$15.45M** | **+£10.40M** | *final interest + re-exchange* |
+
+At inception **BP pays £10 million and receives \$15 million** — implying an
+exchange rate of 1.50 dollars per pound, locked in for the life of the swap.
+
+The interest amounts are straightforward: $3\% \times 15 = 0.45$ and
+$4\% \times 10 = 0.40$, annually. The final row bundles the last interest
+payment with the principal going back the other way.
+
+Notice the **signs are opposite across the two columns** at every date. BP is
+short dollars and long sterling throughout, which is the exposure it wanted.
+
+## Valuing a currency swap
+
+The same **two-bond** framing as the
+[IRS valuation](/docs/Finance/Quant_Finance_Bootcamp/Swaps/valuation-of-irs)
+— but now the two bonds are in different currencies, so one leg has to be
+converted before they can be netted.
+
+**The setup:**
+
+| | US | Japan |
+| --- | --- | --- |
+| **Principal** | **\$10M** | **¥1,200M** |
+| **Fixed rate paid/received** | 4% | 3% |
+| **Risk-free rate** (continuous) | **2.5%** | **1.5%** |
+
+with **3 years remaining** and a current exchange rate of **110 yen per dollar**.
+The institution **pays dollars and receives yen.**
+
+**The dollar leg** — cash flows $0.4$, $0.4$, $10.4$ (the last including
+principal), discounted at 2.5%:
+
+| Time | 1 | 2 | 3 | |
+| --- | --- | --- | --- | --- |
+| CF | 0.4 | 0.4 | 10.4 | |
+| DF `=EXP(-0.025*t)` | 0.975310 | 0.951229 | 0.927743 | |
+| **PV** | 0.390124 | 0.380492 | 9.648532 | **Σ = \$10.419148M** |
+
+**The yen leg** — cash flows $36$, $36$, $1236$, discounted at 1.5%:
+
+| Time | 1 | 2 | 3 | |
+| --- | --- | --- | --- | --- |
+| CF | 36 | 36 | 1236 | |
+| DF `=EXP(-0.015*t)` | 0.985112 | 0.970446 | 0.955997 | |
+| **PV** | 35.46403 | 34.936039 | 1181.612888 | **Σ = ¥1,252.012957M** |
+
+**Convert and net:**
+
+$$
+\frac{¥1{,}252.012957\text{M}}{110} = \$11.381936\text{M}
+$$
+
+$$
+\boxed{\;\text{Net value} = \$11.381936 - \$10.419148 = \mathbf{+\$0.962788\text{M}}\;}
+$$
+
+The swap is worth **+\$962,788** to the institution. All six present values and
+the final net reproduce exactly when recomputed independently.
+
+:::note Where the value comes from
+
+Two forces are at work, and they pull in opposite directions.
+
+**The yen leg pays a lower coupon** (3% vs 4%) — which hurts. But **the yen
+discount rate is also lower** (1.5% vs 2.5%) — which helps, because a lower
+discount rate raises present value.
+
+Here the discounting effect wins. The yen bond's coupon of 3% sits **above** its
+1.5% discount rate, so it prices above par; the dollar bond's 4% coupon sits
+above its 2.5% rate too, but by a smaller margin relative to its size. Converted
+at the current rate, the yen leg is worth more — hence the positive value.
+
+**And note what is *not* in this calculation: any forecast of the exchange
+rate.** The valuation uses today's spot rate to convert, and the two interest
+rate curves to discount. That is the no-arbitrage approach — an FX forecast
+would introduce a view, and a valuation is not supposed to have one.
+
+:::
+
+## Summary
+
+- A **currency swap** exchanges **interest payments and principal in two
+  different currencies**, and is used to **manage foreign exchange exposure.**
+- **Three stages**: **initial exchange of principal** at spot → **exchange of
+  interest** through the life → **re-exchange of principal at maturity, at the
+  original inception rate**, whatever the market rate has become.
+- **The principal really is exchanged**, unlike an IRS, because the two
+  principals are in different currencies and do not cancel.
+- **Three types**: fixed-for-fixed, fixed-for-floating, floating-for-floating.
+- Worked: BP pays **3% on \$15M**, receives **4% on £10M** for 5 years —
+  principals swapped at inception and returned at maturity.
+- Valued as **two bonds in two currencies**: PV each leg on its own curve,
+  **convert at the spot rate**, and net. Worked to **+\$962,788**, verified.
+- The valuation needs **no exchange-rate forecast** — only today's spot rate and
+  the two interest rate curves.

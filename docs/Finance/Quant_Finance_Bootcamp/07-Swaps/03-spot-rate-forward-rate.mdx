@@ -1,0 +1,165 @@
+---
+title: Spot Rates and Forward Rates
+description: 'The rate you can transact at today versus the rate implied for a future period — and the no-arbitrage derivation that pins the second to the first.'
+---
+
+Valuing a swap means discounting future cash flows, and the floating leg's
+future cash flows are not yet known. Both problems need the **term structure of
+interest rates** — which is what this note builds.
+
+## Spot rate
+
+> The spot rate is the **current interest rate at which a financial instrument
+> can be bought or sold for immediate delivery.**
+
+**Usage: it is used for immediate transactions.**
+
+The parallel the notes draw: stock ABC trading at **\$100** right now is the
+**spot value of the stock**. An interest rate of **4%** available right now — a
+**SOFR** quote, say — is the **spot rate**. Both are prices for doing something
+*today*.
+
+## Forward rate
+
+> The forward rate is an **agreed-upon rate between 2 parties for a transaction
+> that will occur at a specified future date.**
+
+$$
+\underbrace{0 \longrightarrow 3}_{\text{spot rate}} \qquad \underbrace{3 \longrightarrow 6}_{\text{forward rate}}
+$$
+
+> **Note: the forward rate is not a market rate today, but rather a rate
+> expected in the future.**
+>
+> ⤷ **Derived from the spot rate.**
+
+That last line is the important one, and the rest of this note is why it is
+true.
+
+| | Used for |
+| --- | --- |
+| **Spot rates** | **immediate transactions** |
+| **Forward rates** | **future transactions** |
+
+## Deriving the forward rate from spot rates
+
+The tool is **continuous compounding**:
+
+$$
+\text{Compounding} = e^{rt}
+\qquad\qquad
+\text{Discounting} = e^{-rt}
+$$
+
+where $r$ is the rate and $t$ the time.
+
+### The setup
+
+Two ways to invest an amount $P$ from time 0 to time $T_2$:
+
+**Case 1 — invest straight through.** Put $P$ in at the $T_2$ spot rate $R_2$
+and hold to $T_2$:
+
+$$
+FV_{T_2} = P \cdot e^{R_2 T_2} \qquad\qquad \text{— (1)}
+$$
+
+**Case 2 — invest in two steps.** Put $P$ in at the $T_1$ spot rate $R_1$ until
+$T_1$:
+
+$$
+FV_{T_1} = P \cdot e^{R_1 T_1}
+$$
+
+then roll that amount forward from $T_1$ to $T_2$ at the forward rate $F$, for a
+duration of $(T_2 - T_1)$:
+
+$$
+FV_{T_2} = FV_{T_1} \times e^{F(T_2 - T_1)} = P \cdot e^{R_1 T_1} \cdot e^{F(T_2-T_1)} \qquad \text{— (2)}
+$$
+
+### Why they must be equal
+
+If the two routes gave different amounts, you could borrow via the cheaper one
+and lend via the richer one and pocket the difference with no capital and no
+risk. The notes name it directly: **arbitrage opportunities.**
+
+$$
+\$100 \xrightarrow{\;\;1\text{yr, then 1yr}\;\;} X
+\qquad
+\$100 \xrightarrow{\;\;\;\;2\text{yr straight}\;\;\;\;} X
+$$
+
+Both must land on the same $X$. So set **(1) = (2)**:
+
+$$
+\cancel{P}\,e^{R_2 T_2} = \cancel{P}\,e^{R_1 T_1} \cdot e^{F(T_2-T_1)}
+$$
+
+$$
+e^{R_2 T_2} = e^{R_1 T_1} \cdot e^{F(T_2-T_1)}
+$$
+
+Take logs of both sides, using $\log(A \times B) = \log(A) + \log(B)$, and since
+log and exp are inverses:
+
+$$
+R_2 T_2 = R_1 T_1 + F(T_2 - T_1)
+$$
+
+$$
+F(T_2 - T_1) = R_2 T_2 - R_1 T_1
+$$
+
+$$
+\boxed{\;F = \frac{R_2 T_2 - R_1 T_1}{T_2 - T_1}\;}
+$$
+
+**the forward rate between $T_1$ and $T_2$**, where $R_1$ and $R_2$ are the
+**zero rates / spot rates** for those maturities.
+
+:::note A slip in the middle of the derivation
+
+Immediately after stating the log rule correctly, the source writes
+
+$$
+\log\left[e^{R_2T_2}\right] = \log\left[e^{R_1T_1} + e^{F(T_2-T_1)}\right]
+$$
+
+with a **plus** inside the bracket where the previous line correctly had a
+**product**. The very next line then gives the right answer,
+$R_2T_2 = R_1T_1 + F(T_2-T_1)$ — which only follows from the product form.
+
+It is a transcription slip mid-derivation; the result is correct. But the
+distinction matters: **the sum appears *after* taking the log, not before.**
+
+:::
+
+## Reading the formula
+
+Rearranged, the formula says something intuitive:
+
+$$
+R_2 T_2 = R_1 T_1 + F(T_2 - T_1)
+$$
+
+**Total growth over the long period = growth over the short period + growth over
+the stub.** The forward rate is whatever rate makes the second leg fill exactly
+the gap the two spot rates leave.
+
+Which also explains why forward rates can look extreme. If $R_2$ is barely above
+$R_1$ but $T_2$ is much larger than $T_1$, the implied $F$ has to be low — and
+if the curve is steep, $F$ can exceed both spot rates.
+
+## Summary
+
+- **Spot rate**: the rate available **now**, for **immediate** transactions.
+- **Forward rate**: an agreed rate for a transaction at a **specified future
+  date** — **not a market rate today**, but one **derived from spot rates.**
+- Continuous compounding is $e^{rt}$; discounting is $e^{-rt}$.
+- The derivation equates **investing straight through to $T_2$** against
+  **investing to $T_1$ then rolling forward** — they must agree or there is an
+  **arbitrage**.
+- $\boxed{F = \dfrac{R_2T_2 - R_1T_1}{T_2 - T_1}}$
+- Equivalently $R_2T_2 = R_1T_1 + F(T_2-T_1)$: the long period's growth is the
+  short period's growth plus the forward stub.
