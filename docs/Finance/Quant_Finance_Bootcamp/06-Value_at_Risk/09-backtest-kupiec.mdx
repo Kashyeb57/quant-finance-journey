@@ -1,0 +1,191 @@
+---
+title: Backtesting — the Kupiec Test
+description: 'The statistical version of the traffic light: a likelihood-ratio test on the breach count, with a chi-square p-value. All three VaR models tested and verified against the workbook.'
+---
+
+The [traffic light](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-traffic-light)
+sorts a breach count into three buckets. **Kupiec asks a sharper question: is
+this breach count statistically consistent with the confidence level you
+claimed?**
+
+## What it is
+
+> The **Kupiec Test**, referred to as the **Proportion of Failure (POF) test**,
+> is a **statistical method used to evaluate the accuracy of a VaR model.**
+
+> The model was developed by **Paul Kupiec in 1995.**
+
+> This test specifically checks **whether the number of times losses exceeded
+> the VaR number is consistent with the confidence interval set by the model.**
+
+### The idea in one example
+
+**1,000 days**, 1-day VaR at **95% CI**. How many breaches *should* there be?
+
+$$
+\text{Alpha}(5\%) \times n(1000) = \frac{5}{100} \times 1000 = \mathbf{50}
+$$
+
+> **The model specified that 50 breaches are allowed.**
+
+Observe 50 and the model is behaving exactly as advertised. Observe 5, or 200,
+and something is wrong. Kupiec turns "how far from 50 is too far?" into a formal
+test.
+
+## How the test works
+
+**a) Define the parameters.**
+
+| | |
+| --- | --- |
+| **VaR CI** | e.g. 95% — *losses should exceed the VaR estimate only 5% of the time* |
+| **Time horizon** | how many **trading days** are we considering |
+
+**b) Count the number of breaches** — days where **loss > VaR number.**
+
+**c) Apply the formula.**
+
+$$
+\boxed{\;LR_{POF} = -2\ln\left[\frac{p^{x}\,(1-p)^{\,n-x}}{\hat{p}^{\,x}\,(1-\hat{p})^{\,n-x}}\right]\;}
+$$
+
+| Symbol | Meaning |
+| --- | --- |
+| $p$ | **Expected probability of exceedance (breach)** |
+| $\hat{p}$ | **Observed probability of exceedance** |
+| $x$ | **Number of violations (failures)** |
+| $n$ | **Total number of observations** |
+
+with
+
+$$
+\hat{p} = \frac{x}{n}
+$$
+
+and $p$ set by the confidence level:
+
+| CI | $p$ |
+| --- | --- |
+| **99% VaR** | **1%** |
+| **95% VaR** | **5%** |
+| **90% VaR** | **10%** |
+
+**What the ratio is doing.** The numerator is the likelihood of seeing $x$
+breaches *if the model's claimed rate $p$ is true*. The denominator is the
+likelihood under the rate you *actually observed*. If the model is right, the
+two are close and the ratio is near 1, so the log is near 0 and **$LR$ is
+small.** A large $LR$ means the observed breach rate is hard to reconcile with
+the claimed one.
+
+## Reading the result
+
+> The **$LR$ follows a chi-square distribution with 1 degree of freedom.**
+
+| Result | Verdict |
+| --- | --- |
+| **p-value > 5%** | **Model is performing adequately** |
+| **p-value < 5%** | **Model is not performing adequately** |
+
+:::note Why 1 degree of freedom, and why chi-square
+
+**Why 1 degree of freedom?** Because **we are testing a single parameter.** In
+the Kupiec test the key parameter being tested is **the rate at which actual
+losses exceed the VaR number** — one number, one degree of freedom.
+
+**Why chi-square?** The **likelihood ratio test statistic involves comparing two
+models by looking at how much more likely the data is under one model compared
+to the other.** That comparison **results in a test statistic that is not
+normally distributed, because it involves a ratio — which naturally leads to the
+chi-square distribution.**
+
+:::
+
+## The Excel test
+
+The `Backtesting (Kupiec)` sheet runs on the same 251 days and the same three
+VaR numbers as the traffic-light sheet, with breach counts from the identical
+`COUNTIF(...,TRUE)`.
+
+```excel
+X26 = -2*LN(((X22^X23)*(1-X22)^(X24-X23))/((X25^X23)*(1-X25)^(X24-X23)))
+X27 = CHISQ.DIST.RT(X26, 1)
+```
+
+| | Variance-Covariance | Historical | Monte Carlo |
+| --- | --- | --- | --- |
+| $p$ (expected) | 0.01 | 0.01 | 0.01 |
+| **$x$ (breaches)** | **3** | **2** | **3** |
+| $n$ | 251 | 251 | 251 |
+| **$\hat{p} = x/n$** | 0.01195219 | 0.00796813 | 0.01195219 |
+| **$LR$** | **0.09094408** | **0.11250372** | **0.09094408** |
+| **p-value** | **0.76298036** | **0.73731150** | **0.76298036** |
+| **p-value > 5%?** | ✅ **Reliable** | ✅ **Reliable** | ✅ **Reliable** |
+
+**Every one of these values reproduces exactly** when the likelihood ratio and
+the chi-square survival function are computed independently — the sheet is
+correct.
+
+### What the numbers mean
+
+All three p-values are around **0.74–0.76**, nowhere near the 5% threshold. In
+plain terms: **if the models were perfectly calibrated, you would see breach
+counts at least this far from 2.51 about three-quarters of the time.** Two or
+three breaches is entirely unremarkable.
+
+For reference, the chi-square critical value at 1 degree of freedom and 5% is
+**3.8415** — the observed $LR$ values of 0.09 and 0.11 are far below it.
+
+Note the shape of the test: **Monte Carlo and variance-covariance give identical
+results** because they had identical breach counts (3). Kupiec sees only the
+count, not the VaR level that produced it — a model with a much larger VaR that
+happened to be breached 3 times would score the same.
+
+:::note What "reliable" does and does not mean
+
+The sheet's own footnote makes the point, and it is worth stating plainly: **a
+high p-value is a failure to reject, not a proof of adequacy.**
+
+With $n = 251$ and an expected 2.51 breaches, this test has very little power.
+It would take a substantial number of breaches before the p-value dropped below
+5%. Passing Kupiec means *"the data gives no evidence the model is broken"* —
+which is not the same as *"the model is right."*
+
+This is also the test's known weakness: it looks only at **how many** breaches
+occurred, not **when**. Three breaches spread across the year and three
+breaches on three consecutive days score identically, though the second is far
+more alarming. Tests of *independence* (such as Christoffersen's) exist to cover
+that gap.
+
+:::
+
+## Traffic light versus Kupiec
+
+| | Traffic Light | Kupiec |
+| --- | --- | --- |
+| **Type** | Rule of thumb, bucketed | **Statistical hypothesis test** |
+| **Output** | Green / yellow / red | **p-value** |
+| **Basis** | Fixed breach bands | **Likelihood ratio, chi-square** |
+| **Adapts to $n$ and CI?** | No — bands assume 250 days at 99% | **Yes** — $p$ and $n$ are inputs |
+
+The traffic light is designed to be applied uniformly by a regulator across many
+institutions without argument. Kupiec is the more flexible instrument: change
+the confidence level or the sample length and the test adjusts, where the
+traffic light's bands would have to be recalculated.
+
+Both agreed here — **all three models pass.**
+
+## Summary
+
+- The **Kupiec (POF) test**, from **Paul Kupiec, 1995**, checks whether the
+  **observed breach count is statistically consistent with the claimed
+  confidence level.**
+- $LR_{POF} = -2\ln\left[\frac{p^x(1-p)^{n-x}}{\hat{p}^x(1-\hat{p})^{n-x}}\right]$,
+  with $\hat{p} = x/n$ and $p$ = 1%, 5% or 10% for 99%, 95%, 90% CI.
+- $LR$ follows a **chi-square distribution with 1 degree of freedom** — one,
+  because a **single parameter** (the exceedance rate) is being tested.
+- **p-value > 5% → adequate; < 5% → not adequate.**
+- On the real portfolio all three models pass comfortably: **LR ≈ 0.09–0.11,
+  p-values ≈ 0.74–0.76**, against a 5% critical value of **3.8415**. All values
+  independently verified.
+- **Passing is a failure to reject, not proof of correctness** — and Kupiec sees
+  only the breach *count*, never whether the breaches clustered.
