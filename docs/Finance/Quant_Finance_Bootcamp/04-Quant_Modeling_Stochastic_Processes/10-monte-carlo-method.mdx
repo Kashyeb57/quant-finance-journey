@@ -1,0 +1,315 @@
+---
+title: The Monte Carlo Method
+description: 'Pricing by simulation when no closed form exists — the six steps, the applications, and why it works at all: the Central Limit Theorem and the Law of Large Numbers.'
+---
+
+> The Monte Carlo method is a **computational technique used to model and solve
+> financial problems that involve uncertainty or complex dynamics.**
+
+In computational finance it is *the* fallback — and the notes are precise about
+when you reach for it.
+
+## When is it used?
+
+> It is particularly used in areas where the **closed-form analytical solution
+> is difficult to derive.**
+
+The notes make the idea of a "closed form" concrete with a quadratic equation:
+
+$$
+ax^2 + bx + c = 0
+\qquad\Longrightarrow\qquad
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+That second expression **provides a direct formula for $x$.** Put the numbers
+in, get the answer out — no iteration, no simulation. That is a closed form.
+
+Options split the same way:
+
+| Contract | Closed form? | Method |
+| --- | --- | --- |
+| **European call / put** | ✅ Yes | [Black-Scholes](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/black-scholes-theory) |
+| **Exotic contract** (e.g. **Asian option**) | ❌ **Not possible** | **Monte Carlo** |
+
+$$
+C = S_0 N(d_1) - K e^{-rT} N(d_2)
+$$
+
+is the closed form for a European call. For an **exotic contract whose closed
+form is not possible**, you simulate instead.
+
+## Applications
+
+**a) Option pricing.** Monte Carlo is used for pricing **exotic options whose
+payoff depends on the *path* of the underlying asset** — not just where it ends
+up.
+
+That word *path* is the whole distinction:
+
+| Option | Payoff | Depends on |
+| --- | --- | --- |
+| **European** | $\max(S_T - K,\, 0)$ | The **terminal** price only |
+| **Asian** | $\max(\bar{S}_T - K,\, 0)$ | The **average** along the way |
+
+where the average is built from prices sampled during the contract's life:
+
+$$
+\bar{S}_T = \frac{S_1 + S_2 + S_3 + S_4}{4}
+$$
+
+Black-Scholes cannot see the middle of the path. Monte Carlo generates the whole
+path, so it can.
+
+Which method covers which contract:
+
+| Method | Applies to |
+| --- | --- |
+| **Black-Scholes** | European |
+| **Binomial** | American (and European) |
+| **Monte Carlo** | **European, American, and exotic contracts** |
+
+Monte Carlo is the most general of the three. That generality is what you buy
+with the computation.
+
+**b) Risk management.** Financial institutions use the method to **assess the
+risk of their portfolio under various scenarios** — they **simulate the stock
+prices** in the portfolio, which gives **Value at Risk**.
+
+> **VaR** — how much potential loss you can have at a **specific confidence
+> interval** in a **given time frame.**
+
+VaR itself has three approaches: **Monte Carlo**, the **historical method**, and
+the **variance-covariance method.**
+
+**c) Portfolio optimization.**
+
+## The steps
+
+**a) Define the problem statement** — e.g. determine the price of an **exotic
+option.**
+
+**b) Identify the inputs of the model** — what has to be simulated:
+
+- **simulate the interest rate** (the notes name the **Vasicek** model)
+- **simulate the stock price**
+
+**c) Generate random numbers.** Use a random generator to **produce input for
+the model. These inputs should represent the uncertainty.**
+
+The stock price is modelled with **geometric Brownian motion**:
+
+$$
+S_t = S_0 \exp\left[\left(\mu - \frac{\sigma^2}{2}\right)t + \sigma W_t\right]
+$$
+
+where **$W_t$ is the Wiener process / Brownian motion**, built from a
+**standard normal random variable $Z$** scaled by $\sqrt{\Delta t}$.
+
+:::note The drift term is written without its t on pages 5 and 6
+
+The source writes this formula as $S_0\exp\left(\left(\mu - \sigma^2/2\right) + \sigma W_t\right)$
+— the $t$ multiplying the drift is missing — and page 14 additionally drops the
+square, writing $\mu - \sigma/2$. Pages 16, 17 and 18 use the correct
+$\left(\mu - \tfrac12\sigma^2\right)\Delta t$ form, and that is what the Excel
+implementation uses. Read the early pages as shorthand.
+
+:::
+
+**d) Run simulation trials.** **Input the random numbers generated in step 3
+into the model to run individual trials. Each trial (run) will produce an
+outcome based on the random input.**
+
+> **Each run simulates the path of the stock price up to the expiration of the
+> option, and then we can calculate the payoff.**
+
+At maturity, for a call:
+
+$$
+C = \max(S_T - K,\, 0)
+$$
+
+**e) Aggregate the result.** Every path produced a payoff at expiry; each is
+**discounted back to today.**
+
+**f) Take the average of the discounted payoffs.**
+
+$$
+\text{Option price} = \frac{1}{N}\sum_{i=1}^{N} \text{discounted payoff}_i
+$$
+
+which, written out for five paths, is exactly:
+
+$$
+\text{Option price} = \frac{1}{5}\left[e^{-rT}P_1 + e^{-rT}P_2 + \cdots + e^{-rT}P_5\right]
+$$
+
+## The whole method in one picture
+
+<svg viewBox="0 0 640 300" role="img" aria-label="From a single starting price S0, many simulated paths fan out to a spread of terminal prices at maturity; each terminal price gives a payoff, the payoffs are discounted back to today and averaged to give the option price" style={{width: '100%', height: 'auto'}}>
+  <g fill="none" strokeWidth="1.4" opacity="0.85">
+    <path d="M60,150 C120,120 170,95 240,70 C300,50 350,45 400,38" stroke="#25c2a0" />
+    <path d="M60,150 C120,138 170,120 240,112 C300,105 350,95 400,88" stroke="#25c2a0" />
+    <path d="M60,150 C120,160 170,150 240,148 C300,146 350,140 400,138" stroke="#25c2a0" opacity="0.7" />
+    <path d="M60,150 C120,168 170,185 240,190 C300,196 350,192 400,188" stroke="#e0a44a" opacity="0.7" />
+    <path d="M60,150 C120,180 170,210 240,225 C300,240 350,240 400,238" stroke="#e0a44a" />
+  </g>
+  <circle cx="60" cy="150" r="5" fill="currentColor" />
+  <line x1="400" y1="20" x2="400" y2="258" stroke="currentColor" strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
+  <g fill="currentColor">
+    <circle cx="400" cy="38" r="4" /><circle cx="400" cy="88" r="4" /><circle cx="400" cy="138" r="4" />
+    <circle cx="400" cy="188" r="4" /><circle cx="400" cy="238" r="4" />
+  </g>
+  <path d="M400,268 C300,292 160,292 62,166" fill="none" stroke="#e0a44a" strokeWidth="1.6" strokeDasharray="5 3" />
+  <polygon points="62,166 74,170 68,158" fill="#e0a44a" />
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="30" y="143">S₀</text>
+    <text x="418" y="30">payoff₁</text>
+    <text x="418" y="80">payoff₂</text>
+    <text x="418" y="130">payoff₃</text>
+    <text x="418" y="180">⋮</text>
+    <text x="418" y="230">payoffₙ</text>
+    <text x="40" y="186" opacity="0.7">t = 0</text>
+    <text x="378" y="276" opacity="0.7">t = T</text>
+  </g>
+  <text x="188" y="288" fill="#e0a44a" fontSize="11" fontFamily="monospace">discount, then average</text>
+</svg>
+
+**Simulate many paths → take each terminal price → compute its payoff →
+discount every payoff back to today → average them.** That is the entire
+method. The average of the discounted payoffs *is* the option price.
+
+### The Excel version of the same six steps
+
+| # | Step |
+| --- | --- |
+| 1 | Generate random number $Z$ |
+| 2 | GBM equation |
+| 3 | Simulate the GBM equation |
+| 4 | At maturity, compute the **call** or **put** payoff |
+| 5 | **Discount** the payoff |
+| 6 | **Take the average** |
+
+## Why averaging works at all
+
+The notes stop here to justify the method, and the justification is two
+theorems.
+
+### The class-average analogy
+
+Three students score **100, 90, 80**. The class average is
+
+$$
+\frac{100 + 90 + 80}{3}
+$$
+
+Nobody finds that controversial. Monte Carlo is doing the same thing with
+payoffs instead of marks — the only question is whether the average of a sample
+tells you about the truth. Which is exactly what the two theorems answer.
+
+### 1. The Central Limit Theorem
+
+> The CLT states that under certain conditions, the **average of a large number
+> of iid random variables** with **finite mean and variance** will approximate a
+> **normal distribution.**
+
+**iid** = **independent, identically distributed** random variables.
+
+This is why the method's machinery is legitimate: the **increments of a Wiener
+process are iid and normally distributed**, drawn as $Z\sqrt{\Delta t}$ with the
+same distribution at every step. And:
+
+> According to the CLT, as the **number of random samples rises**, the
+> distribution of the **sample mean** will approximate the **normal
+> distribution.**
+
+Monte Carlo methods are often used to **estimate the expected value of a complex
+random process** — and the CLT is what says the estimate is well-behaved.
+
+### 2. The Law of Large Numbers
+
+> The LLN states that as the **number of trials (or runs) in the random process
+> increases**, the **average of the results** obtained from these trials is
+> likely to **converge to the expected value of the random process.**
+
+And the line that matters:
+
+> **This convergence is the reliability of the Monte Carlo method.**
+
+The CLT tells you the *shape* of the estimate's error. The LLN tells you the
+error **goes away** if you run enough paths. Together they are the reason a
+simulated average is a price and not a guess.
+
+This is also why the notes keep writing **10,000**: more paths, **so that you
+can get higher accuracy.** The more simulations you run, the closer the average
+sits to the true expected value of the option.
+
+## Setting up a run
+
+**Step 1 — define the input parameters.** All of them feed GBM:
+
+| Parameter | Meaning | Value in the notes |
+| --- | --- | --- |
+| $S_0$ | Initial price | |
+| $\mu$ | Drift (expected return) | |
+| $\sigma$ | Annualised volatility | |
+| $\Delta t$ | Time step | $1/252$ |
+| $T$ | Maturity | |
+| $N$ | Number of steps | $N = T/\Delta t$ |
+| $n$ | Number of simulated paths | **10,000** |
+
+**Step 2 — simulate random numbers.**
+
+$$
+Z_t \sim N(0,1)
+$$
+
+> **Generate a random number from the standard normal distribution for each time
+> step and each path.**
+
+Note *each time step and each path* — a 10,000-path run over 252 days needs
+2.52 million draws. This is why the method is computational.
+
+**Step 3 — calculate the stock price** using the GBM equation.
+
+**Step 4 — payoff, discount, average** → the option price.
+
+## Path dependence, which is the point
+
+A worked illustration of why any of this is necessary. A path visits:
+
+| Point | 1 | 2 | 3 | 4 | 5 |
+| --- | --- | --- | --- | --- | --- |
+| Price | 100 | 102 | 104 | 106 | 108 |
+
+A **European** option looks only at the last number: $\max(108 - K,\, 0)$.
+
+An **Asian** option takes the **average of the stock at certain points of the
+contract**:
+
+$$
+\bar{S}_T = \frac{100 + 102 + 104 + 106 + 108}{5} = 104
+$$
+
+The notes call this a **path-dependent variable**, and it is precisely what a
+closed-form formula cannot reach. Black-Scholes prices a *destination*; Monte
+Carlo prices a *journey*.
+
+## Summary
+
+- Monte Carlo is a **computational technique for problems involving uncertainty
+  or complex dynamics** — used **where no closed-form solution exists.**
+- A closed form is a **direct formula**, like the quadratic root formula or
+  Black-Scholes. **Exotic contracts do not have one.**
+- Applications: **option pricing, risk management (VaR), portfolio
+  optimisation.** VaR's three methods are **Monte Carlo, historical, and
+  variance-covariance.**
+- The method: **define the problem → identify inputs → generate random numbers →
+  run trials → aggregate → average the discounted payoffs.**
+- $\text{Option price} = \frac{1}{N}\sum e^{-rT}\times\text{payoff}$ — simulate,
+  discount, average.
+- It works because of the **CLT** (the sample mean is normally distributed) and
+  the **Law of Large Numbers** (the sample mean converges to the expected
+  value). **That convergence is the reliability of the method.**
+- **More paths means more accuracy** — hence 10,000.
+- It is the only one of the three methods that handles **path dependence.**

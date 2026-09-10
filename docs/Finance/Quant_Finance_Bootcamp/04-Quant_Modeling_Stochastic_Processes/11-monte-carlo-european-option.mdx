@@ -1,0 +1,209 @@
+---
+title: Monte Carlo — European Option
+description: 'Simulating a contract that already has a closed form, as the way to validate the method — plus two defects in the source workbook that pull its answer away from Black-Scholes.'
+---
+
+A European option **already has a closed form**. So why simulate one?
+
+Because it is the **test case**. If Monte Carlo cannot reproduce Black-Scholes
+on a contract where the answer is known, there is no reason to trust it on an
+[exotic](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-asian-option)
+one where it is not. That check is done at the end of this note — and it is the
+most useful thing in it.
+
+## The procedure
+
+**1) Initialise all the parameters.** The notes' worked values:
+
+$$
+\mu = 5\% \qquad \sigma = 5.5\% \qquad \Delta t = \frac{1}{252}
+$$
+
+feeding **GBM → stock price.**
+
+**2) Generate a random number.** $Z_t$ is a **random number drawn from the
+standard normal distribution.**
+
+:::note The margin note that matters
+
+Beside this step the notes write **μ → r ↳ risk-free rate.**
+
+That is the risk-neutral pricing rule, and it is not a detail. When pricing an
+option you do **not** drift the stock at its historical expected return $\mu$ —
+you drift it at the **risk-free rate $r$**. Otherwise you are pricing your own
+forecast rather than the contract. Keep this in mind; the workbook does not
+follow it.
+
+:::
+
+**3) Put $Z_t$ into the GBM equation.**
+
+$$
+S_{t+\Delta t} = S_t \exp\left[\left(\mu - \frac{1}{2}\sigma^2\right)\Delta t + \sigma\sqrt{\Delta t}\,Z_t\right]
+$$
+
+**4) Calculate the payoff** at maturity:
+
+$$
+\text{Payoff}_{\text{call}} = \max(S_T - K,\, 0)
+\qquad\qquad
+\text{Payoff}_{\text{put}} = \max(K - S_T,\, 0)
+$$
+
+**5) Average the payoffs.**
+
+$$
+\text{Avg payoff} = \frac{\text{Payoff}_1 + \text{Payoff}_2 + \cdots + \text{Payoff}_{100}}{100}
+$$
+
+**6) Discount the average payoff.**
+
+$$
+\boxed{\;\text{Option price} = e^{-rT}\left[\text{Avg payoff}\right]\;}
+$$
+
+## Walking one path
+
+> **For every path, you will generate the price of the stock every day.**
+
+The chain is recursive — each day starts from the previous day's price:
+
+$$
+S_1 = S_0 \exp\left[\left(\mu - \tfrac12\sigma^2\right)\Delta t + \sigma\sqrt{\Delta t}\,Z_1\right]
+$$
+
+$$
+S_2 = S_1 \exp\left[\left(\mu - \tfrac12\sigma^2\right)\Delta t + \sigma\sqrt{\Delta t}\,Z_2\right]
+$$
+
+$$
+\vdots
+$$
+
+$$
+S_7 = S_6 \exp\left[\left(\mu - \tfrac12\sigma^2\right)\Delta t + \sigma\sqrt{\Delta t}\,Z_7\right]
+$$
+
+and $S_7$ is the **stock price at maturity for path 1**. A fresh $Z$ is drawn at
+every step of every path.
+
+Then that single terminal price produces a single payoff, and the whole path is
+reduced to one number. Repeat 100 times, average, discount.
+
+## The Excel implementation
+
+Built on **SPY240709C00555000** — the same contract the
+[binomial tree](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/pricing-european-option-binomial-tree)
+and [Black-Scholes](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/black-scholes-excel)
+notes priced, so all three are directly comparable.
+
+| Cell | Input | Value |
+| --- | --- | --- |
+| B5 | Stock price $S$ | 549 |
+| B6 | Strike $K$ | 555 |
+| B7 | Maturity $t$ | `=6/252` |
+| B8 | Risk-free rate $r$ | 0.055 |
+| K1 | Initial stock price | `=B5` |
+| K2 | Drift rate $\mu$ | `=AVERAGE(F3:F253)` → 0.00090561 |
+| K3 | Volatility $\sigma$ | `=STDEV.S(F3:F253)*SQRT(252)` → 0.11102 |
+| N3:N8 | Time increment | `=1/252` |
+
+The grid itself:
+
+| Region | Holds |
+| --- | --- |
+| Row 2 | $S_0 = 549$, repeated across every path |
+| Rows 3-8 | The **6 daily steps** |
+| Columns **O:DJ** | **100 simulated paths**, one per column |
+| Row 9 | Call payoff — `=MAX(O8-$B$6,0)` |
+| Row 10 | Put payoff — `=MAX($B$6-O8,0)` |
+| O11 | `=AVERAGE(O9:DJ9)` — the average call payoff |
+| O12 | `=O11*EXP(-B8*B7)` — **discounted → the call price** |
+| O13 / O14 | The same two steps for the put |
+
+That is steps 4, 5 and 6 in three rows: **payoff, average, discount.**
+
+The per-step formula is:
+
+```excel
+O3 = O2*EXP(($K$2-0.5*$K$3*$K$3)*SQRT(N3)+$K$3*SQRT(N3)*NORM.S.INV(RAND()))
+```
+
+`NORM.S.INV(RAND())` is how Excel draws a standard normal: take a uniform draw
+on (0,1), then invert the normal CDF. That is $Z_t$.
+
+## Does it work? Check it against Black-Scholes
+
+This is the point of pricing a European option by simulation. Running the
+procedure **as the notes describe it** — risk-neutral drift $r$, drift scaled by
+$\Delta t$ — over 400,000 paths:
+
+| Method | Call | Put |
+| --- | --- | --- |
+| **Black-Scholes** (closed form) | **1.7054** | **6.9791** |
+| **Monte Carlo**, done correctly | **1.7065** | **6.9760** |
+| Difference | 0.0011 | 0.0031 |
+
+**Monte Carlo converges on Black-Scholes.** Two completely different methods —
+one an analytic formula, one 400,000 random walks — agree to about a tenth of a
+cent. That agreement is the whole justification for using simulation on
+contracts where no formula exists.
+
+It is also the [Law of Large Numbers](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-method)
+made visible: the average of the simulated payoffs converged to the expected
+value, and the expected value is what Black-Scholes computes directly.
+
+## Two defects in the source workbook
+
+The workbook does **not** reproduce that agreement, and it is worth
+understanding why rather than copying it.
+
+**a) The drift is scaled by $\sqrt{\Delta t}$ instead of $\Delta t$.** In the
+formula above, `SQRT(N3)` multiplies **both** terms. But GBM scales the two
+terms differently — drift with time, diffusion with the square root of time:
+
+$$
+\left(\mu - \tfrac12\sigma^2\right)\underbrace{\Delta t}_{\text{not } \sqrt{\Delta t}} + \sigma\underbrace{\sqrt{\Delta t}}_{\text{correct}}Z_t
+$$
+
+With $\Delta t = 1/252$: $\sqrt{\Delta t} = 0.06299$ against $\Delta t =
+0.003968$ — the drift term is applied **15.9× too strongly.**
+
+**b) $\mu$ is a daily mean return, but $\sigma$ is annualised.** K2 is
+`AVERAGE(F3:F253)`, the mean **daily** return (0.0009). K3 is `STDEV.S(...)
+*SQRT(252)`, an **annualised** volatility (0.111). The two sit in the same
+expression in different units. And per the notes' own margin annotation, the
+drift should have been **$r$**, the risk-free rate, not a historical average at
+all.
+
+What it costs:
+
+| | Call | Put |
+| --- | --- | --- |
+| Black-Scholes | 1.7054 | 6.9791 |
+| MC as the workbook builds it | **1.2543** | **8.2804** |
+| Workbook's saved values (100 paths) | 1.5993 | 7.9632 |
+
+The method is biased **26% low on the call** and **19% high on the put**. The
+saved values sit between the two because **100 paths is a very small sample** —
+the sampling noise on a single recalculation is larger than the bias itself,
+which is exactly why the error is easy to miss when you are looking at one draw.
+
+Fix the two scaling issues and the sheet lands on Black-Scholes. Left as-is, it
+demonstrates the mechanics correctly but does not price the option.
+
+## Summary
+
+- The procedure: **initialise parameters → draw $Z_t$ → step GBM → payoff →
+  average → discount.**
+- $\text{Option price} = e^{-rT}\left[\text{Avg payoff}\right]$, with a fresh
+  $Z$ at **every step of every path**.
+- The Excel sheet lays out **100 paths as columns, 6 daily steps as rows**, then
+  does payoff / average / discount in three rows.
+- **Done correctly, Monte Carlo reproduces Black-Scholes to ~0.001** — that
+  agreement is the reason simulation can be trusted on exotics.
+- **Price with the risk-free rate $r$, not the historical drift $\mu$** — the
+  notes say so in the margin.
+- The source workbook **scales drift by $\sqrt{\Delta t}$ instead of $\Delta t$**
+  and **mixes daily drift with annualised volatility**, which biases the call
+  26% low. Understand the layout from it; do not copy the formula.
