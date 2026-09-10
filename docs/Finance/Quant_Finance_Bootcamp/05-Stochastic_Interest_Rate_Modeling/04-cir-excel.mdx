@@ -1,0 +1,194 @@
+---
+title: CIR in Excel
+description: 'Calibrating and simulating CIR on the same Treasury data — what changes from the Vasicek sheet, the Feller check, and a likelihood that forgot the square root it exists for.'
+---
+
+The [CIR theory note](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/cir-theory)
+adds one term to Vasicek. This note builds it on the same data, and the
+interesting part is how little of the workbook changes — and where that turns
+out to be a problem.
+
+## Calibration
+
+The `CIR Parameter Est (MLE)` sheet is laid out identically to the
+[Vasicek one](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/vasicek-excel-calibration):
+252 observations of the 3-month Treasury rate, with the same seven-column
+pipeline.
+
+| Col | Label | Formula |
+| --- | --- | --- |
+| D | Actual | `=C2/100` |
+| F | r(t)−r(t−1) | `=D2-D3` |
+| G | **dr (CIR)** | `=$O$2*($O$3-D3)*$O$7` |
+| H | residual | `=F2-G2` |
+| I | pdf | `=NORMDIST(H2,0,$O$4,FALSE)` |
+| J | ln(pdf) | `=LN(I2)` |
+| L2 | Sum | `=SUM(J2:J252)` |
+
+Column G is $a(b - r_{t-1})\,dt$ — **the same as Vasicek**, which is right,
+because CIR and Vasicek share a drift. The square root lives only in the
+diffusion.
+
+### The calibrated parameters
+
+| Parameter | Vasicek | **CIR** |
+| --- | --- | --- |
+| $a$ — mean reversion speed | 0.10232 | **11.07860** |
+| $b$ — long-term mean | 0.05741 | **0.05490** |
+| $\sigma$ — volatility | 0.00018280 | **0.00018093** |
+| Log-likelihood | 1804.10 | **1806.81** |
+
+Two things stand out.
+
+**The two $\sigma$ values are almost identical** — 0.00018093 against
+0.00018280, a 1% difference. For models whose diffusion terms differ by a factor
+of $\sqrt{r_t} \approx 0.235$, that is suspicious. It is the first sign of the
+problem below.
+
+**The two $a$ values are not remotely similar.** Vasicek fits 0.102, CIR fits
+11.08 — a factor of over 100, on the same data. In half-life terms:
+
+| | Half-life $\ln 2 / a$ |
+| --- | --- |
+| Vasicek | **6.8 years** |
+| CIR | **16 trading days** |
+
+One model says the rate reverts over years, the other over three weeks. Both
+"fit" the data about equally well (log-likelihoods 1804 and 1807). That is
+**weak identification** — as noted in the Vasicek note, one year of data
+contains very little information about mean reversion, so the optimiser is free
+to land almost anywhere without the likelihood objecting.
+
+### The Feller check
+
+The theory note flagged that CIR's non-negativity guarantee requires the
+**Feller condition**:
+
+$$
+2ab \ge \sigma^2
+$$
+
+With the fitted parameters:
+
+$$
+2ab = 2 \times 11.0786 \times 0.054897 = 1.2164
+\qquad\qquad
+\sigma^2 = 3.27 \times 10^{-8}
+$$
+
+Comfortably satisfied — by seven orders of magnitude. **The simulated rate
+cannot reach zero**, so CIR's headline property holds here.
+
+## The likelihood forgot the square root
+
+Look again at column I, in both workbooks:
+
+```excel
+Vasicek:  =NORMDIST(H2, 0, $O$4, FALSE)
+CIR:      =NORMDIST(H2, 0, $O$4, FALSE)
+```
+
+They are **the same formula.** But under CIR the residual is not
+$\sigma\,dW_t$ — it is $\sigma\sqrt{r_t}\,dW_t$, so its standard deviation
+**varies with the rate level** and the density should be
+
+$$
+\text{NORMDIST}\left(H,\; 0,\; \sigma\sqrt{r_{t-1}}\sqrt{\Delta t},\; \text{FALSE}\right)
+$$
+
+Because the $\sqrt{r_t}$ is missing, the sheet is fitting a **Vasicek
+likelihood** and labelling the answer $\sigma_{CIR}$. That is why the two
+volatilities came out nearly equal — they are estimates of the same thing.
+
+The consequence appears when the simulation *does* apply the square root:
+
+| | Value |
+| --- | --- |
+| $\sigma$ consistent with the data, given $\sqrt{r_0}$ | **0.00077863** |
+| $\sigma$ actually fitted | **0.00018093** |
+| Understated by | **4.3×** |
+
+## Simulation
+
+The `CIR Simulation (MLE)` sheet is the Vasicek simulation with one insertion —
+**10 paths across E:N, 252 days down the rows**, all starting at
+$r_0 = 0.0552$:
+
+```excel
+E3 = $B$1*($B$2-E2)*$B$6 + $B$3*SQRT(E2)*SQRT($B$6)*NORM.S.INV(RAND()) + E2
+```
+
+Set against the Vasicek version, the difference is exactly `SQRT(E2)`:
+
+$$
+r_{t+\Delta t} = a(b - r_t)\Delta t + \sigma\underbrace{\sqrt{r_t}}_{\text{CIR only}}\sqrt{\Delta t}\,Z + r_t
+$$
+
+`E2` is the previous row's rate, so `SQRT(E2)` is $\sqrt{r_t}$ — the theory
+implemented literally, and correctly.
+
+:::danger The two defects compound — CIR paths come out 68× too smooth
+
+This sheet inherits the **units mismatch** documented in the Vasicek note (a
+per-day $\sigma$ multiplied by $\sqrt{\Delta t}$ a second time), **and** adds
+the missing-$\sqrt{r}$ calibration error above. Together:
+
+| | Daily shock std |
+| --- | --- |
+| Actual 3-month rate | **0.00018294** |
+| Vasicek simulation | 0.00001152 — **15.9×** too smooth |
+| **CIR simulation** | **0.00000268** — **68×** too smooth |
+
+The 68 is the 15.9 from the units mismatch multiplied by the 4.3 from the
+missing $\sqrt{r_t}$ in the likelihood.
+
+**To fix it properly**, both ends have to agree: put $\sqrt{r_{t-1}}\sqrt{\Delta t}$
+into the calibration's `NORMDIST` so the fitted $\sigma$ is a true annualised
+CIR volatility, and leave the simulation formula as it stands.
+
+The *structure* of both sheets is right — the columns, the mean reversion, the
+square root in the simulation, the Feller-safe parameters. It is the scaling
+that does not survive the trip from one sheet to the other.
+
+:::
+
+## Module 5, end to end
+
+| | Vasicek | CIR |
+| --- | --- | --- |
+| **Equation** | $dr_t = a(b-r_t)dt + \sigma\,dW_t$ | $dr_t = a(b-r_t)dt + \sigma\sqrt{r_t}\,dW_t$ |
+| **Rates produced** | Positive **and negative** | **Positive only** |
+| **Fits which economy** | Germany, Japan | US, India, China |
+| **Calibrated $a$** | 0.1023 (6.8-year half-life) | 11.08 (16-day half-life) |
+| **Calibrated $b$** | 0.0574 | 0.0549 |
+| **Log-likelihood** | 1804.10 | 1806.81 |
+
+The module's real lesson is in that last row. **Two models with materially
+different dynamics fit the same year of Treasury data almost equally well**, and
+their mean-reversion speeds differ by a factor of 100. Choosing between them
+cannot be done on goodness-of-fit alone — it has to be done on the **structural
+question the theory note posed**: can the rate you are modelling go negative or
+not?
+
+That is the honest state of short-rate modelling. The maths is exact; the
+calibration is not.
+
+## Summary
+
+- The CIR calibration sheet is **structurally identical** to the Vasicek one —
+  same seven columns, same drift in column G, since **CIR and Vasicek share a
+  drift.**
+- Calibrated: **$a$ = 11.0786, $b$ = 0.054897, $\sigma$ = 0.00018093**,
+  log-likelihood **1806.81**.
+- **The Feller condition holds easily** ($2ab = 1.22$ vs $\sigma^2 = 3.3\times10^{-8}$),
+  so the simulated rate stays positive.
+- **The likelihood omits $\sqrt{r_t}$** — it is a Vasicek likelihood, which is
+  why the two fitted volatilities are nearly equal, and it understates
+  $\sigma_{CIR}$ by **4.3×**.
+- Combined with the inherited **units mismatch**, CIR's simulated paths are
+  **68× less volatile** than the data.
+- The simulation's `SQRT(E2)` is the theory implemented correctly — the
+  **scaling**, not the structure, is what breaks.
+- **$a$ differs by 100× between the two models on identical data** while the
+  log-likelihoods barely move: mean reversion is **weakly identified** in one
+  year of observations.

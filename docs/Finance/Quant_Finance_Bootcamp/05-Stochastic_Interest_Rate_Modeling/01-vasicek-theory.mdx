@@ -1,0 +1,206 @@
+---
+title: The Vasicek Model
+description: 'Modelling interest rates as a random process that is pulled back toward a long-term mean — the SDE term by term, the two mean-reversion cases, and the negative-rate limitation that motivates CIR.'
+---
+
+Every model so far has been about a **stock**. This module changes the
+underlying: the thing being modelled is the **interest rate**.
+
+## Why a stochastic model at all
+
+Look at daily data for, say, the **US 3-year Treasury rate** and you see the
+same thing you see in a stock chart — a jagged, unpredictable line.
+
+> **The pattern that we see in the interest rate is random in nature.**
+
+So it needs the same treatment: **for modelling the randomness of interest
+rates, we use a stochastic interest rate model.**
+
+This module covers two of them — **Vasicek** and **CIR** — in theory, and then
+in Excel, where there are two separate jobs: **calibrate** the model (with MLE)
+and then **implement** it.
+
+## The model
+
+> The Vasicek model was introduced by **Oldrich Vasicek in 1977.** It is a
+> stochastic interest rate model used to model **how interest rates will move in
+> the future.**
+
+$$
+\boxed{\;dr_t = a(b - r_t)\,dt + \sigma\,dW_t\;}
+$$
+
+Term by term:
+
+| Symbol | Meaning |
+| --- | --- |
+| $r_t$ | The **interest rate at time $t$** |
+| $dr_t$ | The **change** in the interest rate |
+| $a$ | **Speed of mean reversion** — how fast the rate returns to the mean |
+| $b$ | **Long-term average rate** |
+| $dt$ | Small change in time — **1/252** |
+| $\sigma$ | **Volatility** of the interest rate |
+| $dW_t$ | **Wiener process / Brownian motion** |
+
+**Where $b$ comes from**: take the historical data — the notes use 3-year
+Treasury data — and **average it.** That average is $b$.
+
+**Why 1/252**: a year has 365 days, minus Saturdays, Sundays and holidays,
+leaving **252 trading days.**
+
+$$
+dt = \frac{1}{252}
+$$
+
+**What $dW_t$ is doing:** it **represents the random, unpredictable fluctuation
+that you see in the interest rate over time**, and in practice it is generated
+exactly as in the previous module:
+
+$$
+dW_t = Z_t \times \sqrt{\Delta t}
+$$
+
+where $Z_t$ is a **random number generated from a standard normal
+distribution.**
+
+### Why rates fluctuate in the first place
+
+The notes list the real-world causes that $dW_t$ is standing in for:
+
+- **economic news**
+- **policy change**
+- **market sentiment**
+
+None of them are predictable, which is why they are modelled as Brownian motion
+rather than forecast.
+
+## Two parts, doing two different jobs
+
+The equation splits cleanly, and this split is the whole model:
+
+| Term | Name | Job |
+| --- | --- | --- |
+| $a(b - r_t)\,dt$ | **Deterministic part** / **mean reversion** | **Drives the interest rate toward the long-term $b$** |
+| $\sigma\,dW_t$ | **Stochastic part** | **Captures the random and unpredictable deviation from the deterministic trajectory** |
+
+The first term knows where the rate *should* go. The second term is everything
+that stops it getting there in a straight line.
+
+## Mean reversion, in two cases
+
+The mean-reverting component is $a(b - r_t)\,dt$, and its **sign** is what
+matters. Note that $a$ and $dt$ are both always positive — $dt = 1/252$, and $a$
+is a speed. So the sign of the whole term is decided by $(b - r_t)$ alone.
+
+<svg viewBox="0 0 640 260" role="img" aria-label="When the rate sits above the long-term mean b the drift term is negative and pulls it down; when it sits below b the drift is positive and pushes it up" style={{width: '100%', height: 'auto'}}>
+  <line x1="60" y1="130" x2="590" y2="130" stroke="#25c2a0" strokeWidth="2" strokeDasharray="7 4" />
+  <path d="M70,55 C120,62 150,58 200,74 C260,92 300,108 360,118 C430,128 500,126 580,129" fill="none" stroke="#e0a44a" strokeWidth="2.4" />
+  <path d="M70,212 C120,205 150,208 200,192 C260,174 300,155 360,144 C430,133 500,134 580,131" fill="none" stroke="#e0a44a" strokeWidth="2.4" />
+  <g stroke="#e0a44a" strokeWidth="1.6" opacity="0.85">
+    <line x1="150" y1="66" x2="150" y2="100" /><polygon points="150,108 145,96 155,96" fill="#e0a44a" stroke="none" />
+    <line x1="150" y1="200" x2="150" y2="166" /><polygon points="150,158 145,170 155,170" fill="#e0a44a" stroke="none" />
+  </g>
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="596" y="134" fill="#25c2a0">b</text>
+    <text x="70" y="44">rₜ &gt; b</text>
+    <text x="70" y="238">rₜ &lt; b</text>
+    <text x="166" y="94" opacity="0.8">drₜ &lt; 0</text>
+    <text x="166" y="178" opacity="0.8">drₜ &gt; 0</text>
+    <text x="330" y="44" opacity="0.7">pulled down toward b</text>
+    <text x="330" y="238" opacity="0.7">pushed up toward b</text>
+  </g>
+</svg>
+
+**Case 1 — the rate is above the mean ($r_t > b$).**
+
+$$
+r_t > b \;\Longrightarrow\; (b - r_t) < 0 \;\Longrightarrow\; dr_t < 0
+$$
+
+The change is negative, so the model **adjusts the short rate downward.**
+
+**Case 2 — the rate is below the mean ($r_t < b$).**
+
+$$
+r_t < b \;\Longrightarrow\; (b - r_t) > 0 \;\Longrightarrow\; dr_t > 0
+$$
+
+The change is positive, so the model **adjusts the short rate upward.**
+
+> The direction of the short rate depends on the values of **$b$ and $r_t$**.
+
+| | | Direction |
+| --- | --- | --- |
+| $r_t > b$ | $dr_t < 0$ | **Downwards** |
+| $r_t < b$ | $dr_t > 0$ | **Upwards** |
+
+That is mean reversion in one line: **the further the rate is from $b$, and the
+larger $a$ is, the harder it is pulled back.**
+
+## Strengths
+
+**a) It is intuitive.** The concept of mean reversion **aligns with how many
+people think about interest rates** — returning to a normal level after a period
+of being high or low. The model's central assumption is one most practitioners
+already hold.
+
+**b) It has an analytical solution.** It is possible to **derive a closed-form
+solution for certain use cases** — notably **bond pricing** and **risk
+management.**
+
+The notes make "closed form" concrete with the simplest possible example: $x + 2
+= 5$ solves directly to $x = 3$. No iteration, no simulation. Vasicek admits
+that kind of solution, which is why it survived — you can price a bond with a
+formula rather than a
+[Monte Carlo run](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-method).
+
+## Limitations
+
+**a) It can produce negative interest rates.**
+
+> It can produce a **negative interest rate**, which can be **unrealistic** in
+> the case where interest rates are high.
+
+The culprit is identifiable: the **stochastic part $\sigma\,dW_t$** is
+**responsible for negative interest rates.** Since $dW_t$ is normally
+distributed, it is unbounded below — a large enough negative draw can push $r_t$
+through zero, and nothing in the equation stops it.
+
+Whether that is a flaw depends on where you are:
+
+| | Rates |
+| --- | --- |
+| **USA, India, Pakistan, Sri Lanka, China** | **Positive** |
+| **Germany, Japan** | Have seen **negative** rates |
+
+So negative rates are not impossible in reality — but a model that produces them
+in a high-rate economy is producing nonsense.
+
+**This is exactly what the CIR model fixes**, and it is why the next note
+exists.
+
+**b) It is a single-factor model.**
+
+> The model is driven by **market risk, which is the only factor affecting the
+> change in the interest rate.**
+
+One source of randomness, one $dW_t$. Everything that moves rates in reality —
+policy, inflation, credit, liquidity — is compressed into that single term.
+
+## Summary
+
+- Interest rates are **random in nature**, so they are modelled with a
+  **stochastic interest rate model.**
+- **Vasicek (Oldrich Vasicek, 1977):**
+  $dr_t = a(b - r_t)\,dt + \sigma\,dW_t$.
+- $a$ is the **speed of mean reversion**, $b$ the **long-term average rate**
+  (the historical average), $\sigma$ the volatility, $dt = 1/252$, and
+  $dW_t = Z_t\sqrt{\Delta t}$ the Brownian shock.
+- The equation is **deterministic mean reversion + a stochastic deviation**: one
+  term pulls toward $b$, the other knocks it off course.
+- **Above the mean the drift is negative, below it positive** — the rate is
+  always being pulled back toward $b$.
+- **Strengths:** intuitive, and it has a **closed-form solution** usable for
+  bond pricing and risk management.
+- **Limitations:** it can generate **negative rates** (the $\sigma\,dW_t$ term is
+  unbounded below), and it is a **single-factor model.**

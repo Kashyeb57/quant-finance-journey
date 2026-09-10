@@ -1,0 +1,240 @@
+---
+title: The CIR Model
+description: 'Cox-Ingersoll-Ross — Vasicek plus a square root, and why that one term stops interest rates going negative. Assumptions, the Vasicek comparison, limitations, and where each model actually applies.'
+---
+
+The [Vasicek model](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/vasicek-theory)
+ended on a specific flaw: **it can produce negative interest rates.** CIR is the
+answer to that, and the fix is one square root.
+
+## Introduction
+
+> The **CIR model** — **Cox-Ingersoll-Ross** — is a mathematical model which is
+> used to **model interest rate movement.**
+
+It was **developed in 1985 by John C. Cox, Jonathan E. Ingersoll and Stephen A.
+Ross.**
+
+> The CIR interest rate model is also called a **"one factor model"**, because it
+> describes interest rate movement as driven by a **sole source of market risk.**
+
+Both models share that property:
+
+$$
+\text{CIR} \rightarrow f(\text{market risk})
+\qquad\qquad
+\text{Vasicek} \rightarrow f(\text{market risk})
+$$
+
+One component, one factor. Which is a simplification, because in reality the
+interest rate responds to **monetary policy, market sentiment, inflation** and
+**economic policy** — four forces compressed into one term.
+
+## The mathematical framework
+
+$$
+\boxed{\;dr_t = a(b - r_t)\,dt + \sigma\sqrt{r_t}\,dW_t\;}
+$$
+
+| Symbol | Meaning |
+| --- | --- |
+| $dr_t$ | **Change in $r_t$** (the interest rate) |
+| $a$ | **Speed of mean reversion** |
+| $b$ | **Mean of the interest rate** |
+| $dt$ | Change in time |
+| $\sigma$ | **Volatility** of the interest rate |
+| $r_t$ | Interest rate |
+| $dW_t$ | **Wiener process / Brownian motion** — the random fluctuation that happens in the interest rate |
+
+Set it beside Vasicek and the difference is a single factor:
+
+$$
+\text{Vasicek:}\quad dr_t = a(b - r_t)\,dt + \sigma\,dW_t
+$$
+
+$$
+\text{CIR:}\quad dr_t = a(b - r_t)\,dt + \sigma\,\underbrace{\sqrt{r_t}}_{\text{the addition}}\,dW_t
+$$
+
+> $\sqrt{r_t}$ is the **additional component that is added to the Vasicek
+> equation** to give CIR.
+
+**The drift is untouched.** Mean reversion works exactly as before — the two
+cases are identical to Vasicek's:
+
+| | | Direction |
+| --- | --- | --- |
+| $b > r_t$ | $b - r_t > 0 \Rightarrow dr_t > 0$ | **Adjust the interest rate upwards** |
+| $b < r_t$ | $b - r_t < 0 \Rightarrow dr_t < 0$ | **Adjust the interest rate downward** |
+
+with $a$, $dt$ and $\sqrt{r_t}$ all positive, so the sign of $(b - r_t)$ decides
+everything.
+
+## Why the square root fixes negative rates
+
+> **The square root of any number is always positive.**
+
+That is the whole argument, and it works through the *size* of the shock rather
+than its sign:
+
+<svg viewBox="0 0 640 250" role="img" aria-label="Vasicek's diffusion coefficient is a constant regardless of the rate level, while CIR's is proportional to the square root of the rate, shrinking to zero as the rate approaches zero" style={{width: '100%', height: 'auto'}}>
+  <g stroke="currentColor" strokeWidth="1" opacity="0.35" fill="none">
+    <line x1="70" y1="190" x2="600" y2="190" />
+    <line x1="70" y1="30" x2="70" y2="196" />
+  </g>
+  <line x1="70" y1="80" x2="590" y2="80" stroke="#e0a44a" strokeWidth="2.5" />
+  <path d="M70,190 C130,120 200,100 300,88 C400,77 490,70 590,64" fill="none" stroke="#25c2a0" strokeWidth="2.5" />
+  <circle cx="70" cy="190" r="5" fill="#25c2a0" />
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="600" y="84" fill="#e0a44a">σ</text>
+    <text x="600" y="60" fill="#25c2a0">σ√r</text>
+    <text x="86" y="74" fill="#e0a44a">Vasicek — constant</text>
+    <text x="150" y="150" fill="#25c2a0">CIR — shrinks with r</text>
+    <text x="60" y="208" opacity="0.7">0</text>
+    <text x="300" y="222" opacity="0.75">interest rate r</text>
+    <text x="20" y="40" opacity="0.75">shock size</text>
+  </g>
+  <text x="82" y="178" fill="#25c2a0" fontSize="11" fontFamily="monospace">no shock at r = 0</text>
+</svg>
+
+In **Vasicek**, the shock is $\sigma\,dW_t$ — the **same size at every rate
+level.** So when $r_t$ is already near zero, a normal draw of the usual
+magnitude can push it straight through into negative territory.
+
+In **CIR**, the shock is $\sigma\sqrt{r_t}\,dW_t$. As $r_t$ falls toward zero,
+$\sqrt{r_t}$ falls toward zero too, so **the randomness switches itself off
+exactly where it would do damage.** At $r_t = 0$ the diffusion term vanishes
+entirely and only the drift $ab\,dt$ remains — which is positive, pushing the
+rate back up.
+
+> **CIR $\rightarrow \sqrt{r_t} \rightarrow$ positive value $\rightarrow$
+> interest rates can't go negative.**
+
+:::note The guarantee has a condition
+
+The notes state non-negativity as absolute. Strictly, CIR keeps the rate
+**strictly positive** only when the **Feller condition** holds:
+
+$$
+2ab \ge \sigma^2
+$$
+
+If volatility is large relative to the mean-reversion pull, the rate can still
+touch zero (though it cannot pass through it). Worth knowing, and it is checked
+against the calibrated parameters in the
+[CIR Excel note](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/cir-excel).
+
+:::
+
+## Assumptions
+
+**1) It assumes mean reversion.** This means the **interest rate tends to move
+towards the long-term equilibrium level over time** — rising when it sits below
+$b$, falling when above.
+
+**2) It assumes $a$, $b$ and $\sigma$ are constant.**
+
+| | |
+| --- | --- |
+| $a$ | speed of mean reversion |
+| $b$ | long-term mean |
+| $\sigma$ | volatility / standard deviation |
+
+The notes flag this immediately with a question: for a stock ABC, **will
+volatility always remain constant?** Obviously not — and the note beside it is
+blunt about what that means:
+
+> **Assumption → limitation.**
+
+The long-term mean $b$ in particular has to be obtained by **calibrating the
+model to market data**, and it is economy-specific — the US economy has one
+level, India and China another.
+
+## Vasicek versus CIR
+
+| | Vasicek | CIR |
+| --- | --- | --- |
+| **Equation** | $dr_t = a(b - r_t)dt + \sigma\,dW_t$ | $dr_t = a(b - r_t)dt + \sigma\sqrt{r_t}\,dW_t$ |
+| **Rates it can produce** | **Positive and negative** | **Positive only** |
+| **Diffusion** | Constant | Proportional to $\sqrt{r_t}$ |
+
+Which model to use is therefore **an empirical question about the economy you
+are modelling**, not a matter of taste:
+
+| Economy | Rates observed | Use |
+| --- | --- | --- |
+| **USA, India, China** | Positive | **CIR** |
+| **Germany, Japan** | Have gone to **0 or negative** | **Vasicek** |
+
+The notes are direct about the mismatch: for economies whose rates are firmly
+positive, a model that generates negative rates **"makes no sense"**. And
+conversely — if you need to represent a genuinely negative rate, CIR
+structurally cannot do it.
+
+So the fix is not free. **CIR trades away the ability to model negative rates in
+exchange for never producing spurious ones.**
+
+## Limitations
+
+**a) It assumes constant $a$, $b$ and $\sigma$.** In reality **these parameters
+might change due to changes in market and economic conditions.** The assumption
+that made the model tractable is the same one that makes it wrong over long
+horizons.
+
+**b) It is not suitable for modelling negative interest rates.** The
+$\sqrt{r_t}$ term **makes the interest rate non-negative** — which is a feature
+in the US and a defect in Germany.
+
+**c) It is a single-factor model.**
+
+$$
+dr_t = \underbrace{a(b - r_t)\,dt}_{} + \sigma\sqrt{r_t}\,\underbrace{dW_t}_{\text{random fluctuation}}
+$$
+
+with $r_t$ as the sole **market risk factor**. But **interest rates can rely on
+multiple factors** — **market sentiment** and **economic policies** among them —
+and a one-factor model cannot separate them.
+
+**d) No jumps or discontinuities.**
+
+> The CIR model assumes a **continuous path** for the interest rate. This may
+> **not reflect real-world market behaviour**, which can include **jumps or
+> sudden changes due to unexpected events.**
+
+A central bank announcement moves rates in a step, not a wiggle. Brownian motion
+has continuous paths by construction, so no amount of parameter tuning will
+reproduce that.
+
+## Other interest rate models
+
+The two in this module are the start of a family:
+
+| | Model |
+| --- | --- |
+| 1 | **Vasicek** |
+| 2 | **CIR** |
+| 3 | **Hull-White** (John C. Hull) |
+| 4 | **Black-Karasinski** |
+| 5 | **Libor Market Model** |
+| 6 | **Heath-Jarrow-Morton** |
+
+Each relaxes one of the assumptions above — time-varying parameters, log-normal
+rates, or modelling the whole forward curve rather than a single short rate.
+
+## Summary
+
+- **CIR (Cox, Ingersoll and Ross, 1985)** is a **one-factor** stochastic
+  interest rate model:
+  $dr_t = a(b - r_t)\,dt + \sigma\sqrt{r_t}\,dW_t$.
+- It is **Vasicek plus $\sqrt{r_t}$** in the diffusion term. The drift, and
+  therefore the mean-reversion behaviour, is unchanged.
+- **That square root is what prevents negative rates**: as $r_t$ approaches
+  zero the shock shrinks to nothing, leaving only the upward drift. (Strictly,
+  under the **Feller condition** $2ab \ge \sigma^2$.)
+- **Use CIR where rates are positive** (US, India, China); **use Vasicek where
+  they can go negative** (Germany, Japan). Neither dominates.
+- **Limitations:** constant parameters, cannot model negative rates, only one
+  risk factor, and **no jumps** — real rates move in steps that a continuous
+  path cannot reproduce.
+- The wider family includes **Hull-White, Black-Karasinski, the Libor Market
+  Model and Heath-Jarrow-Morton.**

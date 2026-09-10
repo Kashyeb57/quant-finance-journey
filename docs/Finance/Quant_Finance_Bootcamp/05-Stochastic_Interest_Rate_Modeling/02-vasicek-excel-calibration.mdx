@@ -1,0 +1,276 @@
+---
+title: Calibrating Vasicek with MLE
+description: 'Fitting a, b and sigma to real Treasury data by maximum likelihood — the five steps, why the logarithm appears, and the Excel build, with a check that the calibration actually recovered the right volatility.'
+---
+
+The [theory note](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/vasicek-theory)
+gives the model. It does not give the numbers. The three parameters — $a$, $b$
+and $\sigma$ — have to come from **observed data**, and the method for
+extracting them is **maximum likelihood estimation.**
+
+## What MLE is
+
+> MLE is a method which is used to find the **best-fitting parameters for a
+> mathematical model, based on observed data.**
+
+Applied here, that means finding $a$, $b$ and $\sigma$ in
+
+$$
+dr_t = a(b - r_t)\,dt + \sigma\,dW_t
+$$
+
+The principle in the notes' own words:
+
+> **Adjust the parameters in such a way that the values generated from the
+> Vasicek model closely align with the actual data.**
+
+So there are two columns of numbers — what the rate **actually did**, and what
+the **model says** it should have done — and calibration is the search for the
+parameters that make the gap between them as small (as *likely*) as possible.
+
+## The five steps
+
+**1. Calculate $dr_t$** — for both the **actual data** and the **Vasicek model.**
+
+| | Actual rate | Vasicek | $\Delta r$ actual | $\Delta r$ Vasicek |
+| --- | --- | --- | --- | --- |
+| $T$ | 5.0% | 4.5% | | |
+| $T-1$ | 5.1% | 4.75% | 5.0% − 5.1% | 4.5% − 4.75% |
+| $T-2$ | 5.05% | 4.6% | 5.1% − 5.05% | 4.75% − 4.6% |
+| $T-3$ | 5.15% | ⋮ | ⋮ | ⋮ |
+
+**2. Calculate the residual** — the **error term:**
+
+$$
+\text{Residual} = \Delta r_{\text{Actual}} - \Delta r_{\text{Vasicek}}
+$$
+
+**3. Take a normal distribution of the residual**, with
+
+$$
+\text{Mean} = 0 \qquad\qquad \text{Std deviation} = \sigma
+$$
+
+The residual is assumed **normally distributed around a mean of 0.** This is not
+an arbitrary assumption — it falls straight out of the model. The deterministic
+part is what the model predicted; whatever is left over *is* the realisation of
+$\sigma\,dW_t$, and $dW_t$ is normal with mean zero by construction. So the
+residuals should look like normal draws, and $\sigma$ is exactly the parameter
+that says how wide they should be.
+
+**4. Take the log likelihood.** Each residual gets a probability density from
+that normal distribution; take the **log** of each.
+
+**5. Sum all the logs**, and **maximise** the sum — **by changing $a$, $b$ and
+$\sigma$.**
+
+> We are trying to **maximise the likelihood of the function by changing the
+> parameters** $a$, $b$, $\sigma$.
+
+## Why take the logarithm?
+
+> Since we are working with **multiple time steps**, the **total likelihood of
+> the entire dataset is the product of the likelihood of each individual time
+> step.**
+
+$$
+L = A \times B \times C \times \cdots
+$$
+
+And a product of many probability densities is awkward — multiply 251 small
+numbers together and you underflow to zero. The logarithm turns it into
+something tractable:
+
+$$
+\log(A \times B \times C \times \cdots) = \log(A) + \log(B) + \log(C) + \cdots
+$$
+
+A **product becomes a sum.** Since the logarithm is monotonically increasing,
+whatever maximises the log-likelihood also maximises the likelihood — so nothing
+is lost by optimising the easier quantity.
+
+## The Excel build
+
+**The data** is the US Treasury yield curve — the workbook carries full
+**2024** and **2023** sheets with the 1 Mo through 10 Yr columns. The
+calibration uses the **3-month** rate, 252 observations.
+
+The `Vasicek Parameter Est (MLE)` sheet is the five steps as seven columns:
+
+| Col | Label | Formula | Step |
+| --- | --- | --- | --- |
+| C | 3 Mo | the raw quote, e.g. 5.52 | |
+| D | Actual | `=C2/100` → 0.0552 | convert percent to decimal |
+| E | Return | `=(D2/D3-1)` | |
+| F | r(t)−r(t−1) | `=D2-D3` | **1 — actual $dr$** |
+| G | dr (V) | `=$O$2*($O$3-D3)*$O$7` | **1 — model $dr$** |
+| H | residual | `=F2-G2` | **2 — the error** |
+| I | pdf | `=NORMDIST(H2,0,$O$4,FALSE)` | **3 — normal density** |
+| J | ln(pdf) | `=LN(I2)` | **4 — log** |
+| L2 | Sum | `=SUM(J2:J252)` | **5 — the objective** |
+
+Two details worth noticing.
+
+**Column G has no random term.** It is only $a(b - r_{t-1})\,dt$ — the
+deterministic part. That is correct and it is the point: the model's *prediction*
+is the drift, and the residual in column H is what the stochastic term must have
+supplied. Calibration then asks which $\sigma$ makes those residuals most
+plausible.
+
+**`NORMDIST(..., FALSE)`** returns the **density**, not the cumulative
+probability. The `FALSE` is what selects the PDF — exactly what a likelihood
+needs.
+
+### The parameters
+
+| Cell | Parameter | Initial guess | **Calibrated** |
+| --- | --- | --- | --- |
+| O2 | mean reverting speed $a$ | — | **0.10232419** |
+| O3 | long-term mean $b$ | 0.05 | **0.05740609** |
+| O4 | volatility $\sigma$ | `=STDEV.S(E2:E252)` | **0.00018280** |
+| O5 | initial rate $r_0$ | `=D2` → 0.0552 | |
+| O6 | n_days | 252 | |
+| O7 | $dt$ | `=1/O6` → 0.00396825 | |
+
+Maximised log-likelihood: **1804.0966**. Excel's Solver does the maximising,
+changing O2:O4 to push L2 as high as it will go.
+
+## Did the calibration work?
+
+Worth checking rather than assuming, and there is a clean test. If MLE is doing
+its job, the fitted $\sigma$ should come out close to the **actual standard
+deviation of the daily rate changes** — because that is what the residuals are.
+
+| | Value |
+| --- | --- |
+| Std deviation of daily changes in the 3-month rate | **0.00018294** |
+| **Calibrated $\sigma$** | **0.00018280** |
+
+They agree to four significant figures. **The calibration recovered the
+volatility correctly** — a small but real confirmation that the likelihood was
+set up right.
+
+:::note Where the data is thinner than it looks
+
+Two things about the input are worth knowing.
+
+**The 3-month rate is quoted to two decimal places**, so **86 of the 251 daily
+changes (34%) are exactly zero** — the rate simply printed the same number two
+days running. That rounding does not break the fit above, but it means the
+"daily volatility" being measured is partly a quantisation artifact.
+
+**$a$ and $b$ are weakly identified over one year.** The fitted
+$a = 0.1023$ implies a mean-reversion half-life of
+
+$$
+\frac{\ln 2}{a} = \frac{0.693}{0.1023} \approx 6.8 \text{ years}
+$$
+
+Over a **single year** of data, a process reverting on a 6.8-year timescale
+barely reverts at all — so the data contains very little information about where
+$b$ actually is. That is why the fitted $b$ (5.74%) sits noticeably above the
+sample average rate (5.49%) without the fit objecting. $\sigma$ is pinned down
+by 251 observations; $a$ and $b$ are not.
+
+This is a general feature of short-rate calibration, not a mistake in the sheet
+— mean reversion is a slow phenomenon and short samples struggle to see it.
+
+:::
+
+## Simulating the calibrated model
+
+The `Vasicek Simulation (MLE)` sheet takes the three fitted parameters and runs
+the model forward — **10 simulations across columns E:N, 252 days down the
+rows.**
+
+| Cell | Holds |
+| --- | --- |
+| B1, B2, B3 | the calibrated $a$, $b$, $\sigma$ |
+| B4 | $r_0 = 0.0552$ |
+| B5 / B6 | n_days = 252, $dt$ = `=1/B5` |
+| E2:N2 | `=$B$4` — every path starts at $r_0$ |
+
+and the step itself:
+
+```excel
+E3 = $B$1*($B$2-E2)*$B$6 + $B$3*SQRT($B$6)*NORM.S.INV(RAND()) + E2
+```
+
+which reads directly as the Euler discretisation of the SDE:
+
+$$
+r_{t+\Delta t} = \underbrace{a(b - r_t)\,\Delta t}_{\text{drift}} + \underbrace{\sigma\sqrt{\Delta t}\,Z}_{\text{shock}} + \underbrace{r_t}_{\text{where we were}}
+$$
+
+The **shape** of that step is right — drift scaled by $\Delta t$, shock by
+$\sqrt{\Delta t}$ — unlike the
+[Monte Carlo workbooks in Module 4](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/monte-carlo-european-option),
+which scaled the drift by $\sqrt{\Delta t}$ too. But the **units of $\sigma$**
+do not line up between the two sheets.
+
+:::danger The simulation is 15.9× too smooth — a units mismatch
+
+The calibration sheet fits $\sigma$ with
+
+```excel
+=NORMDIST(H2, 0, $O$4, FALSE)
+```
+
+where `H2` is a **one-day** residual. So the fitted $\sigma$ is already a
+**per-day standard deviation** — and indeed it came out at 0.00018280 against a
+measured daily-change standard deviation of 0.00018294.
+
+The simulation sheet then multiplies it by $\sqrt{\Delta t}$ *again*:
+
+```excel
+$B$3*SQRT($B$6)*NORM.S.INV(RAND())
+```
+
+which treats that same number as an **annualised** volatility. The result:
+
+| | Daily shock std |
+| --- | --- |
+| Actual 3-month rate | **0.00018294** |
+| Simulated by the sheet | **0.00001152** |
+| Ratio | **0.0629** — that is $1/\sqrt{252}$ |
+
+The simulated paths are **15.9× less volatile than the data they were
+calibrated on.** You can see it in the saved values: the first path moves
+0.0552 → 0.05518 → 0.05520 in steps of about 2×10⁻⁵, where the real rate moves
+in steps of about 1.8×10⁻⁴.
+
+**Either** fix works, not both:
+
+- calibrate against the scaled quantity — `NORMDIST(H2, 0, $O$4*SQRT($O$7), FALSE)` — so $\sigma$ is annualised, **or**
+- drop the $\sqrt{\Delta t}$ from the simulation — `$B$3*NORM.S.INV(RAND())` — keeping $\sigma$ per-day.
+
+:::
+
+Because the rate is added back rather than compounded, the process is
+**arithmetic** — which is precisely why it can cross zero into negative
+territory, the limitation the
+[CIR model](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/cir-theory)
+sets out to fix.
+
+## Summary
+
+- **MLE finds the best-fitting parameters for a model given observed data** —
+  here $a$, $b$ and $\sigma$ for Vasicek.
+- The five steps: **compute $dr$ for actual and model → take the residual →
+  assume it is normal with mean 0 and std $\sigma$ → take logs → sum and
+  maximise** by changing the parameters.
+- **The log turns a product of 251 densities into a sum**, which is both
+  numerically stable and easier to maximise; being monotonic, it does not change
+  where the maximum is.
+- The model column carries **only the drift**; the residual is what
+  $\sigma\,dW_t$ must have contributed.
+- Calibrated on the 3-month Treasury: **$a$ = 0.1023, $b$ = 0.0574,
+  $\sigma$ = 0.00018280**, log-likelihood 1804.10.
+- **The fit checks out** — $\sigma$ matches the sample standard deviation of
+  daily changes (0.00018294) to four significant figures. But **$a$ and $b$ are
+  weakly identified**, because a 6.8-year half-life barely shows up in one year
+  of data.
+- The simulation sheet has the **right Euler shape** but a **units mismatch**:
+  the calibration returns a per-day $\sigma$ and the simulation multiplies it by
+  $\sqrt{\Delta t}$ again, making the paths **15.9× too smooth.** Fix it at one
+  end or the other, not both.
