@@ -1,0 +1,252 @@
+---
+title: SR 11-7 — Overview of Model Risk
+description: 'The Fed/OCC supervisory guidance on model risk management: what counts as a model, the two ways model risk arises, and why it cannot be eliminated.'
+---
+
+Every previous module in this course built a model. This one asks the question
+regulators started asking after 2008: **how do you know the model is any good,
+and who is accountable when it is not?**
+
+## What SR 11-7 is
+
+> **SR 11-7 is the Supervisory Guidance on Model Risk Management, issued jointly
+> by the Federal Reserve Board (FRB) and the Office of the Comptroller of the
+> Currency (OCC) in 2011.**
+
+Dated **4 April 2011**, it is the standard reference for model risk management
+in US banking, and it is what a model validation team is measured against.
+
+### Why it was issued
+
+> **Lessons learned from the 2008 financial crisis.**
+>
+> **Failures in model reliability during the financial crisis highlighted the
+> need for robust model risk management practices.**
+
+## Introduction
+
+> **Banks rely heavily on quantitative analysis and models for most of their
+> decision making.**
+
+The guidance lists the range: **underwriting credits, valuing exposures,
+measuring risk, managing client assets, determining capital and reserve
+adequacy**, and many other activities.
+
+> **The expanding use of models in all aspects of banking reflects the extent to
+> which models can improve business decisions — but models also come with a
+> cost.**
+
+| Cost | What it is |
+| --- | --- |
+| **Direct cost** | the **resources** spent building all the models |
+| **Indirect cost** | the consequences of **relying on the outcomes of the model** |
+
+And the indirect cost is the one that matters here:
+
+$$
+\text{Decision} \longrightarrow \text{model gives an incorrect result} \longrightarrow \textbf{banks have faced large financial losses}
+$$
+
+which is why it is **important to actively manage model risk.**
+
+## The seven sections
+
+The document's own structure, which the rest of this module follows:
+
+| Section | Contents |
+| --- | --- |
+| **1** | Introduction |
+| **2** | **Purpose and Scope** of SR 11-7 |
+| **3** | **Overview of Model Risk Management (MRM)** |
+| **4** | Robust **model development, implementation and use** |
+| **5** | **Components of effective validation** |
+| **6** | Salient features of sound **governance, policies and controls** |
+| **7** | Conclusion |
+
+## Section 2 — Purpose and scope
+
+> **The purpose of this document is to provide comprehensive guidance for banks
+> on model risk management.**
+
+> **Rigorous model validation plays a critical role in MRM. However, sound
+> development, implementation and use of the model are also vital elements.**
+
+That balance is the guidance's central posture, and it is worth stating plainly:
+**validation is not a substitute for building the model properly.** The chain
+runs:
+
+$$
+\underbrace{\text{Model development}}_{\text{build the model}}
+\longrightarrow
+\underbrace{\text{Model validation}}_{\text{validate the same model}}
+\longrightarrow
+\underbrace{\text{Approve the model}}_{}
+$$
+
+with two further requirements on the far side: **the user must know the model's
+usage**, and the model must be **implemented the right way.**
+
+## Section 3 — What counts as a model
+
+The definition is precise, and it is broader than most people expect:
+
+> The term **model** refers to a **quantitative method, system, or approach that
+> applies statistical, economic, financial, or mathematical theories, techniques
+> and assumptions to process input data into quantitative estimates.**
+
+### The three components
+
+> A model consists of **three components.**
+
+| # | Component | Role |
+| --- | --- | --- |
+| 1 | **Information input** | delivers **assumptions and data** to the model |
+| 2 | **Processing** | **transforms inputs into estimates** |
+| 3 | **Reporting** | **translates the estimates into useful business information** |
+
+$$
+\text{Input} \longrightarrow \text{Processing} \longrightarrow \text{Output / Reporting}
+$$
+
+:::note The definition is deliberately wide
+
+Two consequences worth noticing.
+
+**A spreadsheet is a model.** Nothing in the definition requires code, a
+database, or sophistication — the Black-Scholes sheet from
+[Module 4](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/black-scholes-excel)
+meets it in full.
+
+**Expert judgement can be an input.** The guidance explicitly covers
+"quantitative approaches whose inputs are partially or wholly qualitative or
+based on expert judgment, **provided that the output is quantitative in
+nature**." So a scorecard driven by analyst opinion is still a model if it
+produces a number.
+
+:::
+
+### Models are simplifications
+
+> Models are **simplified representations of real-world relationships.**
+> Simplification is **inevitable**, due to the complexity of those
+> relationships, **but also intentional** — to focus attention on the aspects
+> considered most important for a given application.
+
+> **Model quality can be measured in many ways: precision, accuracy,
+> discriminatory power, robustness, stability and reliability**, to name a few.
+
+Which metric applies depends on the model's job:
+
+| Model type | Relevant metrics |
+| --- | --- |
+| **Regression model** | **RMSE**, **MSE**, **MAE**, **MAPE** |
+| **VaR model** | [**Traffic Light Approach**](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-traffic-light), [**Kupiec Test**](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-kupiec) |
+
+That second row is the direct link back to
+[Module 6](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-introduction):
+backtesting a VaR model *is* model validation, done by the standards this
+document sets.
+
+> **Models are never perfect, and the appropriate metric of quality depends on
+> the situation.**
+
+## Model risk, and the two ways it arises
+
+> The use of models invariably presents **model risk**, which is the **potential
+> for adverse consequences from decisions based on incorrect or misused model
+> outputs and reports.**
+
+It can lead to **financial loss, poor business and strategic decision making, or
+damage to a bank's reputation.**
+
+**Reason 1 — the model may have fundamental errors.**
+
+> The model **may have fundamental errors and may produce inaccurate output when
+> viewed against the design objective and intended use.**
+
+Errors can enter anywhere along the chain:
+
+- the **mathematical calculation and quantification**
+- the **choice of sample design**
+- the **selection of inputs and estimation**
+- the **implementation**
+
+> **Errors can occur at any point from design through implementation.**
+
+The lecturer's example is an implementation error you can see: the
+[Vasicek model](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/vasicek-theory)
+is $dr_t = a(b - r_t)dt + \sigma\,dW_t$, but deployed as
+$dr_t = a(b - r_t)\sigma\,dt + \sigma\,dW_t$ — the theory is right and the code
+is not. *Is the model deployed correctly?* is a separate question from *is the
+model correct?*
+
+**Reason 2 — the model may be used incorrectly or inappropriately.**
+
+The example here is one this course has already built: **Black-Scholes prices a
+European option.** Point it at an **American option** and it will return a
+number — a wrong one, because
+[the model assumes exercise only at maturity](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/black-scholes-theory).
+
+$$
+\text{Black-Scholes} \rightarrow \text{European} \;\checkmark
+\qquad
+\text{Black-Scholes} \rightarrow \text{American} \;✗ \rightarrow \textbf{model risk}
+$$
+
+> It is **very important to understand the limitations of a model, to avoid
+> using it in ways that are not consistent with the original intent.**
+
+That is the sharpest practical lesson in the whole document: **a model does not
+fail loudly when misused.** It returns a plausible number.
+
+## How model risk behaves
+
+- **Model risk should be managed like any other kind of risk** — identified,
+  measured, controlled.
+- **Banks should identify the source of risk and assess the magnitude.**
+- **Model risk increases with greater model complexity.**
+- **Aggregate model risk is affected by interaction and dependencies among
+  models** — where one model's output is another's input, errors propagate:
+
+$$
+M_1 \xrightarrow{\;\text{output}\;} M_2 \xrightarrow{\;\text{output}\;} \text{decision}
+$$
+
+## It cannot be eliminated
+
+> **Even with skilled modelling and robust validation, model risk cannot be
+> eliminated.**
+
+So the guidance turns to containment instead:
+
+- **establish limits on model use**
+- **monitor model performance**
+- **adjust or revise the model over time**
+- **ad-hoc analysis** — extra checks to make sure everything is correct
+
+Monitoring runs on a defined cycle — **monthly, quarterly, semi-annual, annual,
+or two-yearly** — and the outcome is either to **adjust the model or build a new
+one.**
+
+This is the same posture the hedging module took: you do not remove the risk,
+you decide how much of it to carry and check on it regularly.
+
+## Summary
+
+- **SR 11-7** is the **Fed/OCC Supervisory Guidance on Model Risk Management
+  (2011)**, issued after the **2008 crisis** exposed failures in model
+  reliability.
+- A **model** is any **quantitative method processing input data into
+  quantitative estimates**, with **three components: input, processing,
+  reporting.** The definition covers spreadsheets and expert-judgement inputs.
+- **Models are deliberate simplifications** and **never perfect**; quality
+  metrics depend on the job — RMSE for a regression, traffic light and Kupiec
+  for a VaR model.
+- **Model risk** is the **potential for adverse consequences from decisions
+  based on incorrect or misused model outputs.**
+- It arises **two ways**: **fundamental errors** (anywhere from design through
+  implementation) and **incorrect or inappropriate use** (Black-Scholes on an
+  American option).
+- It **increases with complexity** and **compounds across linked models.**
+- **It cannot be eliminated** — so it is contained with **limits on use,
+  monitoring, revision and ad-hoc analysis.**

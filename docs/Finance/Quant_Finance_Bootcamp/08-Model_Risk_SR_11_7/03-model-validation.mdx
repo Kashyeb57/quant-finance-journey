@@ -1,0 +1,285 @@
+---
+title: Model Validation
+description: 'Section 5 of SR 11-7 — the three elements of comprehensive validation: conceptual soundness, ongoing monitoring, and outcome analysis. Plus the independence and authority a validation team needs to be worth having.'
+---
+
+The longest section of the guidance, and the one a model validation job is built
+around.
+
+> **Model validation is the set of processes and activities intended to verify
+> that models are performing as expected, in line with their design objectives
+> and business uses.**
+
+## What gets validated
+
+**All three model components** — the ones defined in the
+[overview](/docs/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7/overview) —
+**should be subjected to validation:**
+
+$$
+\text{Input} \qquad \text{Processing} \qquad \text{Reporting}
+$$
+
+And it applies regardless of who built it:
+
+| Source | Validation required? |
+| --- | --- |
+| **Internal team model** | **Yes** |
+| **Vendor model** | **Yes** |
+
+Buying a model does not outsource responsibility for it.
+
+## How much validation
+
+> The **rigour and sophistication of validation should be commensurate with**:
+>
+> - the bank's **overall use of the model**
+> - the **complexity and materiality** of the model
+> - the **size and complexity of the bank's operations**
+
+So validation effort is **scaled to risk**, not applied uniformly. A model
+driving a material book gets more scrutiny than one driving a small one.
+
+**The lecturer's illustration**: compare the
+[Vasicek interest rate model](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/vasicek-theory)
+with a **Hull-White two-factor model**. The **validation practices are the
+same** — but Hull-White is more complex, the relationships between variables are
+more complex, and so it demands **more and more validation.** Same framework,
+more of it.
+
+## Who does it — and with what authority
+
+> **Staff doing validation should have the required knowledge, skill and
+> expertise.**
+
+In practice that means quantitative credentials — **MS in Quantitative Finance
+or Financial Engineering, FRM, CFA**, or a **machine learning / statistics**
+background. You cannot validate Black-Scholes without understanding
+[stochastic calculus](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/brownian-motion);
+you would have no way to tell whether the derivation is right.
+
+> **Staff conducting validation work should have explicit authority to challenge
+> the developer or unit**, and to **elevate their findings, including issues and
+> deficiencies.**
+
+:::note Independence is the point, not a formality
+
+> **Model development and model validation must be independent.**
+
+The process runs as a loop, not a rubber stamp:
+
+$$
+\text{Developer builds} \longrightarrow \text{Validator reviews} \xrightarrow{\;\text{issues \& deficiencies}\;} \text{Developer refines} \longrightarrow \cdots
+$$
+
+The reason the guidance is explicit about *authority* is that a validator who
+reports to the model's developer cannot do the job. Finding a deficiency has to
+be a career-neutral act, or deficiencies stop being found.
+
+This is the same structural idea as an audit function — competence alone is not
+enough without the standing to say no.
+
+:::
+
+## The power to reject
+
+> The **range and rigour of validation conducted prior to first use of a model
+> should be in line with the potential risk presented by the model.**
+
+And validation has teeth:
+
+> If **significant deficiencies are noted, use of the model should not be
+> allowed.**
+
+> If the **deficiencies are too severe to be addressed, the model should be
+> rejected.**
+
+> If it is **not feasible to conduct the necessary validation prior to the model
+> because of data or other limitations**, that fact **should be documented and
+> communicated to the user, senior management and relevant parties.**
+
+That last clause matters: **"we could not validate this" is an acceptable
+outcome, but only if it is said out loud.** Silence is not.
+
+## The three elements of comprehensive validation
+
+| # | Element | Includes |
+| --- | --- | --- |
+| **1** | **Evaluation of conceptual soundness** | development evidence |
+| **2** | **Ongoing monitoring** | process verification and benchmarking |
+| **3** | **Outcome analysis** | backtesting |
+
+## 1 — Evaluation of conceptual soundness
+
+> This element involves the **quality of model design and construction.**
+
+> It entails **review of documentation and empirical evidence supporting the
+> method used and the variables selected for the model.**
+
+> **Development evidence should be reviewed before the model goes into use.**
+
+The questions a validator asks of a regression predicting, say, a bank's
+balances: *What method did you follow? What variables did you select? Are those
+variables significant?*
+
+**Sound development means documenting all evidence in support of the model
+choice:**
+
+- **Theory**
+- **Assumptions**
+- **Data**
+- **Mathematical framework**
+- **Limitations**
+
+and a **complete validation** adds:
+
+- **Sensitivity analysis**
+- **Stress testing**
+- **Backtesting**
+- **Accuracy of the model**
+- **Comparison with alternative theories**
+
+### Sensitivity analysis
+
+> **Change one input and check the result on the output.**
+
+For a model $y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3$, vary $x_1$
+by **±1%, ±5%, ±10%** while holding $x_2$ and $x_3$ **constant**, and observe
+the impact on $y$. Then repeat for each input in turn.
+
+:::tip The worked failure is the best thing in this section
+
+Doing exactly that on the balance-prediction model, a **+10% shock to $x_2$**
+produced a **negative** $y$.
+
+> **Balances cannot be negative. They are only positive.**
+
+The model is not broken arithmetically — the regression is doing precisely what
+a linear model does, extrapolating a straight line past the region where it
+makes sense. But a balance model that can output a negative balance is
+**conceptually unsound**, and no amount of goodness-of-fit hides that.
+
+The fixes offered: either **impose a cap or floor on $x_2$**, or **remove $x_2$
+from the model.**
+
+This is what "conceptual soundness" means in practice — not *does it fit?* but
+*can it produce an answer that could never happen?*
+
+:::
+
+### Stress testing
+
+Three scenarios, run through the same model:
+
+| Scenario | The notes' example |
+| --- | --- |
+| **Base** | current values — interest rate, inflation, HPI |
+| **Adverse** | the **COVID period, 2020** |
+| **Severely adverse** | the **2007-08 financial crisis** |
+
+Feed each scenario's inputs in and compare the outputs. If the model **behaves
+weirdly** under the severely adverse case, then **the model is not able to
+stress test the SA condition** — and **changes in the model** are required.
+
+Note this is the same idea as
+[Stressed VaR](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-introduction)
+from Module 6: run the machinery over a deliberately catastrophic window and see
+whether it still makes sense.
+
+## 2 — Ongoing monitoring
+
+> The **second element** of the validation process.
+
+> **Ongoing monitoring confirms that the model is appropriately implemented and
+> is performing as intended.**
+
+> It means **monitoring the models to evaluate whether changes in product,
+> exposure, activities or market necessitate development (changes) or
+> redevelopment.**
+
+**Why it is needed**: a model calibrated on **2020** market conditions, still
+running in **2025**, is being asked about a world that has changed. When it
+**isn't performing the way it has to**, that is **model risk** — and the
+response is to **adjust the model or redevelop it.**
+
+> **Model limitations should be assessed regularly when ongoing monitoring is
+> performed** — every time, not once at inception.
+
+### It involves two things
+
+**a) Process verification.**
+
+- **Check all model components are functioning as designed.**
+- **Verify internal and external data.**
+- **Computer code implementation should be subject to rigorous quality and
+  change control procedures.**
+
+That last point is the one this course has repeatedly demonstrated the need for.
+The
+[Monte Carlo VaR sheet](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-monte-carlo-excel)
+whose live formulas no longer reproduced its own reported numbers is exactly a
+process-verification failure — the theory was fine, the implementation had
+drifted, and nothing caught it.
+
+**b) Benchmarking.**
+
+> **Comparing your model with an alternative model.**
+
+Pricing a derivative, for instance:
+
+| Method | Price |
+| --- | --- |
+| **Black-Scholes** | \$110 |
+| **Binomial tree** | … |
+| **Monte Carlo** | \$100 |
+
+A gap that large between methods is a signal to investigate. Module 4 did this
+without naming it: three methods priced the same SPY call at **1.7131, 1.7054
+and 1.7065** — agreement within a cent, which is a *passing* benchmark test.
+Module 6's three VaR methods **disagreeing by 12.6% at 95%** is a benchmark test
+that raises a question worth answering.
+
+## 3 — Outcome analysis
+
+> The **third element** of the validation process.
+
+> **Analysing the outcome of the model by comparing model output with actual
+> outcome.**
+
+Predicted balance against actual balance, plotted together — the visual form of
+the whole exercise.
+
+> **Outcome analysis depends on quantitative measures or statistical tests.**
+
+| Model type | Measures |
+| --- | --- |
+| **Linear regression** | **RMSE, MSE, MAE, MAPE** |
+| **Logistic regression** | **Accuracy, Precision, F1 score, Recall, AUC-ROC curve** |
+| **VaR** | [**Kupiec test**](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-kupiec) |
+
+Which closes a loop opened two modules ago: **backtesting a VaR model is outcome
+analysis**, the third element of validation under SR 11-7. Module 6 did the
+technique; this section is the governance framework that requires it and says
+who must sign it off.
+
+## Summary
+
+- **Model validation verifies that models perform as expected, in line with
+  design objectives and business uses** — covering **input, processing and
+  reporting**, for **internal and vendor models alike.**
+- **Rigour scales with** the model's use, complexity, materiality, and the
+  bank's size — same practices, more of them for harder models.
+- Validators need **genuine quantitative expertise** and **explicit authority to
+  challenge developers and escalate findings**; **development and validation
+  must be independent.**
+- Validation can **block a model from use** and **reject it outright**; if
+  validation isn't feasible, that must be **documented and communicated.**
+- **Three elements:**
+  - **Conceptual soundness** — design quality, documented evidence,
+    **sensitivity analysis** and **stress testing** (base / adverse / severely
+    adverse). A balance model that outputs a negative balance is unsound
+    regardless of fit.
+  - **Ongoing monitoring** — **process verification** (components, data, code
+    change control) and **benchmarking** against alternative models.
+  - **Outcome analysis** — **compare predicted against actual**, using measures
+    appropriate to the model type; for VaR that is **backtesting.**

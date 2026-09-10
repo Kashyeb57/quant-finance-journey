@@ -1,0 +1,241 @@
+---
+title: Governance, Policies and Controls
+description: 'Sections 6 and 7 of SR 11-7 — the seven components of model governance, from board oversight down to the model inventory, plus vendor models and the conclusion that closes the module.'
+---
+
+Good models and rigorous validation are not enough on their own. Someone has to
+own the framework, staff it, and be accountable when it fails. That is
+governance.
+
+> **Model risk governance is provided at the highest level by the Board of
+> Directors (BOD) and Senior Management (SM)**, when they establish a
+> **bank-wide approach to model risk management.**
+
+> **It fits into the broader risk management of the organisation.**
+
+## The seven components
+
+| # | Component |
+| --- | --- |
+| 1 | **Board of Directors and Senior Management** |
+| 2 | **Policies and Procedures** |
+| 3 | **Roles and Responsibilities** |
+| 4 | **Internal Audit** |
+| 5 | **External Resources** |
+| 6 | **Model Inventory** |
+| 7 | **Documentation** |
+
+## 1 — Board of Directors and Senior Management
+
+The **BOD delegates to Senior Management**, whose duties are:
+
+- **Establishing policies and procedures**
+- **Establishing compliance**
+- **Assigning competent staff**
+- **Overseeing model development**
+- **Overseeing model implementation**
+- **Evaluating results**
+- **Overseeing model validation**
+
+And the board's own responsibility is stated in risk terms:
+
+> **Board members must ensure that model risk is within the tolerance limit.**
+
+That phrasing matters — it treats model risk the same way a board treats credit
+or market risk: something with a stated appetite that must be kept inside it,
+not a technical matter delegated away entirely.
+
+## 2 — Policies and Procedures
+
+> **All aspects of model risk management should be covered by suitable
+> policies.**
+
+Those policies must cover:
+
+- **Model and model risk definitions**
+- **Acceptable practices for model development**
+- **Assessment of model risk**
+- **Appropriate model validation**
+- **Model governance**
+
+> **Policies should identify the roles and responsibilities within the MRM
+> framework**, with clear detail on:
+>
+> - **staff expertise**
+> - **authority**
+> - **reporting lines**
+
+Note the recurrence of *authority* and *reporting lines* — the same requirement
+that made
+[validation independence](/docs/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7/model-validation)
+meaningful. A policy that names a validator without granting them standing
+achieves nothing.
+
+## 3 — Roles and Responsibilities
+
+> The roles in MRM can be divided into **ownership, control and compliance.**
+
+> **Business units are responsible for the model risk associated with their
+> business strategies.**
+
+That is the important allocation: model risk belongs to **the business that uses
+the model**, not to the quantitative team that built it.
+
+### The model owner
+
+> The model owner holds **accountability for the model** — its
+
+- **performance**
+- **development**
+- **implementation**
+- **use**
+- **validation**
+
+One named person is answerable for the whole lifecycle. Without that, a model
+with problems has no natural home and drifts.
+
+## 4 — Internal Audit
+
+> A bank's **internal audit should assess the overall effectiveness of the MRM
+> framework.**
+
+:::note Audit checks the framework, not the models
+
+The guidance is careful here, and the distinction is easy to miss:
+
+> **Internal audit should not replicate MRM activities**, but instead **evaluate
+> whether the MRM is comprehensive, rigorous and effective.**
+
+Validation asks *is this model right?* Internal audit asks *is the validation
+function itself working?* Duplicating the validators' work would waste the
+audit's independence on a question already being answered.
+
+> **Staff that look at the effectiveness of MRM should be expert in their field
+> of work.**
+
+:::
+
+What internal audit checks:
+
+- **Procedures for updating models are clearly documented**
+- **Check model owners are meeting standards or not**
+- **Data is reliable or not**
+- **Review validation activities**
+
+## 5 — External Resources
+
+> **Although MRM is an internal process, a bank can also decide to engage
+> external resources for the MRM framework** — for **developing, implementing,
+> validating**, or **model governance**.
+
+But engaging outside help does not transfer responsibility:
+
+> Whenever external resources are used:
+>
+> - the **scope of work should be clearly written and agreed**
+> - there must be a **designated internal team which should look upon the work
+>   conducted by the external resources**
+
+## 6 — Model Inventory
+
+> **Banks should maintain a comprehensive set of information for:**
+>
+> - **models implemented**
+> - **models under development**
+> - **models retired** — the ones **not being used now**
+
+> A **team maintains a firm-wide inventory of all the models**, in order to
+> **evaluate the model risk in aggregate.**
+
+That last phrase is the reason the inventory exists. The
+[overview note](/docs/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7/overview)
+established that **aggregate model risk is affected by interaction and
+dependencies among models** — one model's output feeding another's input. You
+cannot see that exposure model-by-model. **Only a firm-wide inventory makes the
+dependency graph visible.**
+
+### What the inventory records
+
+- **Purpose of the model**
+- **Product for which the model is designed and used**
+- **Any limitations**
+- **List of input variables and output variables**
+- **Function of the model**
+- **When the model was last updated**
+
+## 7 — Documentation
+
+Documentation runs through everything above, and the guidance's position is
+consistent: **if it is not written down, it did not happen.** Model choice,
+assumptions, data, limitations, validation findings, deficiencies, and the
+reasons validation could not be performed all have to be recorded.
+
+## Vendor and third-party models
+
+A financial institution buying in **vendor data** or a **vendor model /
+software** takes on model risk with it.
+
+> **Banks should ensure that there are appropriate processes for selecting
+> vendor models.**
+
+> **Banks require the vendor to provide development evidence** — the model's
+> **design** (input, processing, output) and **intended use** — so the bank can
+> judge whether **the model is appropriate for the bank or not.**
+
+> **Limitations and assumptions must be documented clearly by the vendor.**
+
+**When the vendor will not share** the mathematical formula, implementation
+code, back end, or adjustments — which is common, since these are trade secrets
+— the bank must compensate with its own testing:
+
+$$
+\text{Sensitivity analysis} \qquad \text{Benchmarking} \qquad \text{Stress testing}
+$$
+
+The notes name real systems in this category: **QRM**, **Polypath** and
+**Calypso** in banking, **Aladdin** (BlackRock), and **ADCO** for mortgage.
+
+> The bank must still **conduct ongoing monitoring and outcome analysis** on a
+> vendor model.
+
+**A black box does not exempt you from validation — it changes the technique.**
+If you cannot inspect the internals, you test the behaviour.
+
+## Section 7 — Conclusion
+
+> **Banks should comply with a strong MRM framework**, covering:
+
+| |
+| --- |
+| **Model development** |
+| **Model implementation** |
+| **Validation** |
+| **Model governance** |
+
+Which is the whole document in four lines, and the four notes of this module.
+
+## Summary
+
+- **Model risk governance sits with the Board and Senior Management**, who set a
+  **bank-wide approach** that fits into the organisation's broader risk
+  management. The **board must keep model risk within its tolerance limit.**
+- **Seven components**: board/senior management, policies and procedures, roles
+  and responsibilities, internal audit, external resources, model inventory,
+  documentation.
+- **Policies must cover** definitions, development practices, risk assessment,
+  validation and governance — with explicit **staff expertise, authority and
+  reporting lines.**
+- Roles divide into **ownership, control and compliance**; **business units own
+  the model risk of their strategies**, and a named **model owner is accountable
+  for performance, development, implementation, use and validation.**
+- **Internal audit assesses whether the MRM framework works** — it **does not
+  replicate validation.**
+- **External resources can be engaged**, but need an agreed scope and a
+  designated internal team overseeing them.
+- **A firm-wide model inventory** — implemented, under development and retired —
+  exists to **evaluate model risk in aggregate**, which is the only way to see
+  risk that arises between models.
+- **Vendor models still require validation.** Demand development evidence; where
+  the vendor withholds internals, substitute **sensitivity analysis,
+  benchmarking and stress testing**, and keep doing **ongoing monitoring and
+  outcome analysis.**

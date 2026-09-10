@@ -1,0 +1,206 @@
+---
+title: Model Development, Implementation and Use
+description: 'Section 4 of SR 11-7 — what a defensible model build looks like: a stated purpose, documented theory, alternatives considered, data you can justify, a battery of tests, and users who understand the limitations.'
+---
+
+> **Model risk management begins with robust model development, implementation
+> and use.** Another essential element is **sound model validation.**
+
+Note the order. Validation comes *second*. You cannot validate your way out of a
+badly built model — which is why this section comes before
+[Section 5](/docs/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7/model-validation).
+
+The third leg is **model governance**, which
+
+> sets an **effective framework with defined roles and responsibilities** for
+> **clear communication of model assumptions and limitations.**
+
+## What an effective development process starts with
+
+**a) A clear objective — a statement of purpose.**
+
+**b) Design, theory and logic underlying the model**, which should be
+
+> **well documented and generally supported by published research and sound
+> industry practice.**
+
+That documentation has to cover four things:
+
+| | |
+| --- | --- |
+| **Mathematical specification** | the equations themselves |
+| **Numerical technique** | how they are solved |
+| **Approximation** | what shortcuts were taken |
+| **Strengths / weaknesses** | → the model's **limitations** |
+
+> The **developer should ensure that the components of the model are appropriate
+> for the intended business use case.**
+
+## Consider the alternatives
+
+> **Comparison with alternate theories and approaches is a fundamental component
+> of a sound modelling process.**
+
+This is a requirement people routinely skip. It is not enough to build $M_1$ and
+show it works — you have to be able to say why $M_1$ and not $M_2$, $M_3$ or
+$M_4$:
+
+$$
+M_1 \;\checkmark \longrightarrow \text{implemented}
+\qquad
+\underbrace{M_2,\; M_3,\; M_4}_{\text{considered and rejected}} \longrightarrow \textbf{justify}
+$$
+
+This module has already done exactly that several times — the
+[three VaR methods](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-monte-carlo-excel)
+disagreeing by 12.6% at 95%, or
+[Vasicek versus CIR](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling/cir-excel)
+fitting the same data with mean-reversion speeds 100× apart. In both cases the
+choice between models mattered and could not be settled by fit alone. **Writing
+down why you chose one is the documentation SR 11-7 is asking for.**
+
+## Data
+
+> **Rigorous assessment of data quality and relevance** is required.
+
+> The **developer should be able to demonstrate that the data and information
+> are suitable for the model** and that **they are consistent with the use
+> case.**
+
+The lecturer's shorthand is the old one, and it is exactly right:
+
+$$
+\textbf{“Garbage In, Garbage Out”}
+$$
+
+### When the data does not exist
+
+> If data **isn't available, data proxies are used** — something with the **same
+> behaviour.**
+
+But a proxy is a substitution, and substitutions are where risk hides:
+
+> Proxies must be **carefully identified, justified and documented.**
+
+Otherwise the proxy itself becomes a source of **model risk** — the model looks
+fine, and the thing it is actually measuring is not the thing you think.
+
+## Testing
+
+> **Testing various components of the model, and its overall functioning, is
+> evaluated to determine whether the model is performing as intended or not.**
+
+And which tests apply depends entirely on what the model assumes:
+
+> **Statistical tests depend on specific distribution assumptions.**
+
+**For a linear regression model:**
+
+| # | Test |
+| --- | --- |
+| 1 | **Linearity** — QQ plot |
+| 2 | **Homoskedasticity** |
+| 3 | **Autocorrelation between residuals** |
+| 4 | **Multicollinearity** — VIF |
+| 5 | **Normality of residuals** |
+
+**For a time series model:**
+
+| # | Test |
+| --- | --- |
+| 1 | **Augmented Dickey-Fuller (ADF) test** |
+| 2 | **KPSS** |
+
+**For a Value at Risk model:**
+
+| # | Test |
+| --- | --- |
+| 1 | [**Kupiec test**](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-kupiec) |
+| 2 | [**Traffic Light Approach**](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-traffic-light) |
+| 3 | **Christoffersen test** |
+| 4 | **Binomial test** |
+
+### Never rely on one test
+
+> **Different tests have different strengths and weaknesses under different
+> conditions.**
+>
+> **Do not rely on a single test.**
+>
+> Use a **variety of tests to develop a sound model.**
+
+:::note This is the exact gap Module 6 identified
+
+The [Kupiec note](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-kupiec)
+ended on a limitation: Kupiec counts breaches but **cannot see whether they
+clustered.** Three breaches spread across a year and three on consecutive days
+score identically — and the second is far more alarming.
+
+**Christoffersen's test is the one that closes that gap**, by testing
+*independence* of breaches rather than just their number. Which is precisely why
+SR 11-7 lists all four together and says not to rely on any single one. The
+guidance is not being vague; it is describing a real blind spot that a second
+test covers.
+
+:::
+
+## Model use
+
+> **Models should be used only for the purpose for which they were designed and
+> validated.**
+
+$$
+\text{Black-Scholes} \longrightarrow \text{European option} \;\checkmark
+$$
+
+> **Misusing a model beyond its intended scope leads to incorrect decisions and
+> heightened risk** → **model risk.**
+
+### What is required of users
+
+> **Users must understand the assumptions, limitations and weaknesses of the
+> model.**
+
+> **Users must interpret the model output correctly and critically.**
+
+> This includes **understanding the sensitivity of the result to input changes
+> and assumptions.**
+
+:::note Why the guidance cares about the reader, not just the model
+
+The deck makes this concrete with a small scenario. A model reports
+**VaR = \$5M.** Two people read that number:
+
+| | Reads it as |
+| --- | --- |
+| **User A** (technical background) | a **potential loss** at a stated confidence level |
+| **User B** | a **profit** figure |
+
+Same output, opposite conclusions. **The model was correct in both cases.**
+
+This is why "model risk" is defined as arising from *incorrect **or misused***
+outputs. A validated model handed to someone who misreads it produces exactly
+the same adverse decision as a broken one — and no amount of validation
+prevents it. Only documentation, training and clear reporting do.
+
+:::
+
+## Summary
+
+- **MRM begins with development, implementation and use** — validation is the
+  *second* line of defence, not the first.
+- A sound build starts with a **clear objective** and **documented design,
+  theory and logic**, supported by **published research and industry practice**,
+  covering **specification, numerical technique, approximations and
+  limitations.**
+- **Comparison with alternative approaches is required** — justify why this
+  model and not another.
+- **Data must be assessed for quality and relevance** ("garbage in, garbage
+  out"), and **proxies must be identified, justified and documented.**
+- **Test against the model's own assumptions** — regression diagnostics, ADF and
+  KPSS for time series, four different backtests for VaR.
+- **Never rely on a single test**; different tests fail in different ways.
+  Kupiec counts breaches, **Christoffersen catches clustering.**
+- **Use the model only as designed**, and **users must understand its
+  assumptions and interpret output critically** — a correct model misread
+  produces the same bad decision as a wrong one.
