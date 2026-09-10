@@ -1,0 +1,299 @@
+---
+title: The Black-Scholes Model
+description: 'Why the model exists, its six assumptions, the call and put formulas, and what N(d1) and N(d2) actually mean — the probability of finishing in the money versus the probability of making money.'
+---
+
+> The Black-Scholes model is a mathematical model for **pricing European-style
+> options.**
+
+It was developed by **Fischer Black** and **Myron Scholes** in the early 1970s,
+and it provides a **theoretical estimate** of the price of a European-style
+option.
+
+## Why do we need it?
+
+Three reasons, and only the first is the obvious one.
+
+**a) Fair pricing.** The model helps determine the **fair market value** of the
+option. This ensures **neither the buyer nor the seller is at a disadvantage** —
+there is a defensible number, rather than two parties guessing.
+
+**b) Regulatory compliance.** Financial institutions are **required to mark
+their positions to market** and ensure they are **accurately valued**. Doing
+that at scale means using a **quantitative model** — and Black-Scholes is the
+one.
+
+**c) Hedging the portfolio.** This is the link back to everything in the
+previous two modules:
+
+$$
+\text{BS model} \longrightarrow \text{price of option} \longrightarrow \text{Greeks} \longrightarrow \text{hedging}
+$$
+
+The model produces a **price**. Differentiate that price and you get the
+[**Greeks**](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/greeks-for-options-part-a)
+— **delta, gamma, rho, theta, vega**. Delta in particular:
+
+$$
+\Delta = \frac{\text{change in option price}}{\text{change in the underlying}}
+$$
+
+where **Black-Scholes supplies the numerator**. And delta is what
+[delta hedging](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks/delta-hedging)
+runs on. So the chain closes: **BS → price → Greeks → hedging.** Without a
+pricing model there are no Greeks, and without Greeks there is no hedge.
+
+## Assumptions
+
+Six of them, and the lecturer flags this section hard — the assumptions are
+where the model's failures live.
+
+**(a) No dividends** are paid during the life of the option.
+
+**(b) No transaction cost** in buying the option.
+
+**(c) The returns of the underlying asset are normally distributed.**
+
+This is the one that breaks. The margin note names the counterexamples
+directly: **2007-2008** and the **pandemic**, where returns spiked far outside
+what a normal distribution allows. The response is either **other models** or
+**tweak the existing model**.
+
+It is also the assumption most often misstated, so the notes draw the
+distinction carefully:
+
+<svg viewBox="0 0 640 260" role="img" aria-label="Returns are normally distributed and symmetric around zero, taking both negative and positive values; stock prices are log-normally distributed, floored at zero and strictly positive" style={{width: '100%', height: 'auto'}}>
+  <g stroke="currentColor" strokeWidth="1" opacity="0.35" fill="none">
+    <line x1="30" y1="185" x2="290" y2="185" />
+    <line x1="350" y1="185" x2="610" y2="185" />
+  </g>
+  <line x1="160" y1="55" x2="160" y2="195" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" opacity="0.5" />
+  <path d="M40,184 C95,182 125,175 160,70 C195,175 225,182 280,184" fill="none" stroke="#25c2a0" strokeWidth="2.5" />
+  <path d="M360,184 C368,184 374,80 400,70 C440,55 470,140 530,170 C560,180 585,183 605,184" fill="none" stroke="#e0a44a" strokeWidth="2.5" />
+  <line x1="360" y1="55" x2="360" y2="195" stroke="#e0a44a" strokeWidth="2" opacity="0.8" />
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="30" y="40">Returns</text>
+    <text x="30" y="222" opacity="0.75">normally distributed</text>
+    <text x="66" y="203" opacity="0.7">−ve</text>
+    <text x="228" y="203" opacity="0.7">+ve</text>
+    <text x="155" y="203" opacity="0.7">0</text>
+    <text x="350" y="40">Stock price</text>
+    <text x="350" y="222" opacity="0.75">log-normally distributed</text>
+    <text x="352" y="203" opacity="0.7">0</text>
+    <text x="420" y="203" opacity="0.7">strictly +ve</text>
+  </g>
+  <text x="366" y="112" fill="#e0a44a" fontSize="11" fontFamily="monospace" opacity="0.9">floor</text>
+</svg>
+
+**Returns** are normally distributed — symmetric, taking negative and positive
+values alike. **The stock price is not.** A stock cannot go negative; it is
+floored at **0**. So the price is **log-normally distributed** while the
+*returns* are normally distributed. Those are two different statements, and the
+model only claims the second.
+
+**(d) The model can be used only for European options** — options **exercised
+only at maturity**. An **American option can be exercised at any point in time**,
+so **Black-Scholes does not apply to it.** The notes mark this with an explicit
+✗.
+
+**(e) The risk-free rate and the volatility of the underlying are known and
+constant.** In the
+[geometric Brownian motion](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/model-stock-gbm-excel)
+that underlies the model, these are the two parameters:
+
+| GBM term | Symbol | Set to |
+| --- | --- | --- |
+| **Drift** | $\mu$ | the **risk-free rate** |
+| **Diffusion** | $\sigma$ | the volatility |
+
+**(f) Markets are random**, so **market movements cannot be predicted.** Which
+is why **Black-Scholes is a stochastic model** — it does not forecast the
+price, it describes the distribution the price is drawn from.
+
+## The formula
+
+For a European **call**:
+
+$$
+\boxed{\;C = S_0\,N(d_1) - K e^{-rT} N(d_2)\;}
+$$
+
+with
+
+$$
+d_1 = \frac{\ln\!\left(\frac{S_0}{K}\right) + \left(r + \frac{\sigma^2}{2}\right)t}{\sigma\sqrt{t}}
+\qquad\qquad
+d_2 = d_1 - \sigma\sqrt{t}
+$$
+
+And for a European **put**:
+
+$$
+\boxed{\;P = K e^{-rT} N(-d_2) - S_0\,N(-d_1)\;}
+$$
+
+| Symbol | Meaning |
+| --- | --- |
+| $C$ | Call option price |
+| $P$ | Put option price |
+| $K$ | Strike price |
+| $S_0$ | Current price of the underlying asset |
+| $r$ | Risk-free interest rate |
+| $t$ | Time to maturity |
+| $N(\cdot)$ | **CDF of the standard normal distribution** |
+
+## The components
+
+**$S_0$** — the current price of the underlying asset.
+
+**$K$** — the price at which you can **buy** (call) or **sell** (put) the
+underlying asset in the future.
+
+**$T$** — the time remaining until the option expires, **expressed in years**.
+A single trading day is therefore
+
+$$
+T \rightarrow \frac{1}{252}
+$$
+
+**$r$** — the risk-free rate, and the notes are specific about how to pick it:
+**match the maturity of the option.**
+
+| Option expiring in | Use |
+| --- | --- |
+| **1 month** | the **1-month Treasury rate** |
+| **3 months** | the **3-month US Treasury rate** |
+
+The source is the **US Department of the Treasury** — **US Treasury rates are
+the risk-free rate in the US.** The notes leave the boxes for **India** and
+**Germany** blank, which is the point: the risk-free rate is
+jurisdiction-specific, and you use the government curve of the currency you are
+pricing in.
+
+## Volatility
+
+> **Volatility** ($\sigma$) is a measure of how much the price of the underlying
+> asset is **expected to fluctuate over a year.**
+
+**Higher volatility means the asset price can move more dramatically.** It comes
+in two kinds:
+
+| | Looks | Is |
+| --- | --- | --- |
+| **Historical volatility** | **backward** | How the price of the underlying **has fluctuated in the past** — computed from historical data |
+| **Implied volatility** | **forward** | **Derived from the market price of the option**; represents the **market's expectation of future volatility** |
+
+### When to use historical volatility
+
+**a) Historical analysis** — when performing any analysis **based on past price
+movements**, and for **backtesting a trading strategy or risk management**.
+
+**b) Comparative study** — when you **compare past volatility across different
+assets**.
+
+### When to use implied volatility
+
+**a) Forward-looking analysis** — when the goal is to **incorporate the market's
+expectation of future volatility**, and **for pricing options**.
+
+**b) Trading and hedging** — for a trader it is **very important to understand
+market sentiment and expectation**. This is the branch that feeds
+**Black-Scholes → hedging.**
+
+The division is simple: you price with **implied**, you study the past with
+**historical**.
+
+## What N(d₁) and N(d₂) actually mean
+
+This is the part worth slowing down on, because the two look similar and are
+not.
+
+### N(d₁) — the probability of finishing in the money
+
+> $N(d_1)$ is the probability that the **stock price will be higher than the
+> strike price at maturity** — the probability the option **expires ITM.**
+
+For a call:
+
+$$
+S_T > K \;\Longrightarrow\; \text{In the Money}
+$$
+
+And the reason a CDF appears at all:
+
+$$
+N(\cdot) \longrightarrow \text{CDF of the standard normal} \longrightarrow \text{probability} \longrightarrow \text{ITM} \longrightarrow \text{exercised}
+$$
+
+**Example.** $N(d_1) = 60\%$, or 0.6 — there is a **60% chance the option
+expires in the money**, i.e. that $S_T > K$.
+
+### N(d₂) — the probability of making money
+
+> $N(d_2)$ is the probability that the stock price will **end up above the
+> strike price**, but **adjusted to account for the time value of money.**
+
+It is also a CDF of the standard normal. The distinction is what it is the
+probability *of*: **that you will actually make money from the option.**
+
+**Example.** $N(d_2) = 55\%$, or 0.55 — there is a **55% chance you will
+actually make money** from the option.
+
+### Side by side
+
+| | Answers |
+| --- | --- |
+| $N(d_1)$ | **Will it be in the money, or not?** |
+| $N(d_2)$ | **Will you make money, or not?** |
+
+The gap between 60% and 55% is not noise — it is **time and the risk-free
+rate**. Finishing above the strike is not the same as profiting, because the
+strike you pay is paid *later*, and must be discounted:
+
+$$
+N(d_2)\,e^{-rT}
+$$
+
+An option can expire in the money and still lose you money. $N(d_1)$ does not
+know that; $N(d_2)$ does.
+
+## Reading the formula term by term
+
+With that, the call formula stops being opaque:
+
+$$
+C = \underbrace{S_0\,N(d_1)}_{\text{what you get}} \;-\; \underbrace{K e^{-rT} N(d_2)}_{\text{what you pay}}
+$$
+
+**First term — $S_0 N(d_1)$.** The **present value of the expected payoff if the
+option is exercised**, weighted by the probability $N(d_1)$ that it finishes
+**ITM**. This is the asset you receive.
+
+**Second term — $K e^{-rT} N(d_2)$.** The **present value of the strike price**,
+weighted by $N(d_2)$. This is the cash you hand over, discounted back from
+expiry because you do not pay it today.
+
+So the price of a call is **what you expect to receive minus what you expect to
+pay**, each weighted by the probability that you receive or pay it at all. The
+put formula is the same idea with the two sides swapped and the probabilities
+mirrored, $N(-d_1)$ and $N(-d_2)$.
+
+## Summary
+
+- Black-Scholes prices **European options only** — Black and Scholes, early
+  1970s — and exists for **fair pricing, regulatory mark-to-market, and
+  hedging.**
+- It is the head of the chain **BS → price → Greeks → hedging**: the model
+  supplies the option price that every Greek is a derivative of.
+- **Six assumptions**: no dividends, no transaction costs, normally distributed
+  **returns**, European exercise only, known and constant $r$ and $\sigma$, and
+  random markets.
+- **Returns are normal; the stock price is log-normal** — because a price cannot
+  go below zero.
+- $C = S_0 N(d_1) - K e^{-rT} N(d_2)$, with $d_2 = d_1 - \sigma\sqrt{t}$ and
+  $N(\cdot)$ the **standard normal CDF**.
+- **$N(d_1)$ is the probability of expiring in the money; $N(d_2)$ is the
+  probability of making money.** The difference between them is the time value
+  of money.
+- Match $r$ to the option's maturity, and use **implied** volatility to price,
+  **historical** volatility to study the past.

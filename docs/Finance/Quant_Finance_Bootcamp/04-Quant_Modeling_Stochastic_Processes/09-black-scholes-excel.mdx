@@ -1,0 +1,214 @@
+---
+title: Black-Scholes in Excel
+description: 'Building the model in a spreadsheet on a real SPY contract — volatility from historical returns, d1 and d2, the Merton dividend extension, and a formula error in the source workbook worth catching.'
+---
+
+The [theory note](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/black-scholes-theory)
+ends with a formula. This one builds it, on the **same contract** the
+[binomial tree](/docs/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes/pricing-european-option-binomial-tree)
+priced — so the two models can be put side by side at the end.
+
+## The inputs
+
+| Cell | Input | Value |
+| --- | --- | --- |
+| B1 | Contract name | **SPY240709C00555000** |
+| B2 | Underlying | **SPY** |
+| B3 | Current date | 2024-07-02 |
+| B4 | Expiry date | 2024-07-09 |
+| B5 | Stock price $S$ | **549** |
+| B6 | Strike price $K$ | **555** |
+| B7 | Maturity $t$ | `=J54/252` → **0.0238095** |
+| B8 | Risk-free rate $r$ | **0.055** |
+
+Maturity is **6 trading days over 252** — the option has a week to live. And
+$r = 5.5\%$ is the one-week Treasury rate, following the
+**match-the-maturity** rule from the theory note.
+
+The sheet also states the assumption it is working under, in its own words:
+**“there are no dividends considered in the life of the option”** — the plain
+Black-Scholes case. Dividends come back later as the Merton extension.
+
+## Volatility from the price history
+
+Same construction as the binomial note: one year of daily closes in column O,
+returns in column P.
+
+| Cell | Calculation | Formula | Value |
+| --- | --- | --- | --- |
+| P3 | Daily return | `=O3/O2-1` | 251 rows |
+| B9 | Daily volatility | `=STDEV.S(P3:P253)` | **0.00699372** |
+| B10 | Annualised volatility | `=B9*SQRT(252)` | **0.11102193** |
+
+So $\sigma = 11.1\%$ — the **historical** volatility, which the theory note
+warned is the backward-looking one. Hold that thought for the comparison at the
+end.
+
+## d₁ and d₂
+
+| Cell | Formula |
+| --- | --- |
+| B11 ($d_1$) | `=(LN(B5/B6)+(B8+((B10*B10)/2))*B7)/(B10*SQRT(B7))` |
+| B12 ($d_2$) | `=(LN(B5/B6)+(B8-((B10*B10)/2))*B7)/(B10*SQRT(B7))` |
+
+$$
+d_1 = -0.54949 \qquad\qquad d_2 = -0.56663
+$$
+
+Both negative, which already tells you the option is out of the money — the
+stock is at 549 against a 555 strike.
+
+:::note The sheet computes d₂ the long way, and it is not a mistake
+
+The theory note gives $d_2 = d_1 - \sigma\sqrt{t}$. The sheet instead rebuilds
+$d_2$ from scratch, flipping **+σ²/2** to **−σ²/2**. These are the same thing:
+
+$$
+d_1 - \sigma\sqrt{t}
+= \frac{\ln\!\left(\frac{S}{K}\right) + \left(r + \frac{\sigma^2}{2}\right)t - \sigma^2 t}{\sigma\sqrt{t}}
+= \frac{\ln\!\left(\frac{S}{K}\right) + \left(r - \frac{\sigma^2}{2}\right)t}{\sigma\sqrt{t}}
+$$
+
+Subtracting $\sigma\sqrt{t}$ removes $\sigma^2 t$ from the numerator, which
+turns $+\sigma^2/2$ into $-\sigma^2/2$. Checked numerically against the sheet:
+$d_1 - \sigma\sqrt{t} = -0.566625039$, and B12 = $-0.566625039$. Identical.
+
+:::
+
+## The prices
+
+| Cell | Formula | Model | Market | Sheet's comment |
+| --- | --- | --- | --- | --- |
+| B16 | `=B5*NORM.S.DIST(B11,TRUE)-B6*EXP(-B8*B7)*NORM.S.DIST(B12,TRUE)` | **1.70542** | 0.40 | Undervalued |
+| B17 | `=B6*EXP(-B8*B7)*NORM.S.DIST(-B12,TRUE)-B5*NORM.S.DIST(-B11,TRUE)` | **6.97911** | 9.95 | Overvalued |
+
+`NORM.S.DIST(x, TRUE)` is Excel's standard normal **CDF** — the cumulative
+form, which is what the `TRUE` argument selects. That is $N(\cdot)$.
+
+Both formulas map straight onto the theory:
+
+$$
+C = S\,N(d_1) - K e^{-rt} N(d_2)
+\qquad\qquad
+P = K e^{-rt} N(-d_2) - S\,N(-d_1)
+$$
+
+## Adding dividends — the Merton extension
+
+The sheet labels this step **BS → BSM**, after **Merton**. SPY pays dividends,
+and plain Black-Scholes assumes it does not, so the fix is to compute a
+**dividend yield** $q$ and discount the stock leg by it.
+
+| Quarter | Amount |
+| --- | --- |
+| Q3 2023 | 1.58 |
+| Q4 2023 | 1.91 |
+| Q1 2024 | 1.60 |
+| Q2 2024 | 1.76 |
+| **Total** | **6.85** |
+
+$$
+q = \frac{6.85}{549} = 0.0124772
+$$
+
+Four trailing quarters of dividends over the current stock price — a **1.25%
+annual yield**. The workbook cites Yahoo Finance's SPY dividend history as the
+source.
+
+The call then becomes:
+
+$$
+C_{BSM} = S e^{-qt} N(d_1) - K e^{-rt} N(d_2)
+$$
+
+| Cell | Model | Market | Comment |
+| --- | --- | --- | --- |
+| B18 — Call (dividends) | **1.65791** | 0.40 | Undervalued |
+
+The call is **worth less** once dividends are accounted for, which is the right
+direction: a dividend paid before expiry leaves the stock lower, and the call
+holder does not receive it.
+
+:::danger The put-with-dividends formula in the source workbook is wrong
+
+B19 reads:
+
+```excel
+=B6*EXP(-B8*B7)*NORM.S.DIST(-B12,TRUE)-B5*EXP(-B13*B7)*NORM.S.DIST(-B12,TRUE)
+```
+
+`-B12` appears **twice**. The second term should use `-B11`, i.e. $N(-d_1)$, not
+$N(-d_2)$. The correct Merton put is:
+
+$$
+P_{BSM} = K e^{-rt} N(-d_2) - S e^{-qt} N(-d_1)
+$$
+
+The consequence, computed both ways:
+
+| | Value |
+| --- | --- |
+| As written in the workbook | **3.88465** |
+| Correct | **7.09467** |
+
+An error of **more than 3.20 on a put worth 7.09** — it nearly halves the
+price. The other three formulas (B16, B17, B18) reproduce exactly when checked
+independently, so this is an isolated typo rather than a bad method. It is
+recorded here as it stands in the source, not silently corrected, but **do not
+copy that cell.**
+
+:::
+
+## Black-Scholes against the binomial tree
+
+Both models have now priced the same contract, on the same inputs:
+
+| | Call | Put |
+| --- | --- | --- |
+| **Binomial tree**, 5 steps | 1.71306 | 6.98675 |
+| **Black-Scholes** | 1.70542 | 6.97911 |
+| **Difference** | 0.00765 | 0.00765 |
+| **Market** | 0.40 | 9.95 |
+
+Two things are worth noticing.
+
+**The two models agree to under a cent**, on a five-step tree. That is the
+binomial tree converging toward Black-Scholes — the tree is a discrete
+approximation of the same process, and even five steps gets most of the way
+there.
+
+**The difference is identical for both.** That is not a coincidence: both
+models satisfy **put-call parity**,
+
+$$
+C - P = S - K e^{-rt}
+$$
+
+which gives $-5.27369$ for the tree and $-5.27374$ for Black-Scholes. Any error
+in one price shows up equally in the other, so the two gaps must match.
+
+**And both models are far from the market.** They say the call is worth 1.71
+when it trades at 0.40. As the binomial note put it, that is not free money —
+it is the models telling you that **historical volatility of 11.1% is the wrong
+input** for a contract six days from expiry. The market is pricing a much lower
+implied volatility. This is the concrete version of the theory note's rule:
+**price with implied volatility, study the past with historical.** Feed a model
+backward-looking volatility and it will confidently misprice a short-dated
+option.
+
+## Summary
+
+- The spreadsheet is the theory formula, cell by cell: inputs, $\sigma$ from
+  historical returns, $d_1$ and $d_2$, then `NORM.S.DIST(·, TRUE)` for
+  $N(\cdot)$.
+- $\sigma$ comes from **`STDEV.S` of daily returns × √252**; maturity is
+  **trading days / 252**; $r$ matches the option's tenor.
+- The sheet computes $d_2$ as $(r - \sigma^2/2)$ rather than $d_1 - \sigma\sqrt{t}$
+  — **algebraically identical**, verified numerically.
+- **Dividends → the Merton extension**: $q$ = four trailing quarters / spot =
+  1.25%, and the stock leg is discounted by $e^{-qt}$, which lowers the call.
+- **The workbook's dividend-put formula is wrong** — it repeats $N(-d_2)$
+  instead of using $N(-d_1)$, pricing 3.88 against a correct 7.09.
+- Black-Scholes and a five-step binomial tree agree to **0.008**, both satisfy
+  **put-call parity**, and both sit far from the market price — because the
+  input volatility is historical, not implied.
