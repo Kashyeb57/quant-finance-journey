@@ -1,0 +1,170 @@
+---
+title: Variance-Covariance VaR in Excel
+description: 'Building the parametric method on JPM/MS/BAC — and because the sheet computes the wrong portfolio volatility alongside the right one, the diversification benefit comes out as a number.'
+---
+
+The [theory note](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-variance-covariance-theory)
+argued that summing weighted volatilities is wrong. This sheet computes it
+**both ways**, side by side — so the size of the error is measurable rather than
+asserted.
+
+## The setup
+
+Same portfolio as the
+[historical sheet](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-historical-excel):
+
+| | JPM | MS | BAC |
+| --- | --- | --- | --- |
+| **Weight** | 0.3 | 0.4 | 0.3 |
+| **Stock value** | \$300,000 | \$400,000 | \$300,000 |
+
+on a **\$1,000,000** investment, over **251 daily returns**.
+
+Prices are pulled from dedicated per-stock sheets (`=JPM!F2`, `=MS!F2`,
+`=BAC!F2`), returns are `=(B7/B6)-1`, and the portfolio return is again
+`=SUMPRODUCT(V7:X7,$AG$7:$AI$7)`.
+
+## Step 3 — the portfolio mean, computed twice
+
+The sheet works it out two different ways as a check:
+
+| Route | Formula | Result |
+| --- | --- | --- |
+| **Average the portfolio returns** | `=AVERAGE(AR7:AR256)` | **0.00073708** |
+| **Weight the individual means** | `=SUMPRODUCT(AV32:AX32, AV33:AX33)` | **0.00073708** |
+
+with the individual mean returns being JPM **0.00155329**, MS **0.00062937**,
+BAC **0.0000645**.
+
+They agree exactly, and they must: averaging and weighting are both linear
+operations, so their order does not matter.
+
+$$
+\frac{1}{T}\sum_t \left(\sum_i w_i r_{i,t}\right) = \sum_i w_i \left(\frac{1}{T}\sum_t r_{i,t}\right)
+$$
+
+## Step 4 — the two portfolio volatilities
+
+### The wrong one, computed explicitly
+
+| | JPM | MS | BAC |
+| --- | --- | --- | --- |
+| **Volatility** `=STDEV.S(...)` | 0.01625597 | 0.01716490 | 0.01821889 |
+
+```excel
+BJ8 = SUMPRODUCT(BJ6:BL6, BJ7:BL7)   →  0.01720842
+```
+
+The sheet labels this **"Portfolio Volatility"**. It is the weighted sum of the
+individual volatilities — the formula the theory note marked ✗.
+
+### The right one, via the covariance matrix
+
+The diagonal uses `VAR.P`, the off-diagonal entries are $\rho\sigma_X\sigma_Y$
+(the sheet computes `CORREL(JPM, MS) = 0.66461117` to show where they come
+from):
+
+$$
+\Sigma =
+\begin{bmatrix}
+0.00026320 & 0.00018444 & 0.00024080 \\
+0.00018444 & 0.00029346 & 0.00023374 \\
+0.00024080 & 0.00023374 & 0.00033061
+\end{bmatrix}
+$$
+
+and then `BJ24`, an array formula, computes $\sqrt{w^T \Sigma w}$:
+
+$$
+w^T \Sigma w = 0.0002441037
+\qquad\Longrightarrow\qquad
+\sigma_p = \sqrt{0.0002441037} = \mathbf{0.01562379}
+$$
+
+Recomputed independently from the matrix above, that gives **0.01562382** —
+matching the sheet to seven decimals.
+
+### What the difference is worth
+
+| | Portfolio volatility |
+| --- | --- |
+| **Naive** (weighted sum) | **0.01720842** |
+| **Correct** (covariance matrix) | **0.01562379** |
+| **Naive overstates by** | **10.14%** |
+
+Carried through to the VaR figures on \$1M:
+
+| CI | VaR (correct) | VaR (naive) | Overstated by |
+| --- | --- | --- | --- |
+| **99%** | −\$35,609.28 | −\$39,295.69 | **\$3,686** |
+| **95%** | −\$24,961.76 | −\$27,568.25 | \$2,606 |
+| **90%** | −\$19,285.60 | −\$21,316.40 | \$2,031 |
+
+**That \$3,686 is the diversification benefit.** It is the amount of risk that
+does not exist because JPM, MS and BAC are correlated at about 0.66 rather than
+1.0 — and it is exactly what the naive formula throws away. For a bank sizing
+capital against this number, ignoring the covariance matrix means holding 10%
+more capital than the portfolio warrants.
+
+Note also that all three banks are highly correlated (0.66 between JPM and MS)
+because they are the *same sector*. A genuinely diversified portfolio would show
+a much larger gap between the two volatilities.
+
+## Step 5 — the VaR calculation
+
+```excel
+CI10 = NORM.S.INV(CI9)              ' Z from alpha
+CI12 = (CI6 + CI7*CI10) * CI11      ' (mean + sigma*Z) * portfolio value
+```
+
+| | 99% | 95% | 90% |
+| --- | --- | --- | --- |
+| Mean | 0.00073708 | ← | ← |
+| Std dev | 0.01562379 | ← | ← |
+| **Alpha** `=1-CI` | 0.01 | 0.05 | 0.10 |
+| **Z** `=NORM.S.INV(alpha)` | **−2.32634787** | **−1.64485363** | **−1.28155157** |
+| Portfolio value | \$1M | \$1M | \$1M |
+| **1-day VaR** | **−\$35,609.28** | **−\$24,961.76** | **−\$19,285.60** |
+
+`NORM.S.INV(0.01) = −2.326` is the standard normal quantile — the point with 1%
+of the distribution below it. This is the payoff of the normality assumption:
+the tail is a **lookup**, not a sort.
+
+:::note The sheet mixes sample and population estimators
+
+The individual volatilities in `BJ7:BL7` use **`STDEV.S`** — the *sample*
+standard deviation, dividing by $n-1$. The covariance matrix diagonal uses
+**`VAR.P`** — the *population* variance, dividing by $n$.
+
+| JPM volatility | Value |
+| --- | --- |
+| `STDEV.S` (sample) | 0.01625597 |
+| `SQRT(VAR.P)` (population) | 0.01622356 |
+| Ratio | **1.001998** |
+
+That ratio is exactly $\sqrt{n/(n-1)} = \sqrt{251/250} = 1.001998$, confirming
+the two estimators are the only difference.
+
+At **0.2%** it changes nothing material here, and it only affects the *naive*
+volatility (which is not used for the final answer anyway). But the two blocks
+are not measuring quite the same thing, and with a shorter sample the gap would
+widen — with 20 observations it would be 2.6%.
+
+:::
+
+## Summary
+
+- Same JPM/MS/BAC portfolio: weights **0.3 / 0.4 / 0.3**, **\$1M**, 251 returns.
+- The **portfolio mean (0.00073708) computes identically** whether you average
+  the portfolio returns or weight the individual means — averaging and weighting
+  commute.
+- The sheet computes **both** portfolio volatilities: the **naive weighted sum
+  (0.01720842)** and the **covariance-matrix answer (0.01562379)**, verified
+  independently as $\sqrt{w^T\Sigma w}$.
+- **The naive method overstates volatility by 10.14%** and 99% VaR by
+  **\$3,686** — that gap *is* the diversification benefit, and it exists because
+  the three banks correlate at ~0.66 rather than 1.
+- **VaR $= (\mu_p + \sigma_p Z) \times$ portfolio value**, with $Z$ from
+  `NORM.S.INV(alpha)`: **−\$35,609.28** at 99%.
+- Minor: the sheet uses **`STDEV.S` in one block and `VAR.P` in another** — a
+  0.2% estimator mismatch at this sample size.
