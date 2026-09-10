@@ -1,0 +1,133 @@
+---
+title: Expected Shortfall in Excel
+description: 'The workbook has no ES sheet — so this builds one on the same portfolio, with a single AVERAGEIF, and shows how much of the tail VaR was hiding.'
+---
+
+:::note This one is not in the workbook
+
+Every other sheet in this module exists in `Value-at-Risk-Model-QFI.xlsx`. There
+is **no Expected Shortfall sheet** — the deck covers ES in
+[theory](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/expected-shortfall-theory)
+and stops there.
+
+So this note builds it, on the **same portfolio and the same 251 returns** the
+rest of the module used, so the ES numbers sit directly alongside the VaR ones.
+
+:::
+
+## What is already there
+
+The
+[Historical Simulation sheet](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-historical-excel)
+has done most of the work:
+
+| Range | Holds |
+| --- | --- |
+| `Q3:Q253` | Portfolio returns, `=SUMPRODUCT(returns, weights)` |
+| **`AB3:AB253`** | **The same 251 returns, sorted ascending** |
+| `AF8` | The VaR rank, `=ROUNDUP(n*alpha, 0)` |
+| `AF9` | The return at that rank |
+| `AF11` | VaR, `=AF10*AF9` |
+
+ES needs one more cell.
+
+## The one formula
+
+ES is the average of every return **worse than** the VaR return. Since `AB` is
+already sorted and `AF9` already holds the VaR return:
+
+```excel
+AF12 = AVERAGEIF($AB$3:$AB$253, "<"&AF9)     ' ES return
+AF13 = AF10 * AF12                            ' ES in dollars
+```
+
+`AVERAGEIF` with the criterion `"<"&AF9` averages exactly the observations
+strictly below the VaR return — ranks 1 to $k-1$ — which is the
+[convention the notes use](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/expected-shortfall-theory)
+when they divide by 4 rather than 5.
+
+If you prefer the convention that **includes** the VaR observation, use `"<="`
+instead.
+
+## The results
+
+Computed on the real sorted returns. The five worst days in the sample were:
+
+$$
+-5.03\%,\quad -3.74\%,\quad -3.63\%,\quad -3.50\%,\quad -3.31\%
+$$
+
+| CI | Rank | **VaR** | **Expected Shortfall** | ES / VaR |
+| --- | --- | --- | --- | --- |
+| **99%** | 3 | −\$36,253.51 | **−\$43,818.72** | **1.21×** |
+| **95%** | 13 | −\$24,160.85 | **−\$32,160.37** | **1.33×** |
+| **90%** | 26 | −\$19,101.28 | **−\$26,954.11** | **1.41×** |
+
+And for reference, the same figures under the inclusive convention:
+
+| CI | ES (excluding VaR obs) | ES (including VaR obs) |
+| --- | --- | --- |
+| 99% | −\$43,818.72 | −\$41,296.98 |
+| 95% | −\$32,160.37 | −\$31,545.03 |
+| 90% | −\$26,954.11 | −\$26,652.08 |
+
+The two conventions differ most at **99%**, where the average is taken over only
+2 observations and adding a third moves it noticeably. By 90% — averaging over
+25 observations — the choice barely matters. **The smaller the tail, the more
+the convention matters.**
+
+## What this actually tells you
+
+**At 99%, VaR says \$36,254 and ES says \$43,819.** If the bad day arrives, the
+typical loss is about **21% worse** than the number the risk report quoted.
+That extra \$7,565 was always there in the data — VaR simply does not report it.
+
+Then notice the pattern in the ratio: **it grows as the confidence level
+falls.**
+
+| CI | ES / VaR | Tail averaged over |
+| --- | --- | --- |
+| 99% | 1.21× | 2 observations |
+| 95% | 1.33× | 12 observations |
+| 90% | 1.41× | 25 observations |
+
+At 99% the VaR boundary already sits deep in the tail, so the handful of losses
+beyond it are not much worse. At 90% the boundary is much closer to the middle
+of the distribution, and the average beyond it reaches all the way out to the
+−5.03% day. **The lower the confidence level, the more of the extreme tail gets
+pulled into the ES average** — so the gap between the two measures widens.
+
+Which is worth knowing when reading a risk report: **a 90% VaR is a much weaker
+statement about tail exposure than a 99% VaR**, and ES makes that visible where
+VaR does not.
+
+## Adding it to the other two methods
+
+The same single formula works on the variance-covariance and Monte Carlo sheets,
+pointed at their own sorted-return columns. For variance-covariance there is
+also a closed form, since ES under normality has an analytic expression:
+
+$$
+ES_\alpha = \mu_p - \sigma_p \cdot \frac{\phi\left(\Phi^{-1}(\alpha)\right)}{\alpha}
+$$
+
+where $\phi$ is the standard normal **density** and $\Phi^{-1}$ its inverse CDF
+— the same `NORM.S.INV` the sheet already uses, with `NORM.S.DIST(..., FALSE)`
+supplying the density. That mirrors how variance-covariance replaced sorting
+with a lookup for VaR: assume normality and the tail average becomes a formula
+too.
+
+## Summary
+
+- **The workbook contains no ES sheet** — this builds one on the existing
+  sorted returns.
+- **ES is one formula**: `AVERAGEIF($AB$3:$AB$253, "<"&VaR_return)`, then
+  multiply by portfolio value.
+- On the real portfolio: **99% VaR −\$36,254 against ES −\$43,819** — the
+  typical tail loss is **21% worse** than VaR reports.
+- **ES / VaR grows as confidence falls** (1.21× at 99%, 1.41× at 90%) because a
+  lower boundary pulls more of the extreme tail into the average.
+- The **inclusive vs exclusive convention** matters most when the tail holds few
+  observations — a visible difference at 99%, negligible at 90%.
+- Under normality ES also has a **closed form**, so the variance-covariance
+  sheet can compute it without sorting.

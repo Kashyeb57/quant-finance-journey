@@ -1,0 +1,220 @@
+---
+title: Expected Shortfall
+description: 'The measure that answers what VaR refuses to: how bad is the tail? Covers the two shortcomings of VaR that motivated it — tail-risk ignorance and the failure of subadditivity.'
+---
+
+The [first note in this module](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/var-introduction)
+ended on an unanswered question. VaR says there is a 1% chance of losing more
+than \$5M — but more by how much? \$10M? \$100M? \$1B?
+
+> **That is something that VaR doesn't tell you.**
+
+Expected Shortfall is the answer.
+
+## Why it was introduced
+
+> **ES was introduced as a risk measure to address some of the significant
+> shortcomings of the VaR model.**
+
+There are two, and they are quite different in character.
+
+## Shortcoming 1 — tail risk ignorance
+
+Take **1-day VaR at 95% CI = \$1M.** That number is the **potential loss of the
+portfolio at 95% CI in 1 day** — and the remaining **5%** is simply labelled
+"worst possible loss" and left there.
+
+> **VaR provides no information about the size of loss exceeding the VaR
+> threshold.**
+
+> It **only indicates the maximum loss expected within a certain confidence
+> interval**, leaving the risk manager or user **unaware of the potential losses
+> that could occur beyond this point.**
+
+<svg viewBox="0 0 640 250" role="img" aria-label="Two loss distributions with identical VaR at the same threshold but very different tails beyond it, showing that VaR cannot distinguish them" style={{width: '100%', height: 'auto'}}>
+  <line x1="380" y1="30" x2="380" y2="200" stroke="#e0a44a" strokeWidth="2.5" />
+  <path d="M60,195 C140,193 190,180 240,140 C290,100 320,50 360,48 C395,46 410,120 430,175 C440,192 450,195 470,196" fill="none" stroke="#25c2a0" strokeWidth="2.4" />
+  <path d="M60,196 C140,194 190,182 240,142 C290,102 320,52 360,50 C400,48 420,130 460,160 C510,190 560,193 610,195" fill="none" stroke="#c2544d" strokeWidth="2.4" strokeDasharray="6 4" />
+  <line x1="60" y1="196" x2="620" y2="196" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+  <g fill="currentColor" fontSize="12" fontFamily="monospace">
+    <text x="345" y="24" fill="#e0a44a">VaR</text>
+    <text x="392" y="215" fill="#25c2a0">thin tail</text>
+    <text x="500" y="150" fill="#c2544d">fat tail</text>
+    <text x="150" y="120" opacity="0.75">same 95%</text>
+    <text x="150" y="137" opacity="0.75">below VaR</text>
+    <text x="300" y="238" opacity="0.7">identical VaR, very different risk</text>
+  </g>
+</svg>
+
+Two portfolios can have **exactly the same VaR** and completely different tails.
+VaR marks where the tail starts; it is blind to everything past that line.
+
+## Shortcoming 2 — lack of subadditivity
+
+The subtler failure, and the one regulators care about.
+
+A **subadditive** risk measure satisfies
+
+$$
+\text{Risk}(A) + \text{Risk}(B) \ge \text{Risk}(A + B)
+$$
+
+— combining two portfolios should never create *more* risk than holding them
+apart. That is just **diversification**, formalised.
+
+**VaR does not always satisfy this.**
+
+> **VaR is not subadditive** ⇒ **the VaR of a combined portfolio can be higher
+> than the VaR of the individual portfolios.**
+
+$$
+\text{VaR}_3 > \left(\text{VaR}_1 + \text{VaR}_2\right) \quad \text{— possible}
+$$
+
+which is absurd as a statement about risk: it says merging two books made you
+riskier than the sum of their parts. A measure that can say that will
+occasionally **penalise diversification**, which is the opposite of what a risk
+measure should do.
+
+:::note The diversification example in the notes
+
+The deck builds the intuition with three portfolios:
+
+| Portfolio | Holdings | |
+| --- | --- | --- |
+| $P_1$ | 2 technology stocks | concentrated |
+| $P_2$ | 2 technology + 2 finance | **risk profile reduced** — diversification benefit |
+| $P_3$ | 2 technology + 2 finance + 2 energy | **best diversification benefit** |
+
+$P_3$ is the most robust because the sectors respond differently to the same
+shock. **COVID** is the worked case: it caused reduced spending, which hit
+**technology** and **finance** — but **"we all need electricity"**, so energy
+held up.
+
+That is what diversification is *for*, and a coherent risk measure must reward
+it. VaR sometimes does not.
+
+:::
+
+## What Expected Shortfall is
+
+> **Expected Shortfall / Conditional Value at Risk (C-VaR).**
+
+> **ES estimates the expected loss in cases where the loss exceeds the VaR
+> threshold.**
+
+> Essentially, **ES is calculated by taking the average of losses greater than
+> the VaR threshold.**
+
+$$
+\boxed{\;ES_\alpha = E\left[\,L \mid L > VaR_\alpha\,\right]\;}
+$$
+
+Read the notation directly: the **expected value of the loss $L$, conditional on
+$L$ having exceeded VaR.** It is an average — but an average taken *only over
+the bad tail*.
+
+$$
+\text{Average of the losses beyond the VaR threshold} = ES
+$$
+
+**So VaR is a boundary and ES is an average.** VaR asks *where does the worst 1%
+begin?* ES asks *and when we are in that worst 1%, how bad is it typically?*
+
+## Worked example
+
+100 days, VaR at 95% CI. The rank is
+
+$$
+n \times \alpha = 100 \times \frac{5}{100} = \mathbf{5}
+$$
+
+so **VaR sits at rank 5.** The sorted returns:
+
+| Rank | 1 | 2 | 3 | 4 | **5** |
+| --- | --- | --- | --- | --- | --- |
+| Return | −5% | −4.7% | −4.6% | −3% | **−2.1%** |
+
+**VaR** is the rank-5 return, **−2.1%**. **ES** averages everything worse than
+it:
+
+$$
+ES = \frac{(-5\%) + (-4.7\%) + (-4.6\%) + (-3\%)}{4} = \mathbf{-4.325\%}
+$$
+
+and on a **\$1M** portfolio:
+
+$$
+ES = -4.325\% \times \$1\text{M} = \mathbf{-\$43{,}250}
+$$
+
+against a VaR of −\$21,000. **The average bad day in the tail is more than twice
+the VaR.** That gap is precisely the information VaR was withholding.
+
+:::note Which observations go into the average
+
+The notes divide by **4**, not 5 — averaging ranks 1–4 and **excluding the VaR
+observation itself** at rank 5. That is the *strictly exceeds* reading of
+$L > VaR_\alpha$, and it matches the formula as written.
+
+The other common convention **includes** the VaR observation (dividing by 5
+here). Both are used in practice; they converge as the sample grows. Just be
+consistent — and know which one your number represents.
+
+:::
+
+## Advantages of ES
+
+**1) Risk of extreme losses.**
+
+> ES provides an **average of the losses in the tail beyond the VaR level**,
+> offering a **clearer picture of the potential extreme risk.**
+
+This is shortcoming 1, solved directly.
+
+**2) Subadditivity.**
+
+> **ES is subadditive.** Basically it means that when you calculate ES:
+
+$$
+ES(S_1) + ES(S_2) \ge ES(S_1 + S_2)
+$$
+
+**Combining always helps, or at worst does nothing** — the diversification
+benefit is guaranteed to show up. This is shortcoming 2, solved.
+
+:::note A slip on the last page
+
+The deck writes *"Unlike **ES** → which was not subadditive"* when introducing
+this point. It means *"unlike **VaR**"* — VaR is the measure that fails
+subadditivity, and the whole point of the sentence is that ES does not. The
+surrounding lines make the intent clear.
+
+:::
+
+**3) Regulatory approval.**
+
+> The **Basel Committee also agrees that ES is a more coherent risk measure than
+> VaR.**
+
+"Coherent" is a technical term: a risk measure is **coherent** if it satisfies
+monotonicity, translation invariance, positive homogeneity **and
+subadditivity.** VaR fails the last one, so it is not coherent. ES is. That is
+the formal reason Basel moved market-risk capital from VaR to ES.
+
+## Summary
+
+- **Expected Shortfall (Conditional VaR)** estimates the **expected loss given
+  that the loss exceeds VaR**: $ES_\alpha = E[L \mid L > VaR_\alpha]$ — **the
+  average of the losses beyond the VaR threshold.**
+- It was introduced to fix **two shortcomings of VaR**:
+  - **Tail risk ignorance** — VaR gives **no information about the size of
+    losses beyond the threshold**; two portfolios with identical VaR can have
+    wildly different tails.
+  - **Lack of subadditivity** — the **VaR of a combined portfolio can exceed the
+    sum of the parts**, penalising diversification.
+- **VaR is a boundary; ES is an average taken past that boundary.**
+- Worked: with VaR at rank 5 (−2.1%), ES averages ranks 1–4 to **−4.325%**, or
+  **−\$43,250** on \$1M — **more than twice the VaR.**
+- **ES is subadditive** ($ES(S_1) + ES(S_2) \ge ES(S_1+S_2)$), which makes it a
+  **coherent** risk measure, and is why the **Basel Committee** prefers it.
