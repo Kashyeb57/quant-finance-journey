@@ -1,6 +1,6 @@
 ---
 title: Fixed Income
-description: Bonds, yield, duration, and convexity — interest-rate-sensitive instruments. Notes in progress.
+description: Bonds, yield, duration and convexity. Spot and forward rates are already covered in the Quant Finance Bootcamp; the bond-specific material is still to come.
 sidebar_class_name: soon
 ---
 
@@ -8,16 +8,34 @@ sidebar_class_name: soon
 
 Bonds, yield, duration, and convexity — understanding interest-rate-sensitive instruments.
 
+:::tip Some of this is already written
+
+The **rate** side of fixed income has since been covered in the **Quant Finance
+Bootcamp**:
+
+| Topic | Where it lives now |
+| --- | --- |
+| **Spot rates and forward rates** | [Spot Rates and Forward Rates](/docs/Finance/Quant_Finance_Bootcamp/Swaps/spot-rate-forward-rate) — including the no-arbitrage derivation |
+| **Discount factors and PV of a bond** | [Valuation of an Interest Rate Swap](/docs/Finance/Quant_Finance_Bootcamp/Swaps/valuation-of-irs) — a swap valued as a pair of bonds |
+| **Modelling the short rate** | [Stochastic Interest Rate Modeling](/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling) — Vasicek and CIR, calibrated to Treasury data |
+
+What is still outstanding is the **bond-specific** material — duration,
+convexity and credit.
+
+:::
+
 <ComingSoon
   eta="On the roadmap"
   covers={[
     'Bond pricing and the price–yield relationship',
-    'Yield to maturity, spot rates, and forward rates',
+    'Yield to maturity and running yield',
     'Duration and convexity as interest-rate risk measures',
     'The yield curve and term structure of rates',
     'Credit risk, spreads, and default',
   ]}
   meanwhile={[
+    { label: 'Spot & forward rates (bootcamp)', to: '/docs/Finance/Quant_Finance_Bootcamp/Swaps/spot-rate-forward-rate' },
+    { label: 'Stochastic interest rate models (bootcamp)', to: '/docs/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling' },
     { label: 'Interest Rates (live compound-interest lab)', to: '/docs/Economics/interest-rates' },
     { label: 'Handbook of Fixed Income Securities (library)', to: '/books' },
   ]}

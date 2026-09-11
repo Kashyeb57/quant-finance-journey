@@ -1,6 +1,6 @@
 ---
 title: Foreign Exchange (FX)
-description: Currency markets, quoting conventions, and FX risk. Notes in progress.
+description: Currency markets, quoting conventions and FX risk. Currency swaps are already covered in the Quant Finance Bootcamp; the spot-market material is still to come.
 sidebar_class_name: soon
 ---
 
@@ -8,16 +8,31 @@ sidebar_class_name: soon
 
 Currency markets, quoting conventions, and FX risk.
 
+:::tip Currency swaps are already written
+
+The derivative side of FX has since been covered in the **Quant Finance
+Bootcamp**:
+
+| Topic | Where it lives now |
+| --- | --- |
+| **Currency swaps** | [The Currency Swap](/docs/Finance/Quant_Finance_Bootcamp/Swaps/currency-swap) — the three-stage structure, why principal really is exchanged, and a two-currency valuation |
+| **Forwards and hedging** | [Forwards & Futures](/docs/Forwards-and-Futures) |
+
+What is still outstanding is the **spot market** — quoting conventions, cross
+rates and parity conditions.
+
+:::
+
 <ComingSoon
   eta="On the roadmap"
   covers={[
     'Spot quotes, base/quote conventions, and pips',
     'Cross rates and triangular arbitrage',
     'Covered and uncovered interest-rate parity',
-    'FX forwards, swaps, and hedging',
     'Carry trades and currency risk',
   ]}
   meanwhile={[
+    { label: 'Currency swaps (bootcamp)', to: '/docs/Finance/Quant_Finance_Bootcamp/Swaps/currency-swap' },
     { label: 'Derivatives (forwards & hedging)', to: '/docs/Finance/derivatives' },
     { label: 'Interest Rates', to: '/docs/Economics/interest-rates' },
   ]}

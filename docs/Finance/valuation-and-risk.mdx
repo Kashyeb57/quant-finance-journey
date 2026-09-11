@@ -1,6 +1,6 @@
 ---
 title: Valuation & Risk Management
-description: Discounted cash flow valuation and the basics of financial risk management. Notes in progress.
+description: Discounted cash flow valuation and the cost of capital. The risk-management half of this topic is now covered in full by the Quant Finance Bootcamp.
 sidebar_class_name: soon
 ---
 
@@ -8,17 +8,34 @@ sidebar_class_name: soon
 
 Discounted cash flow valuation and the basics of financial risk management.
 
+:::tip The risk-management half is already written
+
+When this page was created, everything below was on the roadmap. Most of it has
+since been written up in full, in the **Quant Finance Bootcamp**:
+
+| Topic | Where it lives now |
+| --- | --- |
+| **Value at Risk and Expected Shortfall** | [Value at Risk Modeling](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk) — 11 notes, three methods compared on the same portfolio |
+| **Backtesting risk models** | [Traffic light](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-traffic-light) and [Kupiec](/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk/backtest-kupiec) |
+| **Stress testing** | [Model validation under SR 11-7](/docs/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7/model-validation) |
+| **The Greeks as risk sensitivities** | [Risk Management in Derivatives](/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks) — the five Greeks and six hedges |
+
+What remains outstanding is the **valuation** half — DCF and the cost of
+capital — which is what this page will cover.
+
+:::
+
 <ComingSoon
   eta="On the roadmap"
   covers={[
     'Discounted cash flow (DCF) valuation',
-    'Cost of capital and choosing a discount rate',
-    'Value at Risk (VaR) and Expected Shortfall',
-    'Stress testing and backtesting risk models',
-    'The Greeks as risk sensitivities',
+    'Free cash flow: forecasting and terminal value',
+    'Cost of capital, WACC, and choosing a discount rate',
+    'Relative valuation and trading multiples',
   ]}
   meanwhile={[
+    { label: 'Value at Risk Modeling (bootcamp)', to: '/docs/Finance/Quant_Finance_Bootcamp/Value_at_Risk' },
+    { label: 'Risk Management in Derivatives (bootcamp)', to: '/docs/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks' },
     { label: 'Derivatives (Black–Scholes with live Greeks)', to: '/docs/Finance/derivatives' },
-    { label: 'Quant Finance Bootcamp', to: '/docs/Finance/Quant_Finance_Bootcamp/introduction' },
   ]}
 />
