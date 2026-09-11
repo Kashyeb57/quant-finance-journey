@@ -1,4 +1,10 @@
 {
   "label": "Quant Finance Interview Guide",
-  "position": 11
+  "position": 11,
+  "link": {
+    "type": "generated-index",
+    "title": "Quant Finance Interview Guide",
+    "description": "Preparation material for quantitative finance interviews.",
+    "slug": "/Finance/Quant_Finance_Bootcamp/Quant_Finance_Interview_Guide"
+  }
 }

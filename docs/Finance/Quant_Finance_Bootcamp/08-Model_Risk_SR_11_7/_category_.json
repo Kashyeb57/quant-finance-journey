@@ -1,4 +1,10 @@
 {
   "label": "SR 11-7 Framework for Model Risk Management",
-  "position": 8
+  "position": 8,
+  "link": {
+    "type": "generated-index",
+    "title": "SR 11-7 Framework for Model Risk Management",
+    "description": "The Fed and OCC supervisory guidance on model risk — what counts as a model, how to develop and validate one, and who is accountable when it is wrong.",
+    "slug": "/Finance/Quant_Finance_Bootcamp/Model_Risk_SR_11_7"
+  }
 }

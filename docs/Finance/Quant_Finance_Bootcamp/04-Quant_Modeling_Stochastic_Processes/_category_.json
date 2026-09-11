@@ -1,4 +1,10 @@
 {
   "label": "Quant Modeling & Stochastic Processes",
-  "position": 4
+  "position": 4,
+  "link": {
+    "type": "generated-index",
+    "title": "Quant Modeling & Stochastic Processes",
+    "description": "Binomial trees, Brownian motion and geometric Brownian motion, Black-Scholes, and Monte Carlo simulation for European, Asian and barrier options.",
+    "slug": "/Finance/Quant_Finance_Bootcamp/Quant_Modeling_Stochastic_Processes"
+  }
 }

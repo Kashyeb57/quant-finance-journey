@@ -1,4 +1,10 @@
 {
   "label": "Risk Management in Derivatives",
-  "position": 3
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "Risk Management in Derivatives",
+    "description": "The five Greeks and the six hedges built on them — delta, gamma, theta, vega and rho, then delta, gamma, delta-gamma, vega, theta and rho hedging.",
+    "slug": "/Finance/Quant_Finance_Bootcamp/Risk_Management_Greeks"
+  }
 }

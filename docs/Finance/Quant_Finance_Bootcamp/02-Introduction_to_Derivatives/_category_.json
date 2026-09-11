@@ -1,4 +1,10 @@
 {
   "label": "Introduction to Derivatives",
-  "position": 2
+  "position": 2,
+  "link": {
+    "type": "generated-index",
+    "title": "Introduction to Derivatives",
+    "description": "Forwards, futures and options from first principles — what an underlying is, why clearing houses exist, and how the long and short payoffs actually work.",
+    "slug": "/Finance/Quant_Finance_Bootcamp/Introduction_to_Derivatives"
+  }
 }

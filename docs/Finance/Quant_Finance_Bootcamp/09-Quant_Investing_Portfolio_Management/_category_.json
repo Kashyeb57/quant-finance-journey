@@ -1,4 +1,10 @@
 {
   "label": "Quant Investing & Portfolio Management",
-  "position": 9
+  "position": 9,
+  "link": {
+    "type": "generated-index",
+    "title": "Quant Investing & Portfolio Management",
+    "description": "Measuring whether an investment was any good — returns and volatility, alpha, beta and R-squared against a benchmark, and the Sharpe, Sortino and Treynor ratios.",
+    "slug": "/Finance/Quant_Finance_Bootcamp/Quant_Investing_Portfolio_Management"
+  }
 }

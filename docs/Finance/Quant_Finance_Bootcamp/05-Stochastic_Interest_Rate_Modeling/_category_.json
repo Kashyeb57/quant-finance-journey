@@ -1,4 +1,10 @@
 {
   "label": "Stochastic Interest Rate Modeling",
-  "position": 5
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "title": "Stochastic Interest Rate Modeling",
+    "description": "Modelling interest rates as mean-reverting random processes — the Vasicek model, the CIR model that stops rates going negative, and calibrating both by maximum likelihood.",
+    "slug": "/Finance/Quant_Finance_Bootcamp/Stochastic_Interest_Rate_Modeling"
+  }
 }
