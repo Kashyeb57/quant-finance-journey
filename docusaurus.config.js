@@ -167,9 +167,15 @@ const config = {
               {to: '/scope', label: 'Scope'},
             ],
           },
-          {to: '/events', label: 'Big Events', position: 'left'},
-          {to: '/terminal', label: 'Terminal', position: 'left'},
-          {to: '/portfolio', label: 'Portfolio', position: 'left'},
+          {
+            label: 'Desk',
+            position: 'left',
+            items: [
+              {to: '/terminal', label: 'Terminal'},
+              {to: '/portfolio', label: 'Portfolio'},
+              {to: '/events', label: 'Big Events'},
+            ],
+          },
           {to: '/about', label: 'About', position: 'right'},
           {
             href: 'https://github.com/Kashyeb57/quant-finance-journey',

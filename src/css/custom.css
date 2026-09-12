@@ -205,6 +205,15 @@ article a:not(.card):not(.button):not([class*='Card']):not([class*='btn']):hover
   box-shadow: inset 0 -2px 0 var(--g-500);
 }
 
+/* Dropdown parents (Library, Desk) do not get --active from Docusaurus when a
+   child page is current, so the green indicator would vanish the moment a
+   top-level link moved into a dropdown. Highlight the parent when the open
+   menu contains the active link. */
+.navbar__item.dropdown:has(.dropdown__link--active) > .navbar__link {
+  color: var(--g-500);
+  box-shadow: inset 0 -2px 0 var(--g-500);
+}
+
 /* Mobile menu drawer: force a solid background. The navbar's translucent
    frosted-glass color is otherwise reused for the drawer, which made it
    see-through (the page bled through) and empty-looking on phones. */
