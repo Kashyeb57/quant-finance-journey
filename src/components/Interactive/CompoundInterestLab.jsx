@@ -73,7 +73,7 @@ export default function CompoundInterestLab() {
       <label>
         {label} <b>{show}</b>
       </label>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(+e.target.value)} />
+      <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={(e) => set(+e.target.value)} />
     </div>
   );
 
@@ -86,7 +86,7 @@ export default function CompoundInterestLab() {
         {slider('Years', years, setYears, 1, 40, 1, `${years}`)}
         <div className={styles.control}>
           <label>Compounding</label>
-          <select value={m} onChange={(e) => setM(+e.target.value)}>
+          <select aria-label="Compounding frequency" value={m} onChange={(e) => setM(+e.target.value)}>
             {FREQS.map((f) => (
               <option key={f.m} value={f.m}>
                 {f.label}

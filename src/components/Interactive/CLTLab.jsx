@@ -102,7 +102,7 @@ export default function CLTLab() {
       <div className={styles.controls}>
         <div className={styles.control}>
           <label>Population shape</label>
-          <select value={pop} onChange={(e) => setPop(e.target.value)}>
+          <select aria-label="Population shape" value={pop} onChange={(e) => setPop(e.target.value)}>
             {Object.entries(POPS).map(([k, v]) => (
               <option key={k} value={k}>{v.label}</option>
             ))}
@@ -110,7 +110,7 @@ export default function CLTLab() {
         </div>
         <div className={styles.control}>
           <label>Sample size n <b>{n}</b></label>
-          <input type="range" min={1} max={50} step={1} value={n} onChange={(e) => setN(+e.target.value)} />
+          <input type="range" aria-label="Sample size n" min={1} max={50} step={1} value={n} onChange={(e) => setN(+e.target.value)} />
         </div>
         <div className={styles.control}>
           <label>Fresh draw</label>

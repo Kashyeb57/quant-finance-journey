@@ -118,16 +118,16 @@ export default function HypothesisTestLab({
       <div className={styles.controls}>
         <div className={styles.control}>
           <label>Test statistic {useT ? `t` : `z`} <b>{fmt(stat, 2)}</b></label>
-          <input type="range" min={-4} max={4} step={0.01} value={stat} onChange={(e) => setStat(+e.target.value)} />
+          <input type="range" aria-label="Test statistic" min={-4} max={4} step={0.01} value={stat} onChange={(e) => setStat(+e.target.value)} />
         </div>
         <div className={styles.control}>
           <label>Significance α <b>{fmt(alpha, 3)}</b></label>
-          <input type="range" min={0.01} max={0.2} step={0.005} value={alpha} onChange={(e) => setAlpha(+e.target.value)} />
+          <input type="range" aria-label="Significance alpha" min={0.01} max={0.2} step={0.005} value={alpha} onChange={(e) => setAlpha(+e.target.value)} />
         </div>
         {useT && (
           <div className={styles.control}>
             <label>Degrees of freedom <b>{df}</b></label>
-            <input type="range" min={1} max={40} step={1} value={df} onChange={(e) => setDf(+e.target.value)} />
+            <input type="range" aria-label="Degrees of freedom" min={1} max={40} step={1} value={df} onChange={(e) => setDf(+e.target.value)} />
           </div>
         )}
         <div className={styles.control}>

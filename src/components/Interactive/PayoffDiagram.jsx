@@ -146,7 +146,7 @@ export default function PayoffDiagram({ defaultStrategy = 'long-call' }) {
       <div className={styles.controls}>
         <div className={styles.control}>
           <label>Strategy</label>
-          <select value={strategy} onChange={(e) => setStrategy(e.target.value)}>
+          <select aria-label="Strategy" value={strategy} onChange={(e) => setStrategy(e.target.value)}>
             {Object.entries(STRATEGIES).map(([key, s]) => (
               <option key={key} value={key}>
                 {s.label}
@@ -160,6 +160,7 @@ export default function PayoffDiagram({ defaultStrategy = 'long-call' }) {
           </label>
           <input
             type="range"
+            aria-label="Strike K"
             min={60}
             max={140}
             step={1}
@@ -173,6 +174,7 @@ export default function PayoffDiagram({ defaultStrategy = 'long-call' }) {
           </label>
           <input
             type="range"
+            aria-label="Premium"
             min={1}
             max={20}
             step={0.5}

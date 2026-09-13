@@ -71,7 +71,7 @@ export default function GBMSimulator() {
       <label>
         {label} <b>{show}</b>
       </label>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(+e.target.value)} />
+      <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={(e) => set(+e.target.value)} />
     </div>
   );
 

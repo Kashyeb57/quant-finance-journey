@@ -93,11 +93,24 @@
   --line-strong: rgba(255, 255, 255, 0.12);
   --ifm-toc-border-color: var(--line);
 
-  /* Text */
+  /* Text — every tier below carries a measured WCAG contrast ratio, because
+     the quiet greys this design leans on are exactly where dark themes fail.
+     Ratios are against the WORST surface the token appears on (--overlay
+     #202024); they are higher on --bg-base. AA normal text needs 4.5:1.
+
+       --tx-primary    13.9:1   headings, body
+       --tx-secondary   7.0:1   supporting copy
+       --tx-muted       4.7:1   captions, eyebrows, mono micro-labels  <- AA floor
+       --tx-faint       2.6:1   NOT FOR TEXT — decoration only (see below)
+
+     --tx-faint fails AA at any size and cannot be raised to meet it without
+     collapsing into --tx-muted, so it is reserved for non-text decoration:
+     the titlebar dots and the neutral "cash" segment in the allocation bar.
+     If you need quiet TEXT, --tx-muted is the floor. Don't reach past it. */
   --tx-primary: #ededef;
   --tx-secondary: #a9a9b0;
-  --tx-muted: #6e6e76;
-  --tx-faint: #4a4a50;
+  --tx-muted: #8a8a93;
+  --tx-faint: #5f5f67;
 
   /* Green ramp (identity — anchored on #25c2a0) */
   --g-100: #d4f7ec;

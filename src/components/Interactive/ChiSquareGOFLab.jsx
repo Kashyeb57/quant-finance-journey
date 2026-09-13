@@ -61,6 +61,7 @@ export default function ChiSquareGOFLab({
             </label>
             <input
               type="range"
+              aria-label={`Observed count for ${c.label}`}
               min={0}
               max={sliderMax}
               step={1}

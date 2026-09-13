@@ -153,13 +153,13 @@ export default function Surface3D({
           <label>
             Rotate <b>{yawDisp}°</b>
           </label>
-          <input type="range" min={0} max={360} step={1} value={yawDisp} onChange={(e) => setYaw(+e.target.value)} />
+          <input type="range" aria-label="Rotate" min={0} max={360} step={1} value={yawDisp} onChange={(e) => setYaw(+e.target.value)} />
         </div>
         <div className={styles.control}>
           <label>
             Tilt <b>{Math.round(pitch)}°</b>
           </label>
-          <input type="range" min={4} max={82} step={1} value={pitch} onChange={(e) => setPitch(+e.target.value)} />
+          <input type="range" aria-label="Tilt" min={4} max={82} step={1} value={pitch} onChange={(e) => setPitch(+e.target.value)} />
         </div>
       </div>
 

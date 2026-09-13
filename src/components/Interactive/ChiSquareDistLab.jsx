@@ -54,7 +54,7 @@ export default function ChiSquareDistLab({
   const slider = (label, value, set, min, max, stp, show) => (
     <div className={styles.control}>
       <label>{label} <b>{show}</b></label>
-      <input type="range" min={min} max={max} step={stp} value={value} onChange={(e) => set(+e.target.value)} />
+      <input type="range" aria-label={label} min={min} max={max} step={stp} value={value} onChange={(e) => set(+e.target.value)} />
     </div>
   );
 
