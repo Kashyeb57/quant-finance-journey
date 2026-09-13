@@ -6,7 +6,7 @@ import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import {getQuotes} from '@site/src/lib/market';
 import usePolling from '@site/src/lib/usePolling';
-import {fmtPrice} from '@site/src/lib/format';
+import {fmtPrice, fmtClockCT} from '@site/src/lib/format';
 import styles from './index.module.css';
 
 // Render a LaTeX string to KaTeX HTML for the hero equation chips.
@@ -182,34 +182,58 @@ function Tearsheet() {
 }
 
 // ── Watchlist: MU is the featured chart above; these fill the board below ──
-// `yf` is the Yahoo symbol our Worker reads; px/chg/up are seed fallbacks shown
-// until the live quote lands (and if the fetch ever fails). The sparkline shape
-// is illustrative; its price and % change are real once quotes resolve.
+// `yf` is the symbol our Worker reads. The Worker routes each one by type: US
+// equities come from Alpaca's IEX feed (real time), while the index, the gold
+// future and the FX pair come from Yahoo (delayed ~15 min) because Alpaca does
+// not carry them. Each row is tagged with which it got.
+//
+// px/chg/up are SAMPLE numbers, shown only until the first quote lands and if
+// the feed fails. They are deliberately dimmed and tagged in the UI so a stale
+// placeholder can never be mistaken for a live print. The sparkline shape is
+// always illustrative; the price and % change are real once quotes resolve.
 const WATCH = [
-  {sym: 'AMD',     yf: 'AMD',   px: '164.20',   chg: '1.8', up: true,  s: [150,151,149,152,153,151,154,156,155,158,157,160,162,164]},
-  {sym: 'KOSPI',   yf: '^KS11', px: '2,712.4',  chg: '0.6', up: true,  s: [2670,2675,2668,2680,2685,2678,2690,2695,2688,2700,2705,2698,2708,2712]},
-  {sym: 'SPY',     yf: 'SPY',   px: '558.90',   chg: '0.4', up: true,  s: [553,554,552,555,556,554,556,557,555,557,558,557,558,559]},
-  {sym: 'CRM',     yf: 'CRM',   px: '261.30',   chg: '0.9', up: false, s: [268,267,269,266,265,267,264,263,265,262,263,261,262,261]},
-  {sym: 'TSLA',    yf: 'TSLA',  px: '251.40',   chg: '2.3', up: true,  s: [242,240,244,246,243,248,250,247,252,249,253,251,250,251]},
-  {sym: 'GOLD',    yf: 'GC=F',  px: '2,418.6',  chg: '0.5', up: true,  s: [2402,2405,2400,2408,2410,2406,2412,2409,2414,2411,2416,2413,2417,2419]},
-  {sym: 'USD/JPY', yf: 'JPY=X', px: '149.82',   chg: '0.3', up: false, s: [150.4,150.2,150.5,150.1,150.3,149.9,150.1,149.8,150.0,149.7,149.9,149.7,149.8,149.82]},
+  {sym: 'AMD',     yf: 'AMD',   px: '516.13',    chg: '2.5', up: true,  s: [472.07,475.22,468.92,478.36,481.51,475.22,484.66,490.95,487.81,497.25,494.1,503.54,509.84,516.13]},
+  {sym: 'KOSPI',   yf: '^KS11', px: '6,909.9',   chg: '1.8', up: false, s: [7016.9,7004.2,7022,6991.4,6978.7,6996.5,6966,6953.2,6971.1,6940.5,6927.7,6945.6,6920.1,6909.9]},
+  {sym: 'SPY',     yf: 'SPY',   px: '764.29',    chg: '0.8', up: true,  s: [756.09,757.45,754.72,758.82,760.19,757.45,760.19,761.56,758.82,761.56,762.92,761.56,762.92,764.29]},
+  {sym: 'CRM',     yf: 'CRM',   px: '247.72',    chg: '1.9', up: true,  s: [241.08,242.03,240.13,242.97,243.92,242.03,244.87,245.82,243.92,246.77,245.82,247.72,246.77,247.72]},
+  {sym: 'TSLA',    yf: 'TSLA',  px: '365.44',    chg: '0.5', up: true,  s: [352.34,349.42,355.25,358.16,353.79,361.07,363.98,359.62,366.9,362.53,368.35,365.44,363.98,365.44]},
+  {sym: 'GOLD',    yf: 'GC=F',  px: '4,408.9',   chg: '0.0', up: true,  s: [4377.9,4383.4,4374.3,4388.9,4392.5,4385.2,4396.1,4390.7,4399.8,4394.3,4403.4,4398,4405.3,4408.9]},
+  {sym: 'USD/JPY', yf: 'JPY=X', px: '153.55',    chg: '0.5', up: false, s: [154.14,153.94,154.25,153.84,154.04,153.63,153.84,153.53,153.73,153.43,153.63,153.43,153.53,153.55]},
 ];
 
 const fmtPx = (n) => fmtPrice(n, null);
 
-// Poll /_m/quote and return a { yahooSymbol: {price, changePct} } map. Re-polls
-// every 60s so the board tracks the tape during market hours (Yahoo ~15m delay).
-// Origin, timeout and the poll loop all come from the shared data layer.
+// Poll /_m/quote every 60s. Returns the { symbol -> quote } map plus the board's
+// own state: `status` is 'idle' before the first response, 'ok' after a good
+// one, 'stale' once a poll has failed; `at` is when the last good response
+// landed. On failure the last good prices stay on screen but the board says so
+// rather than presenting a frozen number as the current one. Origin, timeout and
+// the poll loop all come from the shared data layer.
 function useQuotes(symbols) {
   const key = symbols.join(',');
-  const [map, setMap] = useState({});
+  const [state, setState] = useState({map: {}, status: 'idle', at: null});
   usePolling(async ({signal, cancelled}) => {
     try {
       const m = await getQuotes(key.split(','), {signal});
-      if (!cancelled()) setMap(m);
-    } catch (_) { /* the board keeps its last values */ }
+      // A reachable Worker that returns no usable price is still a dead feed —
+      // don't stamp a fresh time on a board full of placeholders.
+      const usable = Object.values(m).some((q) => q && typeof q.price === 'number');
+      if (cancelled()) return;
+      if (usable) setState({map: m, status: 'ok', at: Date.now()});
+      else setState((s) => ({...s, status: 'stale'}));
+    } catch (_) {
+      if (!cancelled()) setState((s) => ({...s, status: 'stale'}));
+    }
   }, 60000, [key]);
-  return map;
+  return state;
+}
+
+// Per-row provenance tag. `delayed` comes straight from the Worker, which knows
+// which upstream served each symbol.
+function sourceTag(q) {
+  if (!q || q.price == null) return {label: 'SAMPLE', title: 'Placeholder figure — no live quote yet'};
+  if (q.delayed) return {label: '15m', title: 'Yahoo Finance, delayed about 15 minutes'};
+  return {label: 'LIVE', title: 'Alpaca IEX feed, real time (IEX volume only, not the full SIP tape)'};
 }
 
 // Every Yahoo symbol the board needs: the featured MU chart + the watchlist.
@@ -264,10 +288,16 @@ export default function Home() {
     return () => io.disconnect();
   }, []);
 
-  // Real last-session quotes for the board (falls back to the seed numbers).
-  const quotes = useQuotes(YF_SYMBOLS);
+  // Live quotes for the board, falling back to the sample numbers.
+  const {map: quotes, status: feed, at: feedAt} = useQuotes(YF_SYMBOLS);
   const mu = quotes['MU'];
   const muDown = mu && mu.changePct != null && mu.changePct < 0;
+  // Build the footer legend from what is actually on the board. If the Worker
+  // ever loses its Alpaca credentials every row falls back to Yahoo, and the
+  // legend must stop advertising a live feed that isn't there.
+  const priced = Object.values(quotes).filter((q) => q && q.price != null);
+  const hasLive = priced.some((q) => !q.delayed);
+  const hasDelayed = priced.some((q) => q.delayed);
 
   return (
     <Layout
@@ -313,8 +343,8 @@ export default function Home() {
               <div className={styles.heroVisual}>
                 <div className={styles.visualHead}>
                   <span className={styles.visualTicker}><span className="p-pip" />MU&nbsp;·&nbsp;1D</span>
-                  <span className={styles.visualReadout}>
-                    ${mu && mu.price != null ? fmtPx(mu.price) : '877.57'}&nbsp;
+                  <span className={clsx(styles.visualReadout, !(mu && mu.price != null) && styles.wSample)}>
+                    ${mu && mu.price != null ? fmtPx(mu.price) : '975.26'}&nbsp;
                     <b className={muDown ? styles.down : undefined}>{muDown ? '▼' : '▲'}</b>
                   </span>
                 </div>
@@ -341,20 +371,58 @@ export default function Home() {
                     const chg = Math.abs(cp).toFixed(1);
                     // Keep the illustrative sparkline pointing the real direction.
                     const sData = up === w.up ? w.s : [...w.s].reverse();
+                    const tag = sourceTag(q);
                     return (
-                      <div key={w.sym} className={styles.wRow}>
+                      <div key={w.sym} className={clsx(styles.wRow, !live && styles.wSample)}>
                         <span className={styles.wSym}>{w.sym}</span>
                         <Spark data={sData} up={up} />
                         <span className={styles.wRight}>
                           <span className={styles.wPx}>{price}</span>
-                          <span className={clsx(styles.wChg, up ? styles.up : styles.down)}>
+                          <span className={clsx(
+                            styles.wChg,
+                            live ? (up ? styles.up : styles.down) : styles.wFlat,
+                          )}>
                             {up ? '▲' : '▼'}&nbsp;{chg}%
+                          </span>
+                          <span
+                            className={clsx(styles.wTag, live && !q.delayed && styles.wTagLive)}
+                            title={tag.title}>
+                            {tag.label}
                           </span>
                         </span>
                       </div>
                     );
                   })}
                 </div>
+                <p className={styles.watchFoot} role="status">
+                  {feed === 'idle' && 'Loading quotes…'}
+                  {feed === 'ok' && (
+                    <>
+                      {hasLive && (
+                        <>
+                          <span className={styles.wTagLive}>LIVE</span> Alpaca IEX
+                        </>
+                      )}
+                      {hasLive && hasDelayed && <span className={styles.footDot}>·</span>}
+                      {hasDelayed && (
+                        <>
+                          <span className={styles.wTag}>15m</span> Yahoo delayed
+                        </>
+                      )}
+                      <span className={styles.footDot}>·</span>
+                      {fmtClockCT(feedAt)}
+                    </>
+                  )}
+                  {feed === 'stale' && (
+                    <span className={styles.footStale}>
+                      Quote feed unreachable
+                      <span className={styles.footDot}>·</span>
+                      {feedAt
+                        ? `last good ${fmtClockCT(feedAt)}`
+                        : 'showing sample figures'}
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           </div>

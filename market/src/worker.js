@@ -64,6 +64,20 @@ function json(request, body, status = 200, cacheSeconds = 0) {
   });
 }
 
+// Belt-and-braces: several handlers forward an upstream error body to the
+// browser, because messages like "insufficient buying power" are genuinely
+// useful. Alpaca does not echo credentials in its errors — but "the upstream
+// won't" is a trust assumption, not a guarantee, so strip the values before any
+// upstream text can leave this Worker. Cheap, and makes the leak impossible
+// rather than unlikely.
+function scrub(text, env) {
+  let t = text || '';
+  for (const secret of [env.ALPACA_KEY_ID, env.ALPACA_SECRET_KEY, env.TRADE_TOKEN]) {
+    if (secret && secret.length >= 8) t = t.split(secret).join('[redacted]');
+  }
+  return t;
+}
+
 async function alpaca(path, env) {
   if (!env.ALPACA_KEY_ID || !env.ALPACA_SECRET_KEY) {
     return { ok: false, status: 503, error: 'Worker is missing Alpaca credentials.' };
@@ -76,7 +90,7 @@ async function alpaca(path, env) {
     },
   });
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = scrub(await res.text().catch(() => ''), env);
     return { ok: false, status: res.status, error: text.slice(0, 300) || 'Upstream error' };
   }
   return { ok: true, data: await res.json() };
@@ -104,7 +118,7 @@ async function alpacaTrade(path, env, init) {
   }
   const res = await fetch(`${ALPACA_PAPER}${path}`, opt);
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
+    const text = scrub(await res.text().catch(() => ''), env);
     return { ok: false, status: res.status, error: text.slice(0, 300) || 'Upstream error' };
   }
   const ct = res.headers.get('content-type') || '';
@@ -381,9 +395,34 @@ async function handleLedger(request, env) {
 // WebSocket proxy: browser <-> this Worker <-> Alpaca's live trade stream.
 // The Alpaca key/secret are used only here (server-side) to authenticate the
 // upstream connection; the browser never sees them.
+// WebSocket relay for Alpaca's IEX trade stream.
+//
+// ⚠️ TWO LIMITS TO KNOW BEFORE CHANGING THIS:
+//
+// 1. CORS DOES NOT APPLY TO WEBSOCKETS. The browser's same-origin policy is not
+//    enforced on a WS handshake, so `corsHeaders()` protects nothing here. The
+//    Origin check below is explicit for that reason. It stops another site from
+//    embedding this feed; it is NOT authentication, because a non-browser client
+//    can send whatever Origin it likes. Treat it as hotlink protection.
+//
+// 2. EVERY CONNECTION OPENS ITS OWN UPSTREAM SOCKET, and Alpaca's free tier
+//    allows ONE concurrent connection per account. So two simultaneous visitors
+//    means the second gets Alpaca error 406 and no live trades. Fixing that
+//    properly needs a Durable Object holding ONE upstream connection and fanning
+//    it out to every client — a real change (wrangler.toml + a migration), not a
+//    patch. Until then the handler at least reports the limit clearly instead of
+//    failing silently, and the client stops hammering it.
 async function handleStream(request, env, url) {
   if ((request.headers.get('Upgrade') || '').toLowerCase() !== 'websocket') {
     return json(request, { error: 'Expected a WebSocket upgrade' }, 426);
+  }
+  // Reject a foreign Origin, but allow a missing one: browsers always send it on
+  // a WS handshake, so a mismatch means someone else's page. Demanding its
+  // presence would buy nothing (a script can forge it) while risking the real
+  // site if anything upstream ever strips the header.
+  const origin = request.headers.get('Origin');
+  if (origin && !ALLOWED_ORIGINS.includes(origin)) {
+    return json(request, { error: 'Origin not allowed' }, 403);
   }
   const symbol = (url.searchParams.get('symbol') || '').toUpperCase();
   if (!SYMBOL_RE.test(symbol)) return json(request, { error: 'Bad symbol' }, 400);
@@ -431,7 +470,20 @@ async function handleStream(request, env, url) {
           time: m.t ? Math.floor(new Date(m.t).getTime() / 1000) : Math.floor(Date.now() / 1000),
         });
       } else if (m.T === 'error') {
-        send({ type: 'error', msg: m.msg || 'stream error', code: m.code });
+        // Alpaca's codes: 406 = connection limit reached (the free tier's single
+        // connection is already in use), 401/402 = auth rejected. None of those
+        // clear up on an immediate retry, so say so and let the client stand
+        // down instead of reconnecting every few seconds forever.
+        const fatal = m.code === 406 || m.code === 401 || m.code === 402;
+        send({
+          type: 'error',
+          msg: m.code === 406
+            ? 'The live feed is already in use (one connection at a time).'
+            : (m.msg || 'stream error'),
+          code: m.code,
+          fatal,
+        });
+        if (fatal) { try { server.close(4406, 'upstream refused'); } catch (_) {} }
       }
     }
   });
@@ -536,10 +588,27 @@ async function handleGex(request, env, url) {
   const WINDOW = { day: 1.5, week: 7, '15d': 15, '30d': 30 };
   const winDays = WINDOW[exp] || 1.5;
 
+  // Edge-cached because the option-chain maths is expensive. NOTE: a cached
+  // response carries the CORS headers of whichever request first populated it,
+  // and `corsHeaders()` echoes the *caller's* Origin. Returning the hit verbatim
+  // therefore hands a later caller someone else's Access-Control-Allow-Origin.
+  // Production never notices (same-origin fetches ignore CORS), but `npm start`
+  // on localhost calls production cross-origin, so the GEX panel breaks there
+  // intermittently depending on which origin warmed that colo's cache. Re-wrap
+  // the cached body with this request's headers instead.
   const cache = caches.default;
   const cacheKey = new Request(`https://gex.internal/${symbol}/${exp}`);
   const hit = await cache.match(cacheKey);
-  if (hit) return hit;
+  if (hit) {
+    return new Response(await hit.text(), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': hit.headers.get('Cache-Control') || 'no-store',
+        ...corsHeaders(request),
+      },
+    });
+  }
 
   const now = Date.now();
   const dayStart = now - (now % 86400000);
@@ -623,12 +692,78 @@ async function handleGex(request, env, url) {
 }
 
 // GET /_m/quote?symbols=AMD,^KS11,GC=F,JPY=X
-// Real last-session quotes for the homepage watchlist. Alpaca only carries US
-// equities, so for a mixed board (stocks + a foreign index + gold + a forex
-// pair) we read Yahoo's public v8 chart endpoint server-side (no key, delayed
-// ~15 min). One tiny fetch per symbol, fanned out in parallel and edge-cached.
+// Quotes for the homepage watchlist, routed per symbol so every row can say
+// where its own number came from:
+//   * plain US equity tickers            -> ALPACA snapshot, IEX feed (real time)
+//   * everything else (^index, =F, =X)   -> Yahoo v8 chart (delayed ~15 min)
+// Alpaca carries US equities only, so a mixed board (stocks + a foreign index +
+// gold + a forex pair) cannot come from a single source. Each quote carries its
+// own `source` and `delayed` flag so the UI can label rows honestly instead of
+// implying the whole board is live. The equities go out as ONE batched Alpaca
+// snapshots call, not one request per symbol.
 const YF_CHART = 'https://query1.finance.yahoo.com/v8/finance/chart/';
 const YF_SYM_RE = /^[A-Za-z0-9.^=-]{1,12}$/;
+// Alpaca-eligible: letters only, 1-5 chars. Excludes ^KS11, GC=F, JPY=X.
+const ALPACA_EQUITY_RE = /^[A-Z]{1,5}$/;
+
+// One snapshots call for every US equity on the board. Returns a map of
+// symbol -> quote; symbols Alpaca has no data for are simply absent, so the
+// caller falls back to Yahoo for them.
+async function quotesFromAlpaca(syms, env) {
+  const out = {};
+  if (!syms.length) return out;
+  const res = await alpaca(`/snapshots?symbols=${syms.join(',')}&feed=iex`, env);
+  if (!res.ok) return out;
+  // The endpoint has returned both a bare map and a { snapshots: {...} }
+  // envelope across API revisions; accept either.
+  const snaps = (res.data && res.data.snapshots) || res.data || {};
+  for (const sym of syms) {
+    const d = snaps[sym];
+    if (!d) continue;
+    const price = (d.latestTrade && d.latestTrade.p)
+      || (d.minuteBar && d.minuteBar.c)
+      || (d.dailyBar && d.dailyBar.c)
+      || null;
+    if (typeof price !== 'number') continue;
+    const prevClose = (d.prevDailyBar && d.prevDailyBar.c) || null;
+    out[sym] = {
+      symbol: sym,
+      price,
+      changePct: prevClose ? ((price - prevClose) / prevClose) * 100 : null,
+      prevClose,
+      currency: 'USD',
+      source: 'alpaca-iex',
+      delayed: false,
+      at: (d.latestTrade && d.latestTrade.t) || null,
+    };
+  }
+  return out;
+}
+
+async function quoteFromYahoo(sym) {
+  try {
+    const r = await fetch(`${YF_CHART}${encodeURIComponent(sym)}?range=1d&interval=1d`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; quant-desk/1.0)' },
+      cf: { cacheTtl: 60, cacheEverything: true },
+    });
+    if (!r.ok) return null;
+    const j = await r.json();
+    const m = j && j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta;
+    if (!m || typeof m.regularMarketPrice !== 'number') return null;
+    return {
+      symbol: sym,
+      price: m.regularMarketPrice,
+      changePct: typeof m.regularMarketChangePercent === 'number' ? m.regularMarketChangePercent : null,
+      prevClose: typeof m.chartPreviousClose === 'number' ? m.chartPreviousClose : null,
+      currency: m.currency || null,
+      source: 'yahoo',
+      delayed: true,
+      at: typeof m.regularMarketTime === 'number' ? new Date(m.regularMarketTime * 1000).toISOString() : null,
+    };
+  } catch (e) {
+    return null;
+  }
+}
 
 async function handleQuotes(request, env, url) {
   const raw = (url.searchParams.get('symbols') || '').trim();
@@ -637,29 +772,32 @@ async function handleQuotes(request, env, url) {
     return json(request, { error: 'Bad symbols' }, 400);
   }
 
+  const equities = [...new Set(
+    symbols.map((s) => s.toUpperCase()).filter((s) => ALPACA_EQUITY_RE.test(s))
+  )];
+  const live = await quotesFromAlpaca(equities, env);
+
   const quotes = await Promise.all(symbols.map(async (sym) => {
-    try {
-      const r = await fetch(`${YF_CHART}${encodeURIComponent(sym)}?range=1d&interval=1d`, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; quant-desk/1.0)' },
-        cf: { cacheTtl: 60, cacheEverything: true },
-      });
-      if (!r.ok) return { symbol: sym, price: null, changePct: null };
-      const j = await r.json();
-      const m = j && j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta;
-      if (!m) return { symbol: sym, price: null, changePct: null };
-      return {
-        symbol: sym,
-        price: typeof m.regularMarketPrice === 'number' ? m.regularMarketPrice : null,
-        changePct: typeof m.regularMarketChangePercent === 'number' ? m.regularMarketChangePercent : null,
-        prevClose: typeof m.chartPreviousClose === 'number' ? m.chartPreviousClose : null,
-        currency: m.currency || null,
-      };
-    } catch (e) {
-      return { symbol: sym, price: null, changePct: null };
-    }
+    const hit = live[sym.toUpperCase()];
+    if (hit) return { ...hit, symbol: sym };
+    const y = await quoteFromYahoo(sym);
+    return y || {
+      symbol: sym,
+      price: null,
+      changePct: null,
+      prevClose: null,
+      currency: null,
+      source: null,
+      delayed: null,
+    };
   }));
 
-  return json(request, { quotes, source: 'yahoo' }, 200, 60);
+  return json(request, {
+    quotes,
+    sources: [...new Set(quotes.map((q) => q.source).filter(Boolean))],
+    anyDelayed: quotes.some((q) => q.delayed === true),
+    asOf: new Date().toISOString(),
+  }, 200, 60);
 }
 
 export default {

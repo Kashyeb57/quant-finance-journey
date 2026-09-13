@@ -25,10 +25,21 @@ export function getSnapshot(symbol, opts) {
 }
 
 /**
- * Last-session quotes for a mixed board — US equities, a foreign index, gold,
- * an FX pair. Takes Yahoo-style symbols (e.g. `['AMD', '^KS11', 'GC=F']`) and
- * resolves to a `{ symbol -> quote }` map so callers can look up by symbol
- * instead of scanning an array.
+ * Quotes for a mixed board — US equities, a foreign index, gold, an FX pair.
+ * Takes Yahoo-style symbols (e.g. `['AMD', '^KS11', 'GC=F']`) and resolves to a
+ * `{ symbol -> quote }` map so callers can look up by symbol instead of
+ * scanning an array.
+ *
+ * The Worker routes each symbol to whichever upstream carries it, so quotes on
+ * one board can have different provenance. Every quote therefore carries:
+ *
+ *   - `source`  — 'alpaca-iex' | 'yahoo' | null (no data)
+ *   - `delayed` — false for Alpaca (real time), true for Yahoo (~15 min)
+ *   - `at`      — the upstream's own timestamp, ISO, when it gives one
+ *
+ * A board that shows prices from both MUST label them per row. Alpaca's free
+ * tier is the IEX feed: genuinely real time, but IEX volume only — not the
+ * consolidated SIP tape.
  */
 export async function getQuotes(symbols, opts) {
   const list = (symbols || []).filter(Boolean);

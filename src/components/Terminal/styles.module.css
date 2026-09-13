@@ -800,6 +800,23 @@
 .mkt_pre, .mkt_after { color: #f59e0b; border-color: rgba(245, 158, 11, 0.45); }
 .mkt_closed { color: var(--ifm-color-emphasis-500); }
 
+/* Where the price is coming from: a live stream, or the poll underneath it.
+   Sits beside the session badge, same shape, deliberately quieter. */
+.feedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  cursor: help;
+}
+.feed_live { color: #22c55e; border-color: rgba(34, 197, 94, 0.45); }
+.feed_polled { color: var(--ifm-color-emphasis-600); }
+
 /* spacer between ticker buttons and interval buttons */
 .tfSpacer { flex: 1 1 1.5rem; min-width: 0.5rem; }
 

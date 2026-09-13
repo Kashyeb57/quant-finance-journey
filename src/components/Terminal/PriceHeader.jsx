@@ -17,10 +17,23 @@ function statusFor(ticker) {
   return isCrypto(ticker) ? { state: 'open', label: 'Crypto · 24/7' } : marketStatus();
 }
 
+// What the price on screen is actually coming from. The stream is a bonus layer
+// over the 2.5s poll, not a replacement for it — so when the stream is not up,
+// the number is still correct, just refreshed on a timer. Say which.
+const FEED = {
+  live: { label: 'Streaming', cls: 'feed_live',
+          title: 'Tick-by-tick trades streaming live from Alpaca (IEX feed).' },
+  polled: { label: `Polled ${REFRESH_MS / 1000}s`, cls: 'feed_polled',
+            title: `Live stream unavailable — the price is refreshed every ${REFRESH_MS / 1000} seconds instead. `
+                 + 'The data plan allows one streaming connection at a time, so this happens when it is already in use.' },
+};
+
 export default function PriceHeader({ ticker }) {
   const [snap, setSnap] = useState(null);
   const [flash, setFlash] = useState(null);
   const [status, setStatus] = useState(() => statusFor(ticker));
+  // null until we know, so the badge doesn't flicker on every ticker change.
+  const [feed, setFeed] = useState(null);
   const prevPrice = useRef(null);
   const flashTimer = useRef(null);
 
@@ -28,6 +41,7 @@ export default function PriceHeader({ ticker }) {
     let cancelled = false;
     prevPrice.current = null;
     setSnap(null);
+    setFeed(null);
     setStatus(statusFor(ticker));
 
     async function pull() {
@@ -71,6 +85,9 @@ export default function PriceHeader({ ticker }) {
           source: 'live',
         });
       });
+      // Coinbase's public feed is not behind our Worker, so the single-connection
+      // limit does not apply to it.
+      setFeed('live');
     } else {
       pull();
       dataTimer = setInterval(pull, REFRESH_MS);
@@ -95,6 +112,10 @@ export default function PriceHeader({ ticker }) {
             changePct: prev.prevClose ? (change / prev.prevClose) * 100 : prev.changePct,
           };
         });
+      }, (state) => {
+        // 'unavailable' means the stream gave up for good (one connection at a
+        // time, and it is taken). The poll above keeps the price right either way.
+        if (!cancelled) setFeed(state === 'ready' ? 'live' : 'polled');
       });
     }
 
@@ -148,6 +169,14 @@ export default function PriceHeader({ ticker }) {
           <span className={styles.marketDot} />
           {status.label}
         </span>
+        {feed && (
+          <span
+            className={`${styles.feedBadge} ${styles[FEED[feed].cls]}`}
+            title={FEED[feed].title}>
+            <span className={styles.marketDot} />
+            {FEED[feed].label}
+          </span>
+        )}
       </div>
     </div>
   );

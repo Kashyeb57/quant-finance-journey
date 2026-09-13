@@ -264,6 +264,34 @@
 .wChg.up { color: var(--g-500); }
 .wChg.down { color: var(--amber-500); }
 
+/* Provenance: every row says where its number came from, and a row still
+   showing a placeholder is dimmed so it cannot pass for a live print. */
+.wTag {
+  min-width: 3.1rem;
+  text-align: right;
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  color: var(--tx-muted);
+}
+.wTagLive { color: var(--g-500); }
+.wSample { opacity: 0.42; }
+.wChg.wFlat { color: var(--tx-muted); }
+
+.watchFoot {
+  margin: 0;
+  padding-top: var(--s2);
+  border-top: 1px solid var(--line-faint);
+  font-family: var(--ff-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--tx-muted);
+  font-variant-numeric: tabular-nums;
+}
+.watchFoot .wTag,
+.watchFoot .wTagLive { min-width: 0; letter-spacing: 0.12em; }
+.footDot { margin: 0 0.45rem; opacity: 0.5; }
+.footStale { color: var(--amber-500); }
+
 /* Tearsheet draw-in */
 .equity { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawLine 1s var(--ease-out) 0.4s forwards; }
 .area { opacity: 0; animation: fadeIn 0.6s var(--ease-out) 0.85s forwards; }
