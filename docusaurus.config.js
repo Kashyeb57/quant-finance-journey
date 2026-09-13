@@ -211,7 +211,6 @@ const config = {
             title: 'Site',
             items: [
               {label: 'About', to: '/about'},
-              {label: 'Privacy', to: '/privacy'},
               {label: 'Publish (owner)', to: '/admin'},
               {
                 label: 'GitHub',
