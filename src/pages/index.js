@@ -443,7 +443,9 @@ export default function Home() {
                   <span className={styles.subjectTop}>
                     <span className={styles.subjectIcon}><Icon name={s.icon} /></span>
                     <span className={clsx(styles.subjectStatus, s.status === 'live' ? styles.statusLive : styles.statusProgress)}>
-                      {s.status === 'live' ? '● Live' : '◐ In progress'}
+                      {/* The glyph is decoration; the word carries the meaning. */}
+                      <span aria-hidden="true">{s.status === 'live' ? '●' : '◐'}</span>{' '}
+                      {s.status === 'live' ? 'Live' : 'In progress'}
                     </span>
                   </span>
                   <span className={styles.subjectTitle}>{s.title}</span>

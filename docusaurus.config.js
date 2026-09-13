@@ -211,6 +211,7 @@ const config = {
             title: 'Site',
             items: [
               {label: 'About', to: '/about'},
+              {label: 'Privacy', to: '/privacy'},
               {label: 'Publish (owner)', to: '/admin'},
               {
                 label: 'GitHub',
@@ -228,7 +229,7 @@ const config = {
             ],
           },
         ],
-        copyright: `© ${new Date().getFullYear()} Joyeb Kashyeb · Quantitative finance`,
+        copyright: `© ${new Date().getFullYear()} Joyeb Kashyeb · Quantitative finance · Educational content, not financial advice`,
       },
       prism: {
         theme: prismThemes.oneLight,

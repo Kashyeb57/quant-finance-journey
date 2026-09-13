@@ -136,7 +136,11 @@
   --e2: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.45);
   --e3: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 18px 50px rgba(0, 0, 0, 0.55);
   --e-glow: 0 0 0 1px var(--g-700), 0 0 28px var(--g-glow);
-  --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--g-glow);
+  /* Keyboard focus ring. Solid --g-500 (8.7:1 on --bg-base), NOT --g-glow:
+     the glow is 28% opacity and measured 1.65:1, under the 3:1 WCAG 1.4.11
+     requires for focus indicators, so keyboard users could barely see where
+     they were. It only paints on :focus-visible, so mouse users never see it. */
+  --focus-ring: 0 0 0 2px var(--bg-base), 0 0 0 4px var(--g-500);
 }
 
 /* ── Typography ────────────────────────────────────────────────────── */
