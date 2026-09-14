@@ -695,3 +695,90 @@
   .perf .metric { border-bottom: 0; }
   .perf .metric:not(:first-child) { border-left: 0; border-top: 1px solid var(--line); }
 }
+
+/* ── Position notes ─────────────────────────────────────────────────── */
+
+.noteList { display: flex; flex-direction: column; }
+.note {
+  padding: 0.95rem 0;
+  border-top: 1px solid var(--line);
+}
+.note:first-child { border-top: 0; padding-top: 0.2rem; }
+.noteHead {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.45rem;
+}
+.noteSym {
+  font-family: var(--ff-mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--tx-primary);
+  letter-spacing: 0.02em;
+}
+.noteTag {
+  font-family: var(--ff-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  padding: 0.05rem 0.45rem;
+}
+.noteDate {
+  font-family: var(--ff-mono);
+  font-size: 0.66rem;
+  color: var(--tx-muted);
+}
+.noteEditBtn {
+  margin-left: auto;
+  font-family: var(--ff-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx-secondary);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  padding: 0.2rem 0.65rem;
+  cursor: pointer;
+}
+.noteEditBtn:hover:not(:disabled) { color: var(--g-500); border-color: var(--g-500); }
+.noteActions .noteEditBtn { margin-left: 0; }
+
+.noteBody { margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.noteRow dt {
+  font-family: var(--ff-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  margin-bottom: 0.1rem;
+}
+.noteRow dd {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--tx-secondary);
+  white-space: pre-wrap;      /* keep the owner's line breaks */
+  overflow-wrap: anywhere;
+}
+.noteEmpty { margin: 0; font-size: 0.85rem; color: var(--tx-muted); }
+
+.noteForm { display: flex; flex-direction: column; gap: 0.65rem; }
+.noteField { display: flex; flex-direction: column; gap: 0.25rem; }
+.noteLabel {
+  font-family: var(--ff-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+}
+.noteText { resize: vertical; line-height: 1.5; font-family: inherit; }
+.noteActions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; }
+.noteSave { padding: 0.5rem 1.1rem; }
+.noteHint { font-size: 0.7rem; color: var(--tx-muted); }
+.noteErr { margin: 0; font-size: 0.8rem; color: var(--amber-500); }

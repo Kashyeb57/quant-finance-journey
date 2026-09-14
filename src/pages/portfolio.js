@@ -242,6 +242,165 @@ function TradePanel({token, symbols, onPlaced, onLock}) {
   );
 }
 
+/* ── Position notes ──────────────────────────────────────────────────────
+ * The owner's research note per position: why he bought it, the horizon, the
+ * risk limit, and a review once the trade is done. Everyone can read; only the
+ * owner (unlocked) sees Add/Edit, and the Worker checks the passphrase again on
+ * save. Stored server-side (GET/POST /_m/notes), so notes are the same on every
+ * device and for every visitor. Rendered as plain text — never as HTML. */
+const NOTE_FIELDS = [
+  {key: 'thesis', label: 'Why I bought', multiline: true, max: 2000, placeholder: 'The thesis — what has to be true for this to work.'},
+  {key: 'horizon', label: 'Horizon', max: 200, placeholder: 'e.g. 6–12 months'},
+  {key: 'risk', label: 'Risk limit', max: 300, placeholder: 'e.g. exit below $320, or at most 10% of the account'},
+  {key: 'review', label: 'Review', multiline: true, max: 2000, placeholder: 'After the trade: what happened and what I learned.'},
+];
+
+function PositionNotes({symbols, owner, token}) {
+  const [notes, setNotes] = useState(null); // symbol -> note; null while loading
+  const [unavailable, setUnavailable] = useState(false);
+  const [editing, setEditing] = useState(null); // symbol being edited
+  const [draft, setDraft] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/_m/notes', {cache: 'no-store'})
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((d) => {
+        if (cancelled) return;
+        const map = {};
+        for (const n of (d && d.notes) || []) if (n && n.symbol) map[n.symbol] = n;
+        setNotes(map);
+        setUnavailable(!!(d && d.unavailable));
+      })
+      .catch(() => { if (!cancelled) { setNotes({}); setUnavailable(true); } });
+    return () => { cancelled = true; };
+  }, []);
+
+  const startEdit = (sym) => {
+    const n = (notes && notes[sym]) || {};
+    setDraft(Object.fromEntries(NOTE_FIELDS.map((f) => [f.key, n[f.key] || ''])));
+    setError(null);
+    setEditing(sym);
+  };
+
+  const save = async (sym) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const d = await postJson('/_m/notes', token, {symbol: sym, ...draft});
+      setNotes((prev) => {
+        const next = {...prev};
+        if (d.deleted) delete next[sym];
+        else next[sym] = d.note;
+        return next;
+      });
+      setEditing(null);
+    } catch (e) {
+      const code = String(e.message || '');
+      setError(
+        code === 'unauthorized' ? 'Passphrase rejected — lock trading and unlock again with the right one.'
+          : code === 'notes_unavailable' ? 'Notes storage isn’t reachable right now. Try again shortly.'
+            : code.startsWith('too_long') ? `That field is too long (limit ${code.split(':')[2]} characters).`
+              : `Couldn’t save: ${code}`,
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (notes === null) return null; // quiet while loading
+  // Held positions first (in holdings order), then symbols that still have a
+  // note after the position was closed.
+  const noted = Object.keys(notes).filter((s) => !symbols.includes(s)).sort();
+  const all = [...symbols, ...noted];
+  // Visitors only see positions that actually have a note; the owner sees all.
+  const list = owner ? all : all.filter((s) => notes[s]);
+  if (!owner && list.length === 0) return null;
+
+  return (
+    <div className={`p-card ${styles.notesCard}`} data-reveal style={{'--i': 3}}>
+      <h2 className={styles.h2}>Notes <span className={styles.count}>why I hold it</span></h2>
+      {unavailable && owner && <p className={styles.noteErr}>Notes storage isn’t reachable right now, so saving may fail.</p>}
+      {list.length === 0 ? (
+        <p className={styles.empty}>No positions to write about yet.</p>
+      ) : (
+        <div className={styles.noteList}>
+          {list.map((sym) => {
+            const n = notes[sym];
+            const isEditing = editing === sym;
+            return (
+              <article key={sym} className={styles.note}>
+                <header className={styles.noteHead}>
+                  <span className={styles.noteSym}>{sym}</span>
+                  {!symbols.includes(sym) && <span className={styles.noteTag}>closed</span>}
+                  {n && n.updatedAt && <span className={styles.noteDate}>updated {fmtWhen(n.updatedAt)}</span>}
+                  {owner && !isEditing && (
+                    <button type="button" className={styles.noteEditBtn} onClick={() => startEdit(sym)}>
+                      {n ? 'Edit' : 'Add note'}
+                    </button>
+                  )}
+                </header>
+
+                {isEditing ? (
+                  <form className={styles.noteForm} onSubmit={(e) => { e.preventDefault(); save(sym); }}>
+                    {NOTE_FIELDS.map((f) => (
+                      <label key={f.key} className={styles.noteField}>
+                        <span className={styles.noteLabel}>{f.label}</span>
+                        {f.multiline ? (
+                          <textarea
+                            className={`${styles.tradeInput} ${styles.noteText}`}
+                            rows={3}
+                            maxLength={f.max}
+                            value={draft[f.key] || ''}
+                            placeholder={f.placeholder}
+                            onChange={(e) => setDraft((d) => ({...d, [f.key]: e.target.value}))}
+                          />
+                        ) : (
+                          <input
+                            className={styles.tradeInput}
+                            type="text"
+                            maxLength={f.max}
+                            value={draft[f.key] || ''}
+                            placeholder={f.placeholder}
+                            onChange={(e) => setDraft((d) => ({...d, [f.key]: e.target.value}))}
+                          />
+                        )}
+                      </label>
+                    ))}
+                    <div className={styles.noteActions}>
+                      <button type="submit" className={`${styles.submitBtn} ${styles.noteSave}`} disabled={saving}>
+                        {saving ? 'Saving…' : 'Save note'}
+                      </button>
+                      <button type="button" className={styles.noteEditBtn} onClick={() => setEditing(null)} disabled={saving}>
+                        Cancel
+                      </button>
+                      <span className={styles.noteHint}>Clear every field and save to delete this note.</span>
+                    </div>
+                    {error && <p className={styles.noteErr} role="alert">{error}</p>}
+                  </form>
+                ) : n ? (
+                  <dl className={styles.noteBody}>
+                    {NOTE_FIELDS.filter((f) => n[f.key]).map((f) => (
+                      <div key={f.key} className={styles.noteRow}>
+                        <dt>{f.label}</dt>
+                        <dd>{n[f.key]}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <p className={styles.noteEmpty}>No note yet.</p>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Content() {
   const [state, setState] = useState({status: 'loading'});
   const [scrubIdx, setScrubIdx] = useState(null);
@@ -561,6 +720,8 @@ function Content() {
             </div>
           )}
         </div>
+
+        <PositionNotes symbols={positions.map((p) => p.symbol)} owner={owner} token={token} />
 
         <div className={`p-card ${styles.metricsCard}`} data-reveal style={{'--i': 4}}>
           <h2 className={styles.h2}>The read <span className={styles.count}>performance</span></h2>

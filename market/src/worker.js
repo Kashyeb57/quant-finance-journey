@@ -142,6 +142,72 @@ function ownerOk(request, env) {
 // POST /_m/order — owner-only. Places a MARKET, whole-share, day order on the
 // PAPER account. Never touches real money (paper base URL). Rejects anything
 // without a valid TRADE_TOKEN.
+// ── Position notes ──────────────────────────────────────────────────────────
+// The owner's per-position research notes for the Portfolio page: why he holds
+// it, the intended horizon, the risk limit, and a post-trade review.
+//   GET  /_m/notes  -> public, read-only
+//   POST /_m/notes  -> owner-only (same X-Trade-Token gate as orders)
+// Stored in the existing site_analytics D1 database (binding NOTES_DB), in its
+// own table, created on first use — so no new Cloudflare resource or manual
+// migration was needed. Text is stored as plain text and rendered as text.
+const NOTE_LIMITS = { thesis: 2000, horizon: 200, risk: 300, review: 2000 };
+let notesTableReady = false;
+
+async function notesTable(env) {
+  if (!env.NOTES_DB) return false;
+  if (!notesTableReady) {
+    await env.NOTES_DB.prepare(
+      'CREATE TABLE IF NOT EXISTS position_notes (' +
+        'symbol TEXT PRIMARY KEY, ' +
+        "thesis TEXT NOT NULL DEFAULT '', " +
+        "horizon TEXT NOT NULL DEFAULT '', " +
+        "risk TEXT NOT NULL DEFAULT '', " +
+        "review TEXT NOT NULL DEFAULT '', " +
+        'updated_at TEXT NOT NULL)'
+    ).run();
+    notesTableReady = true;
+  }
+  return true;
+}
+
+async function handleNotesGet(request, env) {
+  if (!(await notesTable(env))) return json(request, { notes: [], unavailable: true });
+  const { results } = await env.NOTES_DB.prepare(
+    'SELECT symbol, thesis, horizon, risk, review, updated_at AS updatedAt FROM position_notes ORDER BY symbol'
+  ).all();
+  return json(request, { notes: results || [] });
+}
+
+async function handleNotesPost(request, env) {
+  if (!ownerOk(request, env)) return json(request, { error: 'unauthorized' }, 401);
+  if (!(await notesTable(env))) return json(request, { error: 'notes_unavailable' }, 503);
+  let body;
+  try { body = await request.json(); } catch (_) { return json(request, { error: 'bad_json' }, 400); }
+  const symbol = String(body.symbol || '').toUpperCase();
+  if (!SYMBOL_RE.test(symbol)) return json(request, { error: 'bad_symbol' }, 400);
+
+  const note = {};
+  for (const [field, max] of Object.entries(NOTE_LIMITS)) {
+    const value = typeof body[field] === 'string' ? body[field].trim() : '';
+    if (value.length > max) return json(request, { error: `too_long:${field}:${max}` }, 400);
+    note[field] = value;
+  }
+
+  // All fields blank = remove the note.
+  if (!note.thesis && !note.horizon && !note.risk && !note.review) {
+    await env.NOTES_DB.prepare('DELETE FROM position_notes WHERE symbol = ?').bind(symbol).run();
+    return json(request, { ok: true, deleted: true, symbol });
+  }
+
+  const updatedAt = new Date().toISOString();
+  await env.NOTES_DB.prepare(
+    'INSERT INTO position_notes (symbol, thesis, horizon, risk, review, updated_at) VALUES (?, ?, ?, ?, ?, ?) ' +
+      'ON CONFLICT(symbol) DO UPDATE SET thesis = excluded.thesis, horizon = excluded.horizon, ' +
+      'risk = excluded.risk, review = excluded.review, updated_at = excluded.updated_at'
+  ).bind(symbol, note.thesis, note.horizon, note.risk, note.review, updatedAt).run();
+  return json(request, { ok: true, note: { symbol, ...note, updatedAt } });
+}
+
 async function handleOrder(request, env) {
   if (!ownerOk(request, env)) return json(request, { error: 'unauthorized' }, 401);
   let body;
@@ -827,6 +893,7 @@ export default {
     if (request.method === 'POST') {
       if (url.pathname === '/_m/order')  return handleOrder(request, env);
       if (url.pathname === '/_m/cancel') return handleCancel(request, env);
+      if (url.pathname === '/_m/notes')  return handleNotesPost(request, env);
       return json(request, { error: 'Not found' }, 404);
     }
     if (request.method !== 'GET') {
@@ -838,6 +905,7 @@ export default {
     if (url.pathname === '/_m/quote')     return handleQuotes(request, env, url);
     if (url.pathname === '/_m/portfolio') return handlePortfolio(request, env);
     if (url.pathname === '/_m/ledger')    return handleLedger(request, env);
+    if (url.pathname === '/_m/notes')     return handleNotesGet(request, env);
     if (url.pathname === '/_m/gex')       return handleGex(request, env, url);
     if (url.pathname === '/_m/health')    return json(request, { ok: true });
 

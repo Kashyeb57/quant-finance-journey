@@ -18,3 +18,12 @@ routes = [
 
 # ALPACA_KEY_ID and ALPACA_SECRET_KEY are NOT stored here — they are set as
 # secrets with `wrangler secret put` so they never land in git.
+
+# Position notes for the Portfolio page (GET/POST /_m/notes). Reuses the
+# existing site_analytics D1 database, same id as analytics/wrangler.toml, with
+# its own `position_notes` table that the Worker creates on first use. A
+# database id is not a secret; writes are gated by the TRADE_TOKEN secret.
+[[d1_databases]]
+binding = "NOTES_DB"
+database_name = "site_analytics"
+database_id = "7d455993-754e-4bcb-a58e-f11fe028641c"
