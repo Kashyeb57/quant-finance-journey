@@ -40,8 +40,19 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Market hours, news grouping, notebook import/export, and the market
+      # Worker's safety rails (owner-only writes, credential redaction, the
+      # news-feed allowlist). Mocked network; no secrets involved.
+      - name: Unit tests
+        run: npm test
+
       - name: Build
         run: npm run build
+
+      # The hard rules, checked on what is about to be published: no Alpaca
+      # credentials, no private working notes, no download path for library books.
+      - name: Guardrails
+        run: npm run check:build
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
