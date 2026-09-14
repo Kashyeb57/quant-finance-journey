@@ -13,7 +13,7 @@ const SECTIONS = [
         items: [
           { label: 'Single Variable Calculus — MIT OpenCourseWare', url: 'https://ocw.mit.edu/courses/18-01-single-variable-calculus-fall-2006/' },
           { label: 'Multivariable Calculus — MIT OpenCourseWare', url: 'https://ocw.mit.edu/courses/18-02-multivariable-calculus-fall-2007/' },
-          { label: 'Mathematical Methods for Quantitative Finance — edX', url: 'https://www.edx.org/search?q=mathematical%20methods%20for%20quantitative%20finance' },
+          { label: 'Mathematical Methods for Quantitative Finance (15.455x) — MIT Finance MicroMasters', url: 'https://micromasters.mit.edu/fin/' },
           { label: 'NPTEL — Mathematics lecture series', url: 'http://www.digimat.in/nptel/courses/video/111104144/L01.html' },
         ],
       },
@@ -48,6 +48,17 @@ const SECTIONS = [
     ],
   },
   {
+    // Folded in from the old one-entry /tools page (which now redirects here).
+    title: 'Tools',
+    groups: [
+      {
+        items: [
+          { label: 'Jupyter Book — publish notebooks and Markdown as a book or site', url: 'https://jupyterbook.org/' },
+        ],
+      },
+    ],
+  },
+  {
     title: 'YouTube Channels',
     groups: [
       {
@@ -63,15 +74,15 @@ const SECTIONS = [
 
 export default function ResourcesPage() {
   return (
-    <Layout title="Resources" description="Courses, lectures, and channels for learning quantitative finance.">
+    <Layout title="Resources" description="Courses, lectures, channels and tools for learning quantitative finance.">
       <PageHeader
         eyebrow="Learning sources"
         title="Resources"
-        subtitle="Courses, lectures, and channels — where to learn each topic."
+        subtitle="Courses, lectures, channels and tools — where to learn each topic."
       />
       <main>
         <ResourceCards
-          intro="Free and paid courses, plus the YouTube channels worth following on the quant path."
+          intro="Free and paid courses, the YouTube channels worth following, and the tools I use on the quant path."
           sections={SECTIONS}
         />
       </main>

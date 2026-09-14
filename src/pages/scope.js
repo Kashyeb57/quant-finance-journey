@@ -90,10 +90,10 @@ const SECTIONS = [
 
 export default function ScopePage() {
   return (
-    <Layout title="Scope" description="Quant firms and companies that hire from quantitative finance.">
+    <Layout title="Quant Firms" description="Quant firms and companies that hire from quantitative finance.">
       <PageHeader
         eyebrow="Careers · firms"
-        title="Scope"
+        title="Quant Firms"
         subtitle="Where quants get hired — the firms to aim for."
       />
       <main>

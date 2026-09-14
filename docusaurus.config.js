@@ -167,8 +167,7 @@ const config = {
               {to: '/books', label: 'Books'},
               {to: '/research', label: 'Research Papers'},
               {to: '/resources', label: 'Resources'},
-              {to: '/tools', label: 'Tools'},
-              {to: '/scope', label: 'Scope'},
+              {to: '/scope', label: 'Quant Firms'},
             ],
           },
           {
@@ -215,7 +214,6 @@ const config = {
             title: 'Site',
             items: [
               {label: 'About', to: '/about'},
-              {label: 'Publish (owner)', to: '/admin'},
               {
                 label: 'GitHub',
                 href: 'https://github.com/Kashyeb57/quant-finance-journey',

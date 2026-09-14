@@ -1,20 +1,8 @@
 import React from 'react';
-import Layout from '@theme/Layout';
-import PageHeader from '@site/src/components/PageHeader';
-import Heading from '@theme/Heading';
-import Tools from '@site/src/components/Tools';
+import {Redirect} from '@docusaurus/router';
 
+// The Tools page had a single entry, so it was folded into Resources.
+// Kept as a redirect so existing links and bookmarks still land somewhere useful.
 export default function ToolsPage() {
-  return (
-    <Layout title="Tools" description="Software and tools I use for quantitative finance work.">
-      <PageHeader
-        eyebrow="Toolkit"
-        title="Tools"
-        subtitle="The software in my quant toolkit."
-      />
-      <main>
-        <Tools />
-      </main>
-    </Layout>
-  );
+  return <Redirect to="/resources" />;
 }
