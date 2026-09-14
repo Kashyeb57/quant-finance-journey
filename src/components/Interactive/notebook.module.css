@@ -46,6 +46,37 @@
   margin-left: auto;
 }
 
+/* Undo / save-failure strip under the toolbar */
+.notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--viz-ink);
+  background: var(--viz-panel-bg);
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+.noticeWarn {
+  color: var(--amber-500, #e0a44a);
+  font-weight: 600;
+}
+.noticeBtn {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: var(--viz-card-bg);
+  color: var(--viz-ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  cursor: pointer;
+}
+.noticeBtn:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
 /* ── Cells ───────────────────────────────────────────────────────── */
 .cell {
   display: flex;

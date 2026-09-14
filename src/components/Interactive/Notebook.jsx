@@ -44,6 +44,12 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
   const [results, setResults] = useState({}); // id -> {count, output, error, images, state}
   const [kernelBusy, setKernelBusy] = useState(false);
   const [booted, setBooted] = useState(false);
+  // Snapshot of the cells before the last destructive action (delete, reset), so
+  // one click can bring the user's work back.
+  const [undo, setUndo] = useState(null); // { label, cells } | null
+  // Saving used to fail silently (storage full or blocked), leaving people
+  // believing their work was kept. Say so instead.
+  const [saveFailed, setSaveFailed] = useState(false);
   const nsRef = useRef(null);
   const execCount = useRef(0);
   // Keyboard escape from the editor. Tab indents, so without this a keyboard
@@ -69,8 +75,9 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
     if (!booted) return;
     try {
       window.localStorage.setItem(storageKey, JSON.stringify(cells.map((c) => c.source)));
+      setSaveFailed(false);
     } catch (e) {
-      /* storage full/blocked — not fatal */
+      setSaveFailed(true); // storage full or blocked: not fatal, but the user must know
     }
   }, [cells, booted, storageKey]);
 
@@ -143,8 +150,17 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
       return next;
     });
 
-  const deleteCell = (id) =>
-    setCells((cs) => (cs.length > 1 ? cs.filter((c) => c.id !== id) : cs));
+  const deleteCell = (id) => {
+    if (cells.length <= 1) return;
+    setUndo({ label: 'Cell deleted', cells });
+    setCells(cells.filter((c) => c.id !== id));
+  };
+
+  const undoLast = () => {
+    if (!undo) return;
+    setCells(undo.cells);
+    setUndo(null);
+  };
 
   const moveCell = (index, dir) =>
     setCells((cs) => {
@@ -156,6 +172,7 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
     });
 
   const resetExamples = () => {
+    setUndo({ label: 'Your cells were replaced with the examples', cells });
     restartKernel();
     setCells(STARTER_CELLS.map(newCell));
   };
@@ -186,9 +203,30 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
           ⌂ Reset examples
         </button>
         <span className={styles.tbNote}>
-          Shift+Enter runs a cell · Esc then Tab leaves a cell · numpy / pandas / matplotlib auto-load · work is saved in your browser
+          Shift+Enter runs a cell · Esc then Tab leaves a cell · numpy / pandas / matplotlib auto-load · cell code is saved in this browser (variables are not)
         </span>
       </div>
+
+      {(undo || saveFailed) && (
+        <div className={styles.notice} role="status">
+          {saveFailed && (
+            <span className={styles.noticeWarn}>
+              Couldn&rsquo;t save to this browser (storage full or blocked) — copy anything you want to keep.
+            </span>
+          )}
+          {undo && (
+            <>
+              <span>{undo.label}.</span>
+              <button type="button" className={styles.noticeBtn} onClick={undoLast}>
+                Undo
+              </button>
+              <button type="button" className={styles.noticeBtn} onClick={() => setUndo(null)} aria-label="Dismiss">
+                ✕
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {cells.map((cell, i) => {
         const res = results[cell.id] || {};
