@@ -8,10 +8,26 @@ import styles from './styles.module.css';
  *   • SCROLL over the panel = pan up/down through the strikes.
  *   • DOUBLE-CLICK = zoom in (around the click) / zoom back out.
  *   • Hover a bar = read its exact net GEX.
+ *   • KEYBOARD (focus the panel): ↑/↓ read strike by strike, PgUp/PgDn pan,
+ *     Enter zooms in/out around the selected strike, Esc clears.
  * Starts as a window around the current price, so there are strikes above and
  * below to scroll to.
  */
 const PADT = 6, PADB = 6, PADL = 6, PADR = 6;
+
+// Shift the visible strike window up (dir 1) or down (dir -1). Returns false when
+// everything is already in view, so the caller can let the page scroll instead.
+function panBy(s, dir) {
+  if (!s.ready) return false;
+  const span = s.maxK - s.minK;
+  if (span >= (s.dataMax - s.dataMin) - 1e-6) return false;
+  const step = span * 0.14 * dir;
+  let nlo = s.minK + step, nhi = s.maxK + step;
+  if (nhi > s.dataMax) { const d = nhi - s.dataMax; nlo -= d; nhi -= d; }
+  if (nlo < s.dataMin) { const d = s.dataMin - nlo; nlo += d; nhi += d; }
+  s.setView([nlo, nhi]);
+  return true;
+}
 
 const fmtGex = (v) => {
   const a = Math.abs(v), s = v < 0 ? '−' : '+';
@@ -25,7 +41,7 @@ export default function GexProfile({ profile, spot, callWall, putWall, gammaFlip
   const boxRef = useRef(null);
   const stRef = useRef({});
   const [dim, setDim] = useState({ w: 210, h: 440 });
-  const [hover, setHover] = useState(null);
+  const [hoverK, setHoverK] = useState(null); // strike being read (mouse or keyboard)
   const [view, setView] = useState(null); // [min, max] user pan/zoom, or null = default window
 
   useEffect(() => { setView(null); }, [resetKey]);
@@ -46,16 +62,7 @@ export default function GexProfile({ profile, spot, callWall, putWall, gammaFlip
     const el = boxRef.current;
     if (!el) return undefined;
     const onWheel = (e) => {
-      const s = stRef.current;
-      if (!s.ready) return;
-      const span = s.maxK - s.minK;
-      if (span >= (s.dataMax - s.dataMin) - 1e-6) return; // showing all → let page scroll
-      e.preventDefault();
-      const step = span * 0.14 * (e.deltaY < 0 ? 1 : -1);
-      let nlo = s.minK + step, nhi = s.maxK + step;
-      if (nhi > s.dataMax) { const d = nhi - s.dataMax; nlo -= d; nhi -= d; }
-      if (nlo < s.dataMin) { const d = s.dataMin - nlo; nlo += d; nhi += d; }
-      setView([nlo, nhi]);
+      if (panBy(stRef.current, e.deltaY < 0 ? 1 : -1)) e.preventDefault();
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
@@ -87,7 +94,7 @@ export default function GexProfile({ profile, spot, callWall, putWall, gammaFlip
   const zeroX = PADL + plotW * 0.4;
   const sy = (k) => PADT + ((maxK - k) / (maxK - minK)) * (H - PADT - PADB);
 
-  stRef.current = { ready, H, minK, maxK, dataMin, dataMax, spot };
+  stRef.current = { ready, H, minK, maxK, dataMin, dataMax, spot, setView };
 
   let bars = [], rowH = 8;
   if (ready && W > 30 && H > 30 && maxK > minK) {
@@ -109,14 +116,12 @@ export default function GexProfile({ profile, spot, callWall, putWall, gammaFlip
     const my = e.clientY - rect.top;
     let best = null, bd = Infinity;
     for (const b of bars) { const d = Math.abs(b.y - my); if (d < bd) { bd = d; best = b; } }
-    setHover(best && bd < 16 ? best : null);
+    setHoverK(best && bd < 16 ? best.strike : null);
   };
 
-  const onDbl = (e) => {
-    if (!ready || !boxRef.current) return;
-    const rect = boxRef.current.getBoundingClientRect();
-    const frac = (e.clientY - rect.top - PADT) / (H - PADT - PADB);
-    const cursorK = maxK - frac * (maxK - minK);
+  const hover = hoverK == null ? null : bars.find((b) => b.strike === hoverK) || null;
+
+  const zoomAt = (cursorK) => {
     const defSpan = (defHi - defLo) || 1;
     if ((maxK - minK) > defSpan * 0.6) {
       // zoom IN around the click
@@ -129,6 +134,49 @@ export default function GexProfile({ profile, spot, callWall, putWall, gammaFlip
       setView(null); // zoom back OUT to the default window
     }
   };
+
+  const onDbl = (e) => {
+    if (!ready || !boxRef.current) return;
+    const rect = boxRef.current.getBoundingClientRect();
+    const frac = (e.clientY - rect.top - PADT) / (H - PADT - PADB);
+    zoomAt(maxK - frac * (maxK - minK));
+  };
+
+  // Keyboard equivalent of hover / scroll / double-click.
+  const onKey = (e) => {
+    if (!ready) return;
+    const sorted = bars.map((b) => b.strike).sort((a, b) => a - b);
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!sorted.length) return;
+      const up = e.key === 'ArrowUp';
+      if (hoverK == null || !sorted.includes(hoverK)) {
+        const anchor = spot != null ? spot : sorted[Math.floor(sorted.length / 2)];
+        setHoverK(sorted.reduce((m, k) => (Math.abs(k - anchor) < Math.abs(m - anchor) ? k : m)));
+        return;
+      }
+      const i = sorted.indexOf(hoverK) + (up ? 1 : -1);
+      if (i >= 0 && i < sorted.length) setHoverK(sorted[i]);
+      else panBy(stRef.current, up ? 1 : -1); // at the edge: bring more strikes into view
+    } else if (e.key === 'PageUp' || e.key === 'PageDown') {
+      e.preventDefault();
+      panBy(stRef.current, e.key === 'PageUp' ? 1 : -1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      zoomAt(hoverK != null ? hoverK : spot != null ? spot : (minK + maxK) / 2);
+    } else if (e.key === 'Escape') {
+      setHoverK(null);
+    }
+  };
+
+  // The profile in words: where the biggest positive and negative gamma sit.
+  let topPos = null, topNeg = null;
+  if (ready) {
+    for (const p of profile) {
+      if (p.net > 0 && (!topPos || p.net > topPos.net)) topPos = p;
+      if (p.net < 0 && (!topNeg || p.net < topNeg.net)) topNeg = p;
+    }
+  }
 
   const marker = (price, color, label) => (price == null || !(maxK > minK) || price < minK || price > maxK) ? null : (
     <g key={label}>
@@ -143,11 +191,27 @@ export default function GexProfile({ profile, spot, callWall, putWall, gammaFlip
     <div className={styles.gexProfile}>
       <div className={styles.gexProfileTitle}>
         GEX by strike
-        <span className={styles.gexHint}> · scroll to pan · dbl-click zoom</span>
+        <span className={styles.gexHint} title="Keyboard: focus the panel, then ↑/↓ read each strike, Page Up/Down pan, Enter zooms"> · scroll to pan · dbl-click zoom</span>
       </div>
-      <div className={styles.gexProfilePlot} ref={boxRef} onMouseMove={onMove} onMouseLeave={() => setHover(null)} onDoubleClick={onDbl}>
+      {(topPos || topNeg) && (
+        <div className={styles.gexSummary}>
+          {topPos && <span>most + <b>{Math.round(topPos.strike)}</b> {fmtGex(topPos.net)}</span>}
+          {topNeg && <span>most − <b>{Math.round(topNeg.strike)}</b> {fmtGex(topNeg.net)}</span>}
+        </div>
+      )}
+      <div
+        className={styles.gexProfilePlot}
+        ref={boxRef}
+        tabIndex={ready ? 0 : -1}
+        role="group"
+        aria-label="GEX by strike. Up and down arrows read each strike, Page Up and Page Down pan, Enter zooms."
+        onKeyDown={onKey}
+        onBlur={() => setHoverK(null)}
+        onMouseMove={onMove}
+        onMouseLeave={() => setHoverK(null)}
+        onDoubleClick={onDbl}>
         {bars.length > 0 && (
-          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
+          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }} aria-hidden="true" focusable="false">
             <line x1={zeroX} y1={4} x2={zeroX} y2={H - 4} stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
             {bars.map((b, i) => {
               const x = b.bw >= 0 ? zeroX : zeroX + b.bw;
@@ -173,10 +237,13 @@ export default function GexProfile({ profile, spot, callWall, putWall, gammaFlip
           </svg>
         )}
         {hover && (
-          <div className={styles.gexTip} style={{ top: hover.y, left: zeroX + 8 }}>
+          <div className={styles.gexTip} style={{ top: hover.y, left: zeroX + 8 }} aria-hidden="true">
             <b>{Math.round(hover.strike)}</b> · {fmtGex(hover.net)}
           </div>
         )}
+        <span className={styles.gexLive} aria-live="polite">
+          {hover ? `Strike ${Math.round(hover.strike)}: net gamma ${fmtGex(hover.net)}` : ''}
+        </span>
       </div>
     </div>
   );

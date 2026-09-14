@@ -120,6 +120,8 @@
   touch-action: pan-y;
   user-select: none;
 }
+.chartBox:focus { outline: none; }
+.chartBox:focus-visible { box-shadow: var(--focus-ring); border-radius: 6px; }
 .chart { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .endDot {
   position: absolute;
@@ -271,6 +273,16 @@
   color: var(--tx-muted);
   font-variant-numeric: tabular-nums;
 }
+.chartSummary {
+  margin: 0.35rem 0 0;
+  padding: 0 1.6rem;
+  font-family: var(--ff-mono);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--tx-muted);
+  font-variant-numeric: tabular-nums;
+}
+@media (hover: none) { .chartKeys { display: none; } }
 
 .metric { padding: 0.95rem 1.1rem; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .metric:nth-child(3n+1) { border-left: 0; }

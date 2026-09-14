@@ -127,7 +127,7 @@ function EquityChart({points, scrubIdx, onScrub}) {
   const up = last >= start;
   const stroke = up ? 'var(--g-500)' : 'var(--amber-500)';
 
-  const sel = scrubIdx == null ? points.length - 1 : scrubIdx;
+  const sel = scrubIdx == null ? points.length - 1 : Math.min(scrubIdx, points.length - 1);
   const sx = x(sel), sy = y(points[sel].value);
   const pctX = (px) => `${(px / W) * 100}%`;
   const pctY = (py) => `${(py / H) * 100}%`;
@@ -144,16 +144,39 @@ function EquityChart({points, scrubIdx, onScrub}) {
     onScrub(i);
   };
 
+  // Keyboard equivalent of the scrub: step day by day, the hero above follows.
+  const lastIdx = points.length - 1;
+  const onKey = (e) => {
+    const step = {ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -5, PageUp: 5}[e.key];
+    let next = null;
+    if (step) next = Math.max(0, Math.min(lastIdx, sel + step));
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = lastIdx;
+    else if (e.key === 'Escape') { onScrub(null); return; }
+    else return;
+    e.preventDefault();
+    onScrub(next);
+  };
+
   return (
     <div
       ref={ref}
       className={styles.chartBox}
+      tabIndex={0}
+      role="slider"
+      aria-label="Account equity by day. Arrow keys step through the days."
+      aria-valuemin={0}
+      aria-valuemax={lastIdx}
+      aria-valuenow={sel}
+      aria-valuetext={`${fmtDay(points[sel].t)}: ${money(points[sel].value)}`}
+      onKeyDown={onKey}
+      onBlur={() => onScrub(null)}
       onMouseMove={move}
       onMouseLeave={() => onScrub(null)}
       onTouchStart={move}
       onTouchMove={move}
       onTouchEnd={() => onScrub(null)}>
-      <svg className={styles.chart} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label="Account equity over time">
+      <svg className={styles.chart} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true" focusable="false">
         <defs>
           <linearGradient id="eqArea" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor={stroke} stopOpacity="0.22" />
@@ -517,6 +540,12 @@ function Content() {
   // Drop Alpaca's pre-funding value:0 padding so the curve doesn't rocket from $0.
   const hist = (history || []).filter((p) => p && Number.isFinite(p.value) && p.value > 0);
   const canScrub = hist.length > 1;
+  const curve = canScrub ? {
+    first: hist[0],
+    last: hist[hist.length - 1],
+    high: hist.reduce((m, p) => (p.value > m.value ? p : m)),
+    low: hist.reduce((m, p) => (p.value < m.value ? p : m)),
+  } : null;
   const sel = scrubIdx == null || !canScrub ? null : Math.min(scrubIdx, hist.length - 1);
 
   // Live-adjust each position from a fresh snapshot price, then roll that into a
@@ -639,6 +668,15 @@ function Content() {
             <span>dashed line = start, {money(hist[0].value)}</span>
             <span>{fmtDay(hist[hist.length - 1].t)}</span>
           </div>
+        )}
+        {/* The curve in words, so nothing depends on hovering. */}
+        {curve && (
+          <p className={styles.chartSummary}>
+            {money(curve.first.value)} on {fmtDay(curve.first.t)} to {money(curve.last.value)} on {fmtDay(curve.last.t)}
+            {' · '}high {money(curve.high.value)} ({fmtDay(curve.high.t)})
+            {' · '}low {money(curve.low.value)} ({fmtDay(curve.low.t)})
+            <span className={styles.chartKeys}> · focus the chart and use the arrow keys to read any day</span>
+          </p>
         )}
 
         <div className={styles.pills} aria-hidden="true">
