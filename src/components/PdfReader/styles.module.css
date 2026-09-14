@@ -329,3 +329,25 @@
     transform: rotate(360deg);
   }
 }
+
+/* Printed page number, when it differs from the PDF page number */
+.printedLabel {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ifm-color-emphasis-600);
+}
+
+/* "Resumed at page N · start from the beginning" */
+.resumeNote {
+  font-size: 0.75rem;
+  color: var(--ifm-color-emphasis-700);
+}
+.resumeBtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--ifm-color-primary);
+  text-decoration: underline;
+  cursor: pointer;
+}

@@ -28,7 +28,7 @@ function loadPdfjs() {
 const clampScale = (v) => Math.max(0.4, Math.min(4, +(+v).toFixed(3)));
 
 // One page — renders its canvas only when scrolled near the viewport.
-function PdfPage({ pdf, pageNumber, scale, registerObserver }) {
+function PdfPage({ pdf, pageNumber, scale, size, registerObserver }) {
   const holderRef = useRef(null);
   const [rendered, setRendered] = useState(false);
 
@@ -71,7 +71,15 @@ function PdfPage({ pdf, pageNumber, scale, registerObserver }) {
 
   return (
     <div ref={holderRef} className={styles.page} data-page={pageNumber}>
-      <div className={styles.pagePlaceholder}>Page {pageNumber}</div>
+      {/* Sized like the real page at this zoom, so unrendered pages take their
+          true height: scroll positions and page jumps stay accurate before the
+          pages around them have rendered. */}
+      <div
+        className={styles.pagePlaceholder}
+        style={size ? { width: `${size.w}px`, height: `${size.h}px`, aspectRatio: 'auto' } : undefined}
+      >
+        Page {pageNumber}
+      </div>
     </div>
   );
 }
@@ -122,6 +130,45 @@ export default function PdfReader({ url, title }) {
   const scrollRef = useRef(null);
   const observerRef = useRef(null);
   const jobsRef = useRef(new Map());
+
+  // Where the reader is, and where it was last time for this book.
+  const [currentPage, setCurrentPage] = useState(1);
+  const currentPageRef = useRef(1);
+  const [pageFocus, setPageFocus] = useState(false);
+  const [pageLabels, setPageLabels] = useState(null); // printed page numbers, if the PDF has them
+  const [resumedAt, setResumedAt] = useState(null);
+  const allowSave = useRef(false);
+  const pendingPage = useRef(null);
+  // 'auto' (the opening fit-width, capped at 160%) | 'width' | 'page' while a fit
+  // mode is active, so a resize re-fits; null after a manual zoom.
+  const [fitMode, setFitMode] = useState('auto');
+  const autoScale = () => clampScale(Math.min(fitScale('width'), 1.6));
+  const posKey = `reader-pos:${url}`;
+
+  // Scroll the reader's own pane to a page. scrollIntoView would also scroll the
+  // window and could tuck the page under the site's sticky navbar.
+  const scrollToPage = (n, smooth) => {
+    const sc = scrollRef.current;
+    if (!sc) return;
+    const el = sc.querySelector(`[data-page="${n}"]`);
+    if (!el) return;
+    const top = sc.scrollTop + el.getBoundingClientRect().top - sc.getBoundingClientRect().top - 8;
+    sc.scrollTo({ top: Math.max(0, top), behavior: smooth ? 'smooth' : 'auto' });
+  };
+
+  // Zooming re-renders every page; keep the reader on the page it was on.
+  const changeScale = (next, mode = null) => {
+    pendingPage.current = currentPageRef.current;
+    setFitMode(mode);
+    setScale(next);
+  };
+  useEffect(() => {
+    if (pendingPage.current == null) return undefined;
+    const n = pendingPage.current;
+    pendingPage.current = null;
+    const id = requestAnimationFrame(() => scrollToPage(n, false));
+    return () => cancelAnimationFrame(id);
+  }, [scale]);
 
   // Shared IntersectionObserver for lazy page rendering.
   useEffect(() => {
@@ -189,6 +236,12 @@ export default function PdfReader({ url, title }) {
         } catch (err) {
           setOutline([]);
         }
+        try {
+          const labels = await doc.getPageLabels();
+          if (!cancelled && Array.isArray(labels)) setPageLabels(labels);
+        } catch (err) {
+          /* no printed page labels: PDF page numbers only */
+        }
 
         setStatus('ready');
       } catch (err) {
@@ -202,6 +255,88 @@ export default function PdfReader({ url, title }) {
       cancelled = true;
     };
   }, [url]);
+
+  // Current page: the page under a line 30% down the pane. Pages are in order,
+  // so a binary search keeps this cheap even for 900-page books.
+  useEffect(() => {
+    const sc = scrollRef.current;
+    if (!sc || status !== 'ready') return undefined;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const pages = sc.querySelectorAll('[data-page]');
+      if (!pages.length) return;
+      const probe = sc.getBoundingClientRect().top + sc.clientHeight * 0.3;
+      let lo = 0;
+      let hi = pages.length - 1;
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (pages[mid].getBoundingClientRect().top <= probe) lo = mid;
+        else hi = mid - 1;
+      }
+      const n = lo + 1;
+      if (n !== currentPageRef.current) {
+        currentPageRef.current = n;
+        setCurrentPage(n);
+      }
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    sc.addEventListener('scroll', onScroll, { passive: true });
+    update();
+    return () => {
+      sc.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [status, numPages]);
+
+  // Resume where this book was left, once, then start remembering.
+  useEffect(() => {
+    if (status !== 'ready' || allowSave.current) return undefined;
+    let saved = 0;
+    try { saved = parseInt(window.localStorage.getItem(posKey), 10) || 0; } catch (e) { /* storage blocked */ }
+    if (saved > 1 && saved <= numPages) {
+      const id = requestAnimationFrame(() => {
+        scrollToPage(saved, false);
+        setResumedAt(saved);
+        allowSave.current = true;
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    allowSave.current = true;
+    return undefined;
+  }, [status, numPages, posKey]);
+
+  useEffect(() => {
+    if (!allowSave.current) return;
+    try { window.localStorage.setItem(posKey, String(currentPage)); } catch (e) { /* storage blocked */ }
+  }, [currentPage, posKey]);
+
+  useEffect(() => {
+    if (!resumedAt) return undefined;
+    const id = setTimeout(() => setResumedAt(null), 8000);
+    return () => clearTimeout(id);
+  }, [resumedAt]);
+
+  // Re-fit when the pane changes width (rotating a phone, opening the contents).
+  useEffect(() => {
+    const sc = scrollRef.current;
+    if (!sc || status !== 'ready' || !fitMode || typeof ResizeObserver === 'undefined') return undefined;
+    let lastW = sc.clientWidth;
+    let lastH = sc.clientHeight;
+    const ro = new ResizeObserver(() => {
+      const w = sc.clientWidth;
+      const h = sc.clientHeight;
+      const changed = Math.abs(w - lastW) > 8 || (fitMode === 'page' && Math.abs(h - lastH) > 8);
+      if (!changed) return;
+      lastW = w;
+      lastH = h;
+      const next = fitMode === 'auto' ? autoScale() : fitScale(fitMode);
+      if (Math.abs(next - scale) > 0.01) changeScale(next, fitMode);
+    });
+    ro.observe(sc);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, fitMode, scale]);
 
   // Track fullscreen state.
   useEffect(() => {
@@ -222,10 +357,9 @@ export default function PdfReader({ url, title }) {
     e.preventDefault();
     const pageNum = parseInt(jumpPage, 10);
     if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= numPages) {
-      const pageEl = scrollRef.current?.querySelector(`[data-page="${pageNum}"]`);
-      if (pageEl) {
-        pageEl.scrollIntoView({ behavior: 'smooth' });
-      }
+      scrollToPage(pageNum, true);
+      setResumedAt(null);
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     }
   };
 
@@ -239,10 +373,8 @@ export default function PdfReader({ url, title }) {
       if (Array.isArray(destArray) && destArray[0]) {
         const pageIndex = await pdf.getPageIndex(destArray[0]);
         const pageNum = pageIndex + 1; // 1-based
-        const pageEl = scrollRef.current?.querySelector(`[data-page="${pageNum}"]`);
-        if (pageEl) {
-          pageEl.scrollIntoView({ behavior: 'smooth' });
-        }
+        scrollToPage(pageNum, true);
+        setResumedAt(null);
       }
     } catch (e) {
       console.error('Could not jump to destination', e);
@@ -286,17 +418,30 @@ export default function PdfReader({ url, title }) {
         <span className={styles.pages}>
           {status === 'ready' ? (
             <form onSubmit={handlePageJump} className={styles.pageJumpForm}>
+              {/* Shows the page you're on; focus it to type a page to jump to. */}
               <input
                 type="number"
                 min="1"
                 max={numPages}
-                value={jumpPage}
+                value={pageFocus ? jumpPage : String(currentPage)}
+                onFocus={(e) => {
+                  setPageFocus(true);
+                  setJumpPage(String(currentPageRef.current));
+                  const input = e.target;
+                  requestAnimationFrame(() => input.select());
+                }}
+                onBlur={() => setPageFocus(false)}
                 onChange={(e) => setJumpPage(e.target.value)}
                 placeholder="Page"
-                aria-label={`Go to page, 1 to ${numPages}`}
+                aria-label={`Page ${currentPage} of ${numPages}. Type a page number to jump to it.`}
                 className={styles.pageInput}
               />
               <span className={styles.pageCount}>/ {numPages}</span>
+              {pageLabels && pageLabels[currentPage - 1] && pageLabels[currentPage - 1] !== String(currentPage) && (
+                <span className={styles.printedLabel} title="The page number printed in the book">
+                  printed p. {pageLabels[currentPage - 1]}
+                </span>
+              )}
             </form>
           ) : (
             'Loading…'
@@ -304,19 +449,28 @@ export default function PdfReader({ url, title }) {
         </span>
 
         <span className={styles.group}>
-          <button onClick={() => setScale(fitScale('width'))} disabled={status !== 'ready'}>
+          <button onClick={() => changeScale(fitScale('width'), 'width')} disabled={status !== 'ready'}>
             Fit width
           </button>
-          <button onClick={() => setScale(fitScale('page'))} disabled={status !== 'ready'}>
+          <button onClick={() => changeScale(fitScale('page'), 'page')} disabled={status !== 'ready'}>
             Fit page
           </button>
         </span>
 
         <span className={styles.zoom}>
-          <button onClick={() => setScale((s) => clampScale(s - 0.2))} aria-label="Zoom out">−</button>
+          <button onClick={() => changeScale(clampScale(scale - 0.2))} aria-label="Zoom out">−</button>
           <span className={styles.zoomVal}>{Math.round(scale * 100)}%</span>
-          <button onClick={() => setScale((s) => clampScale(s + 0.2))} aria-label="Zoom in">+</button>
+          <button onClick={() => changeScale(clampScale(scale + 0.2))} aria-label="Zoom in">+</button>
         </span>
+
+        {resumedAt && (
+          <span className={styles.resumeNote} role="status">
+            Resumed at page {resumedAt} ·{' '}
+            <button type="button" className={styles.resumeBtn} onClick={() => { scrollToPage(1, true); setResumedAt(null); }}>
+              start from the beginning
+            </button>
+          </span>
+        )}
 
         <button className={styles.fsBtn} onClick={toggleFullscreen}>
           {isFullscreen ? '✕ Exit full screen' : '⛶ Full screen'}
@@ -356,6 +510,7 @@ export default function PdfReader({ url, title }) {
                 pdf={pdf}
                 pageNumber={i + 1}
                 scale={scale}
+                size={baseSize.current ? { w: baseSize.current.w * scale, h: baseSize.current.h * scale } : null}
                 registerObserver={registerObserver}
               />
             ))}
