@@ -3,8 +3,7 @@ title: "Tuples"
 sidebar_position: 3
 ---
 
-#### Tuples
-Video Outline:
+In this lesson:
 1. Introduction to Tuples
 2. Creating Tuples
 3. Accessing Tuple Elements

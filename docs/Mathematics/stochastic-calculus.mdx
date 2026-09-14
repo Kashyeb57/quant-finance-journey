@@ -31,8 +31,11 @@ Things to notice while you play:
    no individual path tracks it. Averages hide the violence of randomness.
 2. **The −σ²/2 correction is real.** Set μ = 0% and σ = 60%: more than half the paths finish *below*
    S₀ even though the drift is zero. That's the volatility drag term (μ − σ²/2) at work.
-3. **Volatility scales with √t.** The fan of paths widens like a square root, not a straight line —
-   double the horizon and uncertainty only grows by √2.
+3. **Log-return volatility scales with √t.** $\operatorname{Var}(\ln S_t) = \sigma^2 t$, so the spread
+   of log returns grows like a square root — double the horizon and it grows by only √2. The *price*
+   fan you see widens faster and lopsidedly, because prices compound:
+   $\operatorname{SD}(S_t) = S_0 e^{\mu t}\sqrt{e^{\sigma^2 t} - 1}$. Upside paths stretch further than
+   downside ones, since a price can never fall below zero.
 4. **Paths are jagged everywhere.** Brownian motion is continuous but nowhere differentiable —
    there's no slope to measure, which is precisely why ordinary calculus fails and Itô calculus exists.
 
@@ -54,7 +57,7 @@ Things to notice while you play:
     q: 'Over a horizon T, the standard deviation of Brownian motion W_T grows like…',
     options: ['T', '√T', 'log T', 'e^T'],
     answer: 1,
-    explain: 'Var(W_T) = T, so the standard deviation is √T. That is why the simulated fan of paths widens with a square-root shape rather than linearly.',
+    explain: 'Var(W_T) = T, so the standard deviation is √T. That √T is the spread of the Brownian driver, and of GBM’s log returns. The simulated price fan widens faster than that, because prices compound: its standard deviation is S₀e^(μT)·√(e^(σ²T) − 1).',
   },
   {
     q: 'A martingale is a process whose…',

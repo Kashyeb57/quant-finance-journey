@@ -3,10 +3,9 @@ title: "Variables"
 sidebar_position: 2
 ---
 
-### Variables
 Variables are fundamental elements in programming used to store data that can be referenced and manipulated in a program. In Python, variables are created when you assign a value to them, and they do not need explicit declaration to reserve memory space. The declaration happens automatically when you assign a value to a variable.
 
-Video Outline:
+In this lesson:
 - Introduction to Variables
 - Declaring and Assigning Variables
 - Naming Conventions
@@ -61,16 +60,13 @@ last_name="Kashyeb"
 ##@name="Joyeb"
 ```
 
-*Output:*
-
-```text
-SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='? (1710987940.py, line 4)
-```
+Each line above is commented out so the cell runs. Uncomment any one of them and Python stops with a `SyntaxError` before running anything: a name cannot start with a digit, contain a hyphen, or contain `@`.
 
 ```python
 ## case sensitivity
 name="Joyeb"
 Name="Kashyeb"
+print(name==Name)
 ```
 
 *Output:*
@@ -80,7 +76,7 @@ False
 ```
 
 ```python
-## Understnading Variable types
+## Understanding Variable types
 ## Python is dynamically typed,type of a variable is determined at runtime
 age=25 #int
 height=6.1 #float
@@ -171,7 +167,7 @@ float(int(height))
 
 ```python
 ## Dynamic Typing
-## Python allows the type of a vraible to change as the program executes
+## Python allows the type of a variable to change as the program executes
 var=10 #int
 print(var,type(var))
 

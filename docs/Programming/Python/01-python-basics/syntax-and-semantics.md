@@ -3,13 +3,12 @@ title: "Syntax & Semantics"
 sidebar_position: 1
 ---
 
-### Syntax and Semantics in Python
-Video Outline:
-- Single line Comments and multiline comments 
+In this lesson:
+- Single-line comments
 - Definition of Syntax and Semantics
 - Basic Syntax Rules in Python
 - Understanding Semantics in Python
-- Common Syntax Errors and How to Avoid Them
+- A common error: `NameError`
 - Practical Code Examples
 
 Syntax refers to the set of rules that defines the combinations of symbols that are considered to be correctly structured programs in a language. In simpler terms, syntax is about the correct arrangement of words and symbols in a code.
@@ -96,7 +95,7 @@ print(z)
 ```
 
 ```python
-##Understand  Semnatics In Python
+## Understand Semantics In Python
 # variable assignment
 age=32 ##age is an integer
 name="Joyeb" ##name is a string
@@ -163,11 +162,11 @@ NameError: name 'b' is not defined
 ```
 
 ```python
-## Code exmaples of indentation
+## Code examples of indentation
 if True:
     print("Correct Indentation")
     if False:
-        print("This ont print")
+        print("This won't print")
     print("This will print")
 print("Outside the if block")
 ```

@@ -25,12 +25,30 @@ A few things to try:
 
 ## 2. Pricing: the Black–Scholes lab
 
-Payoff diagrams show value *at expiry*. Before expiry an option is worth more than its intrinsic
-value — that extra is **time value**, and Black–Scholes tells you how much:
+Payoff diagrams show value *at expiry*. Before expiry an option's price is usually above its
+intrinsic value — that extra is **time value**. Black–Scholes prices **European** options, which
+can only be exercised at expiry:
 
 $$
-C = S\,N(d_1) - K e^{-rT} N(d_2)
+C = S\,N(d_1) - K e^{-rT} N(d_2), \qquad P = K e^{-rT} N(-d_2) - S\,N(-d_1)
 $$
+
+$$
+d_1 = \frac{\ln(S/K) + \left(r + \tfrac{1}{2}\sigma^2\right)T}{\sigma\sqrt{T}}, \qquad d_2 = d_1 - \sigma\sqrt{T}
+$$
+
+Here $S$ is the spot price, $K$ the strike, $T$ the time to expiry in years, $r$ the risk-free
+rate, $\sigma$ the volatility, and $N$ the standard normal cumulative distribution function.
+
+:::note Time value can be negative
+
+"Usually" matters. A deep in-the-money European **put** can be worth *less* than its intrinsic
+value. Switch the lab to Put with S = 50, K = 100, T = 1, σ = 20% and r = 5%: it prices the put at
+about **\$45.13**, below its **\$50** intrinsic value. The holder cannot exercise early, so they
+wait a year to receive the strike, and money received later is worth less today. An American put
+could be exercised immediately for \$50, so it never trades below intrinsic value.
+
+:::
 
 <BlackScholesLab />
 
@@ -38,7 +56,7 @@ Try these experiments:
 
 1. Slide **T → 0** and watch the blue curve collapse onto the dashed hockey stick — time value melting is *theta decay*.
 2. Double **σ** — the option gets more valuable even though the spot never moved. Options are long volatility.
-3. Set the spot deep in-the-money and check **Delta** — it approaches 1: the option starts behaving like the stock itself.
+3. Set the spot deep in-the-money and check **Delta**. A call's delta approaches **+1**: it starts behaving like the stock itself. A put's approaches **−1**: it behaves like a short position in the stock.
 
 ## 3. Check your understanding
 

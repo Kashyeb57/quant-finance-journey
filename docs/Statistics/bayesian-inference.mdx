@@ -18,7 +18,7 @@ The **prior** $P(\theta)$ is what you believed before seeing evidence. The **lik
 
 ## Where the prior comes from
 
-A prior encodes a **state of information** — what you know before the data — and Bayes' theorem is the consistent rule for updating it as evidence arrives. That only makes sense under a **subjective / epistemic** reading of probability, where a probability is a *degree of belief* you can attach to any proposition, not just a long-run frequency. The four classical interpretations — classical, frequency, logical, and subjective — are laid out on [Probability Foundations](/docs/Probability/foundations); Bayesian inference lives in the last two. There is no prior-free analysis: a frequentist simply fixes an implicit flat prior instead of stating one.
+A prior encodes a **state of information** — what you know before the data — and Bayes' theorem is the consistent rule for updating it as evidence arrives. That only makes sense under a **subjective / epistemic** reading of probability, where a probability is a *degree of belief* you can attach to any proposition, not just a long-run frequency. The four classical interpretations — classical, frequency, logical, and subjective — are laid out on [Probability Foundations](/docs/Probability/foundations); Bayesian inference lives in the last two. Frequentist inference is not simply Bayesian inference with a hidden flat prior. It takes a different stance: the parameter is fixed but unknown, and a procedure is judged by how it behaves over repeated samples. The two can agree numerically — with a flat prior, the posterior mean of a normal mean equals the maximum-likelihood estimate, and the credible interval matches the confidence interval — but that is a property of particular models, not a general rule.
 
 ## A concrete finance example: estimating drift
 
@@ -39,7 +39,7 @@ $$
 Two things fall out of this formula that every quant should internalize:
 
 1. **Evidence accumulates.** As $n$ grows, the data term dominates and the posterior collapses onto $\bar{x}$. With little data, the prior does the heavy lifting.
-2. **Uncertainty shrinks monotonically.** The posterior variance is always smaller than both the prior variance and the data-only variance — combining information never makes you less certain.
+2. **In this model, uncertainty shrinks with every observation.** Precision simply adds, so the posterior variance is smaller than both the prior variance and the data-only variance. That is a property of this conjugate normal model with known $\sigma$, not of Bayesian updating in general: with an unknown variance or heavy-tailed data, one surprising observation can *widen* the posterior. What holds generally is weaker — averaged over the datasets you might see, the posterior variance is no larger than the prior variance.
 
 ## Watch it happen
 
