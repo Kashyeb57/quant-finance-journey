@@ -97,7 +97,11 @@ const config = {
     ],
   ],
 
-  // Offline search across all 191 notes. Builds a Lucene index at compile time
+  // Counts notes and interactive labs at build time for the homepage stat rail,
+  // so those numbers can never drift from the content again.
+  plugins: ['./plugins/content-stats.js'],
+
+  // Offline search across every note. Builds a Lucene index at compile time
   // and ships it with the static site — no Algolia account, no external service,
   // nothing to pay for, and it keeps working if a third party goes away.
   themes: [

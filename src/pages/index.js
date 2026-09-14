@@ -4,6 +4,7 @@ import katex from 'katex';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
+import useGlobalData from '@docusaurus/useGlobalData';
 import {getQuotes} from '@site/src/lib/market';
 import usePolling from '@site/src/lib/usePolling';
 import {fmtPrice, fmtClockCT} from '@site/src/lib/format';
@@ -132,7 +133,7 @@ function Tearsheet() {
   const equityPath = toPath(EQUITY);
   const areaPath = `${equityPath} L400 250 L44 250 Z`;
   return (
-    <svg viewBox="0 0 440 300" className={styles.tearsheet} role="img" aria-label="A two-series equity curve — a green strategy line above a dashed benchmark — inside a research tearsheet">
+    <svg viewBox="0 0 440 300" className={styles.tearsheet} role="img" aria-label="Illustrative example, not market data: a two-series equity curve — a green strategy line above a dashed benchmark — inside a research tearsheet">
       <defs>
         <linearGradient id="equityArea" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="var(--g-500)" stopOpacity="0.22" />
@@ -290,6 +291,8 @@ export default function Home() {
 
   // Live quotes for the board, falling back to the sample numbers.
   const {map: quotes, status: feed, at: feedAt} = useQuotes(YF_SYMBOLS);
+  // Notes / labs counts from plugins/content-stats.js; absent -> those blocks hide.
+  const stats = useGlobalData()['content-stats']?.default;
   const mu = quotes['MU'];
   const muDown = mu && mu.changePct != null && mu.changePct < 0;
   // Build the footer legend from what is actually on the board. If the Worker
@@ -332,17 +335,22 @@ export default function Home() {
                     See the roadmap
                   </Link>
                 </div>
+                {/* Counted from the content at build time (plugins/content-stats.js). */}
                 <div className={styles.statRail}>
-                  <div className={styles.statBlock}><span className={styles.statNum}>914</span><span className={styles.statLabel}>Symbols</span></div>
-                  <span className={styles.statDivider} />
-                  <div className={styles.statBlock}><span className={styles.statNum}>20</span><span className={styles.statLabel}>Flows</span></div>
-                  <span className={styles.statDivider} />
-                  <div className={styles.statBlock}><span className={styles.statNum}>7</span><span className={styles.statLabel}>Subjects</span></div>
+                  {stats && (
+                    <>
+                      <div className={styles.statBlock}><span className={styles.statNum}>{stats.notes}</span><span className={styles.statLabel}>Notes</span></div>
+                      <span className={styles.statDivider} />
+                      <div className={styles.statBlock}><span className={styles.statNum}>{stats.labs}</span><span className={styles.statLabel}>Labs</span></div>
+                      <span className={styles.statDivider} />
+                    </>
+                  )}
+                  <div className={styles.statBlock}><span className={styles.statNum}>{SUBJECTS.length}</span><span className={styles.statLabel}>Subjects</span></div>
                 </div>
               </div>
               <div className={styles.heroVisual}>
                 <div className={styles.visualHead}>
-                  <span className={styles.visualTicker}><span className="p-pip" />MU&nbsp;·&nbsp;1D</span>
+                  <span className={styles.visualTicker}><span className="p-pip" />MU&nbsp;·&nbsp;last</span>
                   <span className={clsx(styles.visualReadout, !(mu && mu.price != null) && styles.wSample)}>
                     ${mu && mu.price != null ? fmtPx(mu.price) : '975.26'}&nbsp;
                     <b className={muDown ? styles.down : undefined}>{muDown ? '▼' : '▲'}</b>
@@ -350,6 +358,9 @@ export default function Home() {
                 </div>
                 <div className={styles.chartBox}>
                   <Tearsheet />
+                  {/* The price above is MU's live quote; this curve is a fixed
+                      illustration, not MU data. Say so on the chart itself. */}
+                  <span className={styles.chartTag}>Illustrative</span>
                   <span
                     className={clsx(styles.formula, styles.formulaTop)}
                     dangerouslySetInnerHTML={tex('dS = \\mu S\\,dt + \\sigma S\\,dW')}
@@ -422,6 +433,7 @@ export default function Home() {
                         : 'showing sample figures'}
                     </span>
                   )}
+                  <span className={styles.footDot}>·</span>Sparklines illustrative
                 </p>
               </div>
             </div>

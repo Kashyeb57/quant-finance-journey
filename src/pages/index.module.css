@@ -215,6 +215,22 @@
   animation: bootUp 0.5s var(--ease-out) both;
 }
 .formulaTop { top: 2%; left: 2%; animation-delay: 1.2s; }
+
+/* Marks the hero curve as an illustration. Top-right, clear of both formula
+   chips; quiet, but a real label rather than a hover-only hint. */
+.chartTag {
+  position: absolute;
+  top: 2%;
+  right: 3%;
+  font-family: var(--ff-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tx-muted);
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
 .formulaBottom { bottom: 10%; right: 3%; animation-delay: 1.35s; }
 
 /* Watchlist — fills the rest of the board with even rows on the recessed screen */
