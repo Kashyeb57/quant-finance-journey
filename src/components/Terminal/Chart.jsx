@@ -518,7 +518,11 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         <>
           <GexProfile
             profile={gex.profile}
-            spot={(lastBarRef.current && lastBarRef.current.close) || (gexChain && gexChain.spot)}
+            // Same rule as the level maths above: the chart's price only when GEX
+            // follows the chart. With an index selected (the default, SPX) the
+            // chart is a different instrument, and centring on its price left
+            // the panel empty once the chart's bars loaded.
+            spot={(gexFollows && lastBarRef.current && lastBarRef.current.close) || (gexChain && gexChain.spot)}
             callWall={gex.callWall}
             putWall={gex.putWall}
             gammaFlip={gex.gammaFlip}
