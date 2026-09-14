@@ -32,13 +32,26 @@ Seven subject areas, each with its own section of notes:
 | [Programming](/docs/Programming/Python) | Python (fully runnable in the browser), data structures, and systems for quant work. |
 | [Machine Learning](/docs/Machine_Learning/overview) | Regression to deep learning, aimed at financial applications. |
 
+## New here? A first path
+
+If you're starting from scratch, take these in order. Each one is a finished note, and each builds on the one before:
+
+1. **Python basics** — [Syntax & Semantics](/docs/Programming/Python/python-basics/syntax-and-semantics), then [Variables](/docs/Programming/Python/python-basics/variables). Every code block runs in your browser.
+2. **Summarising data** — [Measures of Central Tendency](/docs/Statistics/descriptive-statistics/summary-measures/central-tendency), then [Standard Deviation](/docs/Statistics/descriptive-statistics/summary-measures/standard-deviation).
+3. **Probability** — [Probability Foundations](/docs/Probability/foundations), then [Conditional Probability](/docs/Probability/conditional-probability).
+4. **Distributions** — [PMF, PDF & CDF](/docs/Probability/distributions/foundations/pmf-pdf-cdf), then [the Normal distribution](/docs/Probability/distributions/continuous/normal).
+5. **Calculus** — [Limits & Derivatives](/docs/Mathematics/Calculus/single-variable-calculus/limits-and-derivatives).
+6. **Markets** — [Interest Rates](/docs/Economics/interest-rates), then [Derivatives](/docs/Finance/derivatives), where the first pricing lab lives.
+
+After that, the [Roadmap](/roadmap) picks up where this leaves off.
+
 ## How to use this site
 
-There are three good ways in, depending on how you like to learn:
+Once you know your footing, there are three good ways in:
 
 1. **Follow the structured path** — start at the [Roadmap](/roadmap), pick a level, and work topic by topic. Progress is trackable: tick off each node as you learn it.
 2. **Explore by subject** — go to the [Tutorial hub](/tutorial), pick a field, pick a topic.
-3. **Play with ideas immediately** — jump straight to [Stochastic Calculus](/docs/Mathematics/stochastic-calculus), [Distributions](/docs/Probability/distributions), or [Derivatives](/docs/Finance/derivatives). All three have live interactive labs: simulate Brownian motion, bend the bell curve, price options with sliders.
+3. **Already comfortable with the maths? Play with ideas immediately** — jump straight to [Stochastic Calculus](/docs/Mathematics/stochastic-calculus), [Distributions](/docs/Probability/distributions), or [Derivatives](/docs/Finance/derivatives). All three have live interactive labs: simulate Brownian motion, bend the bell curve, price options with sliders.
 
 ## My current focus
 
