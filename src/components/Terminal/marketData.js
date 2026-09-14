@@ -239,25 +239,58 @@ export async function fetchSnapshot(symbol) {
 /* --------------------------------------------------------- market status */
 
 /**
- * US equities regular session: Mon-Fri 09:30-16:00 America/New_York.
- * (Holidays are not tracked — it will say "open" on a market holiday.)
+ * NYSE full closures and 1:00 p.m. early closes, copied from nyse.com/trade/hours-calendars
+ * (checked 2026-09-14). NYSE publishes about two years ahead: add each new year
+ * when it appears. Dates outside this table fall back to the plain weekday rule.
+ */
+const NYSE_HOLIDAYS = {
+  '2026-01-01': "New Year's Day", '2026-01-19': 'Martin Luther King Jr. Day',
+  '2026-02-16': "Washington's Birthday", '2026-04-03': 'Good Friday',
+  '2026-05-25': 'Memorial Day', '2026-06-19': 'Juneteenth',
+  '2026-07-03': 'Independence Day (observed)', '2026-09-07': 'Labor Day',
+  '2026-11-26': 'Thanksgiving', '2026-12-25': 'Christmas',
+  '2027-01-01': "New Year's Day", '2027-01-18': 'Martin Luther King Jr. Day',
+  '2027-02-15': "Washington's Birthday", '2027-03-26': 'Good Friday',
+  '2027-05-31': 'Memorial Day', '2027-06-18': 'Juneteenth (observed)',
+  '2027-07-05': 'Independence Day (observed)', '2027-09-06': 'Labor Day',
+  '2027-11-25': 'Thanksgiving', '2027-12-24': 'Christmas (observed)',
+};
+// Early-close days: the regular session ends at 1:00 p.m. ET and the late
+// session at 5:00 p.m. ET.
+const NYSE_EARLY_CLOSES = new Set(['2026-11-27', '2026-12-24', '2027-11-26']);
+
+/**
+ * US equities session in America/New_York: pre-market 04:00, regular
+ * 09:30-16:00 (13:00 on early-close days), after hours to 20:00 (17:00 on
+ * early-close days), closed at weekends and on NYSE holidays.
  */
 export function marketStatus(now = new Date()) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/New_York',
+    year: 'numeric', month: '2-digit', day: '2-digit',
     weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
   }).formatToParts(now);
   const get = (t) => (parts.find((p) => p.type === t) || {}).value;
 
   const day = get('weekday');
-  const hour = parseInt(get('hour'), 10);
+  const date = `${get('year')}-${get('month')}-${get('day')}`;
+  const hour = parseInt(get('hour'), 10) % 24; // some engines report midnight as 24
   const minute = parseInt(get('minute'), 10);
   const mins = hour * 60 + minute;
 
   if (day === 'Sat' || day === 'Sun') return { state: 'closed', label: 'Market closed — weekend' };
-  if (mins >= 570 && mins < 960) return { state: 'open', label: 'Market open' };
+  if (NYSE_HOLIDAYS[date]) return { state: 'closed', label: `Market closed — ${NYSE_HOLIDAYS[date]}` };
+
+  const early = NYSE_EARLY_CLOSES.has(date);
+  const closeMins = early ? 780 : 960;
+  const afterEnd = early ? 1020 : 1200;
+  if (mins >= 570 && mins < closeMins) {
+    return { state: 'open', label: early ? 'Market open — closes 1:00 pm ET' : 'Market open' };
+  }
   if (mins >= 240 && mins < 570) return { state: 'pre', label: 'Pre-market' };
-  if (mins >= 960 && mins < 1200) return { state: 'after', label: 'After hours' };
+  if (mins >= closeMins && mins < afterEnd) {
+    return { state: 'after', label: early ? 'After hours — early close day' : 'After hours' };
+  }
   return { state: 'closed', label: 'Market closed' };
 }
 

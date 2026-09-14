@@ -983,3 +983,44 @@
     height: 36px;
   }
 }
+
+/* news: same story from other outlets, folded under the lead headline */
+.dupes {
+  margin: -0.15rem 0 0;
+  padding: 0 0.7rem 0.4rem 3.4rem;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.7rem;
+  color: var(--ifm-color-emphasis-600);
+}
+.dupes summary { cursor: pointer; }
+.dupeLink {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  color: var(--ifm-font-color-base);
+  text-decoration: none;
+  font-size: 0.78rem;
+}
+.dupeLink:hover { text-decoration: underline; }
+.dupeLink time { flex: 0 0 auto; color: var(--ifm-color-emphasis-500); }
+
+/* news on phones: full-width headline cards — the title gets the whole width,
+   with time, source and tone on a line underneath */
+@media (max-width: 640px) {
+  .row {
+    flex-wrap: wrap;
+    row-gap: 0.25rem;
+    padding: 0.6rem 0.75rem;
+  }
+  .rowTitle {
+    order: -1;
+    flex: 1 1 100%;
+    font-size: 0.9rem;
+  }
+  .rowTime { flex: 0 0 auto; text-align: left; margin-top: 0; }
+  .rowImpactDot { margin-top: 4px; }
+  .rowSrc { flex: 0 1 auto; margin-top: 0; }
+  .rowImpact { margin-left: auto; margin-top: 0; }
+  .dupes { padding-left: 0.75rem; }
+}

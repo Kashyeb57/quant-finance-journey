@@ -93,6 +93,23 @@ function analyze(title) {
   return { impact, tags: tags.slice(0, 2) };
 }
 
+// What each tab does, shown on hover.
+const CATEGORY_HELP = {
+  ALL: 'Every source', MKT: 'Markets: stocks, indices, currencies', ECO: 'Economics and finance',
+  TECH: 'Technology', NRG: 'Energy and oil', CRPT: 'Crypto', GEO: 'World news and geopolitics',
+  REG: 'Regulators and central banks: SEC, Fed, ECB',
+};
+
+// Exact publication time for the relative stamp's tooltip, in CT like the rest of the site.
+function fullTimeCT(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago', month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  }).format(d) + ' CT';
+}
+
 function timeAgo(dateStr) {
   const d = new Date(dateStr);
   if (isNaN(d)) return '';
@@ -163,6 +180,53 @@ async function fetchFeed(feed, signal) {
     } catch (e) { /* timed out, aborted or failed: next proxy */ }
   }
   return [];
+}
+
+// ── Grouping repeated coverage ──────────────────────────────────────────
+// Several outlets often run the same story. Group a headline under an earlier
+// (newer) one when they come from different sources within 36 hours and share
+// most of their meaningful words: at least 3 in common and a Jaccard overlap of
+// 0.5. "Fed holds rates steady" and "Fed cuts rates" stay apart (2 shared of 6).
+const GROUP_STOP = new Set([
+  'the', 'and', 'for', 'with', 'from', 'after', 'over', 'into', 'amid', 'says', 'said',
+  'this', 'that', 'its', 'are', 'was', 'will', 'has', 'have', 'new', 'more', 'than',
+  'about', 'what', 'why', 'how', 'who', 'you', 'your', 'as', 'at', 'by', 'on', 'in', 'of', 'to',
+]);
+const GROUP_WINDOW_MS = 36 * 3600 * 1000;
+
+function titleWords(title) {
+  return new Set(
+    String(title || '')
+      .toLowerCase()
+      .replace(/[’']/g, '')
+      .replace(/[^a-z0-9$%.]+/g, ' ')
+      .split(' ')
+      .map((w) => w.replace(/^\.+|\.+$/g, ''))
+      .filter((w) => w.length > 2 && !GROUP_STOP.has(w)),
+  );
+}
+
+function sameStory(a, b) {
+  let shared = 0;
+  for (const w of a) if (b.has(w)) shared += 1;
+  const union = a.size + b.size - shared;
+  return shared >= 3 && union > 0 && shared / union >= 0.5;
+}
+
+function groupHeadlines(items) {
+  const groups = [];
+  for (const it of items) {
+    const words = titleWords(it.title);
+    const t = new Date(it.pubDate).getTime();
+    const home = groups.find((g) =>
+      g.lead.source !== it.source &&
+      !g.dupes.some((d) => d.source === it.source) &&
+      (Number.isNaN(t) || Number.isNaN(g.t) || Math.abs(g.t - t) <= GROUP_WINDOW_MS) &&
+      sameStory(g.words, words));
+    if (home) home.dupes.push(it);
+    else groups.push({ lead: it, dupes: [], words, t });
+  }
+  return groups;
 }
 
 function mergeHeadlines(prev, fresh) {
@@ -280,6 +344,9 @@ export default function News({ ticker }) {
     });
   }, [items, range, query, onlyTicker, breaking, ticker]);
 
+  // Repeated coverage of one story, folded under its newest headline.
+  const groups = useMemo(() => groupHeadlines(view), [view]);
+
   const arrow = (imp) => (imp === 'pos' ? '▲' : imp === 'neg' ? '▼' : '–');
 
   return (
@@ -296,7 +363,7 @@ export default function News({ ticker }) {
       </div>
       <div className={styles.termRow}>
         {CATEGORIES.map((c) => (
-          <button key={c} className={`${styles.tab} ${c === cat ? styles.tabActive : ''}`} onClick={() => setCat(c)}>{c}</button>
+          <button key={c} className={`${styles.tab} ${c === cat ? styles.tabActive : ''}`} onClick={() => setCat(c)} title={CATEGORY_HELP[c]}>{c}</button>
         ))}
       </div>
       <div className={styles.termRow}>
@@ -308,7 +375,14 @@ export default function News({ ticker }) {
           ⚡ Breaking
         </button>
         {RANGES.map((r) => (
-          <button key={r.code} className={`${styles.tab} ${r.code === range ? styles.tabActive : ''}`} onClick={() => setRange(r.code)}>{r.code}</button>
+          <button
+            key={r.code}
+            className={`${styles.tab} ${r.code === range ? styles.tabActive : ''}`}
+            onClick={() => setRange(r.code)}
+            title={r.h ? `Headlines from the last ${r.code.replace('H', ' hours').replace('D', ' days')}` : 'Headlines from any time'}
+          >
+            {r.code}
+          </button>
         ))}
         {ticker && (
           <button
@@ -336,19 +410,38 @@ export default function News({ ticker }) {
           </div>
         )}
         {!loading && !error &&
-          view.map((it, i) => (
-            <a key={it.link || it.title || i} className={`${styles.row} ${matchesTicker(it, ticker) ? styles.rowMatch : ''}`} href={it.link} target="_blank" rel="noreferrer">
-              <span className={styles.rowTime}>{timeAgo(it.pubDate)}</span>
-              <span className={`${styles.rowImpactDot} ${styles['imp_' + it.impact]}`} />
-              <span className={styles.rowSrc}>{it.source}</span>
-              <span className={styles.rowTitle}>{it.title}</span>
-              <span className={`${styles.rowImpact} ${styles['imp_' + it.impact]}`}>
-                {it.tags.map((t) => (<span key={t} className={styles.tag}>{t}</span>))}
-                <span title="Keyword tone of the headline, not a sentiment model or the market's reaction">
-                  {arrow(it.impact)}
+          groups.map(({ lead: it, dupes }, i) => (
+            <React.Fragment key={it.link || it.title || i}>
+              <a className={`${styles.row} ${matchesTicker(it, ticker) ? styles.rowMatch : ''}`} href={it.link} target="_blank" rel="noreferrer">
+                <time className={styles.rowTime} dateTime={isNaN(new Date(it.pubDate)) ? undefined : new Date(it.pubDate).toISOString()} title={fullTimeCT(it.pubDate)}>
+                  {timeAgo(it.pubDate)}
+                </time>
+                <span className={`${styles.rowImpactDot} ${styles['imp_' + it.impact]}`} />
+                <span className={styles.rowSrc}>{it.source}</span>
+                <span className={styles.rowTitle}>{it.title}</span>
+                <span className={`${styles.rowImpact} ${styles['imp_' + it.impact]}`}>
+                  {it.tags.map((t) => (<span key={t} className={styles.tag}>{t}</span>))}
+                  <span title="Keyword tone of the headline, not a sentiment model or the market's reaction">
+                    {arrow(it.impact)}
+                  </span>
                 </span>
-              </span>
-            </a>
+              </a>
+              {/* Same story from other outlets: folded, each still linked and attributed. */}
+              {dupes.length > 0 && (
+                <details className={styles.dupes}>
+                  <summary>
+                    +{dupes.length} more source{dupes.length === 1 ? '' : 's'}: {dupes.map((d) => d.source).join(', ')}
+                  </summary>
+                  {dupes.map((d) => (
+                    <a key={d.link || d.title} className={styles.dupeLink} href={d.link} target="_blank" rel="noreferrer">
+                      <span className={styles.rowSrc}>{d.source}</span>
+                      <time title={fullTimeCT(d.pubDate)}>{timeAgo(d.pubDate)}</time>
+                      <span>{d.title}</span>
+                    </a>
+                  ))}
+                </details>
+              )}
+            </React.Fragment>
           ))}
       </div>
     </div>
