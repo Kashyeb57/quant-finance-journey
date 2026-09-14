@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import OriginalCodeBlock from '@theme-original/CodeBlock';
-import { runPython, isPyodideLoaded } from '@site/src/components/Interactive/pyRuntime';
+import { runPython, isPyodideLoaded, interruptPython } from '@site/src/components/Interactive/pyRuntime';
 import styles from './styles.module.css';
 
 // Wraps the stock CodeBlock: every ```python fence on the site gets a
@@ -35,6 +35,15 @@ export default function CodeBlock(props) {
         <button className={styles.runBtn} onClick={run} disabled={state !== 'idle'}>
           {state === 'loading' ? '⏳ Loading Python…' : state === 'running' ? '⏳ Running…' : '▶ Run'}
         </button>
+        {state !== 'idle' && (
+          <button
+            className={styles.clearBtn}
+            onClick={() => interruptPython()}
+            title="Stop the running code. Python restarts, so earlier variables are cleared."
+          >
+            ■ Stop
+          </button>
+        )}
         <span className={styles.runNote}>
           {state === 'loading' ? 'downloading the runtime (~10 MB, one time)' : 'runs in your browser'}
         </span>

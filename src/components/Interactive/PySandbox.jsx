@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import LabCard from './LabCard';
 import styles from './pysandbox.module.css';
-import { runPython, isPyodideLoaded } from './pyRuntime';
+import { runPython, isPyodideLoaded, interruptPython } from './pyRuntime';
 
 /**
  * Editable Python playground that runs entirely in the browser (Pyodide).
@@ -68,6 +68,15 @@ export default function PySandbox({ title = 'Python playground', code = '', rows
               ? '⏳ Running…'
               : '▶ Run'}
         </button>
+        {state !== 'idle' && (
+          <button
+            className={styles.clearBtn}
+            onClick={() => interruptPython()}
+            title="Stop the running code. Python restarts, so earlier variables are cleared."
+          >
+            ■ Stop
+          </button>
+        )}
         <span className={styles.note}>
           {state === 'loading'
             ? 'first run downloads the runtime (~10 MB), then it’s instant'

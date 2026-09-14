@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './notebook.module.css';
-import { createNamespace, runPythonCell, isPyodideLoaded } from './pyRuntime';
+import { createNamespace, runPythonCell, isPyodideLoaded, interruptPython } from './pyRuntime';
 
 const STARTER_CELLS = [
   `# Welcome to your in-browser Python notebook!
@@ -98,11 +98,26 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
     setKernelBusy(false);
   };
 
+  // Set by Stop so "Run all" halts instead of carrying on to the next cell.
+  const stopRequested = useRef(false);
+
   const runAll = async () => {
+    stopRequested.current = false;
     for (const cell of cells) {
+      if (stopRequested.current) break;
       // eslint-disable-next-line no-await-in-loop
       await runCell(cell);
     }
+  };
+
+  // Stop terminates the Python worker, so the running cell resolves with a
+  // KeyboardInterrupt message and every variable is gone. Drop the namespace
+  // handle so the next run starts clean, as after a kernel restart.
+  const stopKernel = () => {
+    stopRequested.current = true;
+    interruptPython();
+    nsRef.current = null;
+    execCount.current = 0;
   };
 
   const restartKernel = () => {
@@ -152,6 +167,14 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
       <div className={styles.toolbar}>
         <button className={styles.tbBtn} onClick={runAll} disabled={kernelBusy}>
           ▶▶ Run all
+        </button>
+        <button
+          className={styles.tbBtn}
+          onClick={stopKernel}
+          disabled={!kernelBusy}
+          title="Stop the running code. Python restarts, so earlier variables are cleared."
+        >
+          ■ Stop
         </button>
         <button className={styles.tbBtn} onClick={() => addCell(cells.length - 1)}>
           ＋ Add cell
