@@ -1,6 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from '@docusaurus/router';
 import LabCard from './LabCard';
 import styles from './quiz.module.css';
+
+// Best score per quiz, in this browser. Read by the doc footer so "read the
+// page" and "did the exercise" are tracked separately.
+export const QUIZ_KEY = 'qf-quiz';
+export const QUIZ_EVENT = 'qf-quiz-updated';
+
+function saveBest(id, correct, total) {
+  try {
+    const map = JSON.parse(window.localStorage.getItem(QUIZ_KEY)) || {};
+    const prev = map[id];
+    if (!prev || correct > prev.correct || prev.total !== total) {
+      map[id] = { correct, total, at: new Date().toISOString() };
+      window.localStorage.setItem(QUIZ_KEY, JSON.stringify(map));
+      window.dispatchEvent(new Event(QUIZ_EVENT));
+    }
+  } catch (e) {
+    /* storage blocked: the quiz still works, the score just isn't kept */
+  }
+}
 
 /**
  * Multiple-choice quiz with instant feedback.
@@ -18,6 +38,13 @@ export default function Quiz({ title = 'Check your understanding', questions = [
     0
   );
   const done = answered === questions.length;
+
+  // Keep the best finished attempt for this page's quiz.
+  const { pathname } = useLocation();
+  const quizId = `${pathname.replace(/\/$/, '')}|${questions.length}|${(questions[0] && questions[0].q ? questions[0].q : '').slice(0, 40)}`;
+  useEffect(() => {
+    if (done && questions.length > 0) saveBest(quizId, correct, questions.length);
+  }, [done, correct, quizId, questions.length]);
 
   const pick = (qi, oi) => {
     // Lock the first choice so the score means something.

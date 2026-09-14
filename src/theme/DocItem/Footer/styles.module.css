@@ -35,3 +35,8 @@
   font-size: 0.8rem;
   color: var(--ifm-color-emphasis-600);
 }
+
+.quizScore {
+  font-size: 0.82rem;
+  color: var(--ifm-color-emphasis-800);
+}
