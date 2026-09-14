@@ -25,7 +25,7 @@
   border: 1px solid var(--ifm-color-emphasis-200);
   border-radius: 12px;
   padding: 0.9rem 1.2rem;
-  margin-bottom: 1.75rem;
+  margin-bottom: 0.75rem;
 }
 .overallBarOuter {
   flex: 1;
@@ -271,3 +271,72 @@
 @media (max-width: 560px) {
   .grid { grid-template-columns: 1fr; }
 }
+
+/* ── Next up: the first unticked topic, so there's always a next step ── */
+.nextUp {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-left: 3px solid var(--ifm-color-primary);
+  border-radius: 12px;
+  padding: 0.7rem 1.1rem;
+  margin-bottom: 1.75rem;
+}
+.nextUpLabel {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-600);
+  font-weight: 700;
+}
+.nextUpTopic { font-weight: 600; }
+.nextUpWhere { font-size: 0.8rem; color: var(--ifm-color-emphasis-600); }
+.nextUpBtn {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  background: transparent;
+  color: var(--ifm-color-emphasis-800);
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.nextUpBtn:first-of-type { margin-left: auto; }
+.nextUpBtn:hover { border-color: var(--ifm-color-primary); color: var(--ifm-color-primary); text-decoration: none; }
+.nodeNext { box-shadow: inset 0 0 0 1px var(--ifm-color-primary); }
+
+/* Career tracks fold behind a summary (collapsed by default on phones) */
+.tracksDetails { margin-bottom: 1.5rem; }
+.tracksSummary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  color: var(--ifm-color-emphasis-800);
+}
+.trackAllTicked {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+  margin-left: 0.3rem;
+}
+
+@media (max-width: 700px) {
+  .nextUpBtn:first-of-type { margin-left: 0; }
+}
+
+/* topic row: the checkbox button plus a link to the note that teaches it */
+.nodeRow { display: flex; align-items: flex-start; gap: 0.2rem; }
+.nodeRow .node { flex: 1; min-width: 0; }
+.nodeLink {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--pillar, var(--ifm-color-primary));
+  text-decoration: none;
+  opacity: 0.7;
+}
+.nodeLink:hover { opacity: 1; background: var(--ifm-color-emphasis-100); text-decoration: none; }

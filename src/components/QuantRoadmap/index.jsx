@@ -21,6 +21,66 @@ const PILLARS = [
   { id: 'fin', name: 'Finance & Economics', color: '#16a34a', docs: '/docs/Finance' },
 ];
 
+// The note that teaches each topic, where one genuinely covers it (checked
+// against the note's content, not just its title). Topics without a matching
+// note are left unlinked rather than pointed somewhere vague. Every path is a
+// real route: onBrokenLinks 'throw' fails the build if one ever breaks.
+const TOPIC_NOTES = {
+  'Functions and their Graphs': '/docs/Mathematics/Calculus/single-variable-calculus/functions-and-models',
+  'Limits, Derivatives & Integrals': '/docs/Mathematics/Calculus/single-variable-calculus/limits-and-derivatives',
+  'Optimization (Minima / Maxima)': '/docs/Mathematics/Calculus/single-variable-calculus/applications-of-differentiation',
+  'Multivariate Calculus (Partials, Gradients)': '/docs/Mathematics/Calculus/multivariable-calculus/partial-derivatives',
+  'Vectors, Matrices & Matrix Operations': '/docs/Mathematics/linear-algebra',
+  'Eigenvalues & Eigenvectors': '/docs/Mathematics/linear-algebra',
+  'Solving Systems of Linear Equations': '/docs/Mathematics/linear-algebra',
+  'Itô Calculus & Stochastic Differential Equations': '/docs/Mathematics/stochastic-calculus',
+  'Applying Stochastic Calculus to Pricing': '/docs/Mathematics/stochastic-calculus',
+  'Mean, Median, Mode, Range': '/docs/Statistics/descriptive-statistics/summary-measures/central-tendency',
+  'Variance & Standard Deviation': '/docs/Statistics/descriptive-statistics/summary-measures/standard-deviation',
+  'Sample Spaces & Events': '/docs/Probability/foundations',
+  'Conditional Probability': '/docs/Probability/conditional-probability',
+  'Combinatorics (Permutations & Combinations)': '/docs/Probability/combinatorics',
+  'Set Theory Basics': '/docs/Probability/foundations',
+  'Statistical Assumptions & Their Violations': '/docs/Statistics/regression-analysis',
+  'Autoregressive (AR) & Moving Average (MA) Models': '/docs/Statistics/time-series',
+  'ARMA / ARIMA / GARCH (Volatility Modeling)': '/docs/Statistics/time-series',
+  'Stationarity & Unit Root Tests': '/docs/Statistics/time-series',
+  'Bayesian Inference (Prior, Likelihood, Posterior)': '/docs/Statistics/bayesian-inference',
+  'Nonparametric Methods': '/docs/Statistics/robust-statistics',
+  'Robust Statistics (Outliers, Non-normal Data)': '/docs/Statistics/robust-statistics',
+  'Programming Fundamentals': '/docs/Programming/Python',
+  'Building APIs': '/docs/Programming/apis-and-systems',
+  'Data Structures': '/docs/Programming/data-structures-and-algorithms',
+  'Algorithms': '/docs/Programming/data-structures-and-algorithms',
+  'Time & Space Complexity': '/docs/Programming/complexity',
+  'Numerical Optimization (Gradient Descent, Newton’s Method)': '/docs/Mathematics/numerical-methods',
+  'Low-Latency Architecture (Market Data, Execution)': '/docs/Programming/concurrency-and-low-latency',
+  'Concurrency & Parallelism': '/docs/Programming/concurrency-and-low-latency',
+  'Supervised vs. Unsupervised Learning': '/docs/Machine_Learning/foundations',
+  'Bias-Variance Tradeoff': '/docs/Machine_Learning/model-evaluation',
+  'Cross-Validation & Model Evaluation Metrics': '/docs/Machine_Learning/model-evaluation',
+  'Linear / Logistic Regression': '/docs/Machine_Learning/regression-and-classification',
+  'Decision Trees & Ensembles (Random Forests, Boosting)': '/docs/Machine_Learning/ensembles-and-svm',
+  'Support Vector Machines (SVM)': '/docs/Machine_Learning/ensembles-and-svm',
+  'K-Nearest Neighbors (KNN)': '/docs/Machine_Learning/regression-and-classification',
+  'Intro to Neural Networks (Perceptrons, Backprop)': '/docs/Machine_Learning/deep-learning',
+  'Finance Feature Engineering (Volume, Volatility, Order Book)': '/docs/Machine_Learning/ml-for-finance',
+  'Walk-Forward Validation & Backtesting (No Lookahead Bias)': '/docs/Machine_Learning/ml-for-finance',
+  'Reinforcement Learning (Policy Search, Q-Learning)': '/docs/Machine_Learning/reinforcement-learning',
+  'Deep Learning (RNNs, LSTMs for Sequences)': '/docs/Machine_Learning/deep-learning',
+  'Causal Inference': '/docs/Statistics/causal-inference',
+  'Combining Alpha (Ensembles, Cross-sectional vs. Time-series)': '/docs/Machine_Learning/ml-for-finance',
+  'Interest Rates': '/docs/Economics/interest-rates',
+  'Monetary vs. Fiscal Policy': '/docs/Economics/monetary-vs-fiscal',
+  'Options, Futures, Swaps (Derivatives Basics)': '/docs/Finance/derivatives',
+  'Fixed Income (Yield, Duration, Convexity)': '/docs/Finance/fixed-income',
+  'Foreign Exchange (FX)': '/docs/Finance/foreign-exchange',
+  'Capital Asset Pricing Model (CAPM)': '/docs/Finance/capm',
+  'Efficient Market Hypothesis (EMH)': '/docs/Finance/efficient-market-hypothesis',
+  'The Concept of Alpha & Its Existence': '/docs/Finance/capm',
+  'Valuation (DCF) & Risk Management Basics': '/docs/Finance/valuation-and-risk',
+};
+
 const LEVELS = [
   { n: 1, takeaway: 'Understanding lets you think critically and create NEW extensions.' },
   { n: 2, takeaway: 'New quantitative ideas come from MASTERY of foundational material.' },
@@ -335,6 +395,31 @@ function RoadmapInner() {
 
   const overall = pct(done.size, INDEX.all.length);
 
+  // The first unticked topic, walking level by level and pillar by pillar, so
+  // there is always an obvious next step rather than just a percentage.
+  const nextUp = (() => {
+    for (const lvl of [1, 2, 3]) {
+      for (const p of PILLARS) {
+        const entry = DATA[p.id][lvl];
+        const i = (entry?.topics || []).findIndex((_, k) => !done.has(nodeId(p.id, lvl, k)));
+        if (i >= 0) return { id: nodeId(p.id, lvl, i), label: entry.topics[i], pillar: p, level: lvl };
+      }
+    }
+    return null;
+  })();
+  const goToNext = () => {
+    if (!nextUp) return;
+    const el = document.getElementById(`node-${nextUp.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus({ preventScroll: true });
+    }
+  };
+
+  // Phones: the career cards collapse behind a summary so the study list isn't
+  // pushed eight cards down the page.
+  const [narrow] = useState(() => window.matchMedia('(max-width: 700px)').matches);
+
   // progress for a pillar up to and including a level
   const pillarUpTo = (pillarId, maxLevel) => {
     let total = 0;
@@ -368,26 +453,44 @@ function RoadmapInner() {
     <div className={styles.wrap}>
       <div className={styles.intro}>
         <p>
-          Five pillars, three levels. Tick off each topic as you learn it &mdash;
-          your progress saves automatically and scores you against the {TRACKS.length} quant
-          career tracks below.
+          Five pillars, three levels. Tick off each topic once you&rsquo;ve studied it &mdash;
+          it saves in this browser. The percentages count ticked topics against what each of
+          the {TRACKS.length} career tracks below calls for: a study checklist you mark
+          yourself, not a measure of mastery or job readiness.
         </p>
       </div>
 
       {/* Overall progress */}
       <div className={styles.overall}>
-        <strong>Overall</strong>
+        <strong>Topics ticked</strong>
         <div className={styles.overallBarOuter}>
           <div className={styles.overallBarInner} style={{ width: `${overall}%` }} />
         </div>
-        <span className={styles.overallPct}>{overall}%</span>
+        <span className={styles.overallPct}>{done.size} / {INDEX.all.length}</span>
         <button className={styles.resetBtn} onClick={reset}>Reset</button>
       </div>
 
+      {nextUp ? (
+        <div className={styles.nextUp}>
+          <span className={styles.nextUpLabel}>Next up</span>
+          <span className={styles.nextUpTopic}>{nextUp.label}</span>
+          <span className={styles.nextUpWhere}>{nextUp.pillar.name} · Level {nextUp.level}</span>
+          <button type="button" className={styles.nextUpBtn} onClick={goToNext}>Show me</button>
+          <Link to={TOPIC_NOTES[nextUp.label] || nextUp.pillar.docs} className={styles.nextUpBtn}>Open the notes ↗</Link>
+        </div>
+      ) : (
+        <div className={styles.nextUp}>
+          <span className={styles.nextUpLabel}>All topics ticked</span>
+        </div>
+      )}
+
       {/* Tracks */}
+      <details className={styles.tracksDetails} open={!narrow}>
+      <summary className={styles.tracksSummary}>Career tracks ({TRACKS.length}) &mdash; what each role does and which levels it calls for</summary>
       <p className={styles.tracksNote}>
-        Eight quant career tracks and what each role actually does. Level targets for the
-        newer roles are my own estimates &mdash; adjust to taste.
+        {TRACKS.length} quant career tracks and what each role actually does. Level targets for the
+        newer roles are my own estimates &mdash; adjust to taste. A track&rsquo;s percentage is the
+        share of its topics you&rsquo;ve ticked.
       </p>
       <div className={styles.tracks}>
         {TRACKS.map((t) => {
@@ -399,9 +502,9 @@ function RoadmapInner() {
             >
               <div className={styles.trackHead}>
                 <span className={styles.trackName}>
-                  {t.name} {tp.complete ? '✅' : ''}
+                  {t.name} {tp.complete ? <span className={styles.trackAllTicked}>all topics ticked</span> : ''}
                 </span>
-                <span className={styles.trackPct}>{tp.pct}%</span>
+                <span className={styles.trackPct} title="Share of this track's topics you've ticked">{tp.pct}%</span>
               </div>
               <div className={styles.trackBarOuter}>
                 <div className={styles.trackBarInner} style={{ width: `${tp.pct}%` }} />
@@ -429,6 +532,7 @@ function RoadmapInner() {
           );
         })}
       </div>
+      </details>
 
       {/* Levels */}
       {LEVELS.map((lvl) => (
@@ -465,18 +569,26 @@ function RoadmapInner() {
                       {entry.topics.map((label, i) => {
                         const id = nodeId(p.id, lvl.n, i);
                         const isDone = done.has(id);
+                        const note = TOPIC_NOTES[label];
                         return (
-                          <button
-                            key={id}
-                            className={styles.node}
-                            onClick={() => toggle(id)}
-                            aria-pressed={isDone}
-                          >
-                            <span className={`${styles.check} ${isDone ? styles.checkDone : ''}`}>
-                              {isDone ? '✓' : ''}
-                            </span>
-                            <span className={isDone ? styles.nodeDone : ''}>{label}</span>
-                          </button>
+                          <div key={id} className={styles.nodeRow}>
+                            <button
+                              id={`node-${id}`}
+                              className={`${styles.node} ${nextUp && nextUp.id === id ? styles.nodeNext : ''}`}
+                              onClick={() => toggle(id)}
+                              aria-pressed={isDone}
+                            >
+                              <span className={`${styles.check} ${isDone ? styles.checkDone : ''}`}>
+                                {isDone ? '✓' : ''}
+                              </span>
+                              <span className={isDone ? styles.nodeDone : ''}>{label}</span>
+                            </button>
+                            {note && (
+                              <Link to={note} className={styles.nodeLink} title={`Open the notes on ${label}`} aria-label={`Notes: ${label}`}>
+                                ↗
+                              </Link>
+                            )}
+                          </div>
                         );
                       })}
                       <div className={styles.cellBar}>
