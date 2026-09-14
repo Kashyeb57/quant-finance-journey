@@ -21,6 +21,20 @@ import styles from './portfolio.module.css';
  */
 
 const POLL_MS = 30000;
+
+// A snapshot price may override Alpaca's own position mark only if its trade is
+// recent. The snapshot comes from the IEX feed, which doesn't trade overnight or
+// at weekends, while Alpaca marks positions to overnight-session prices — so a
+// "last" from Friday afternoon was replacing a fresher Sunday-night mark and put
+// the page $1.2k away from Alpaca's own account value. No timestamp (the keyless
+// fallback) counts as stale.
+const FRESH_TRADE_MS = 2 * 60 * 1000;
+function isFreshTrade(at) {
+  if (!at) return false;
+  // Alpaca sends nanoseconds; trim to milliseconds so every browser parses it.
+  const ms = Date.parse(String(at).replace(/(\.\d{3})\d+/, '$1'));
+  return Number.isFinite(ms) && Date.now() - ms <= FRESH_TRADE_MS;
+}
 const TRADE_TOKEN_KEY = 'pf_trade_token';
 // Tradeable universe = the terminal's sectors, minus crypto (the equity order
 // path can't place -USD pairs). Grouped so the picker mirrors the terminal.
@@ -287,14 +301,20 @@ function Content() {
     async function tick() {
       if (document.visibilityState === 'hidden') return;
       const quotes = await Promise.all(syms.map(async (sym) => {
-        try { const s = await fetchSnapshot(sym); return [sym, s && s.last]; } catch (_) { return [sym, null]; }
+        try {
+          const s = await fetchSnapshot(sym);
+          return [sym, s && s.last != null && isFreshTrade(s.at) ? s.last : null];
+        } catch (_) { return [sym, null]; }
       }));
       if (cancelled) return;
       setLivePrices((prev) => {
         let changed = false;
         const next = {...prev};
         for (const [sym, price] of quotes) {
-          if (price != null && next[sym] !== price) { next[sym] = price; changed = true; }
+          if (price == null) {
+            // Stale or unavailable: stop overriding and let Alpaca's mark stand.
+            if (sym in next) { delete next[sym]; changed = true; }
+          } else if (next[sym] !== price) { next[sym] = price; changed = true; }
         }
         return changed ? next : prev;
       });
@@ -340,7 +360,7 @@ function Content() {
   const canScrub = hist.length > 1;
   const sel = scrubIdx == null || !canScrub ? null : Math.min(scrubIdx, hist.length - 1);
 
-  // Live-adjust each position from its streamed price, then roll that into a
+  // Live-adjust each position from a fresh snapshot price, then roll that into a
   // live equity + today's P/L so the hero value moves in real time.
   const equityBase = a.portfolioValue != null ? a.portfolioValue : a.equity;
   const livePos = positions.map((p) => {
