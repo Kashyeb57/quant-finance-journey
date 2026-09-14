@@ -1,6 +1,34 @@
 import React from 'react';
 import Link from '@docusaurus/Link';
+import useGlobalData from '@docusaurus/useGlobalData';
 import styles from './styles.module.css';
+
+// Readiness from plugins/content-stats.js: which docs are still placeholders,
+// and how many notes each section holds. Absent (e.g. an old build) -> no chips.
+function useReadiness() {
+  const data = useGlobalData()['content-stats'];
+  const d = data && data.default;
+  return {
+    drafts: new Set((d && d.drafts) || []),
+    sections: (d && d.sections) || {},
+  };
+}
+
+function TopicStatus({ to, drafts, sections }) {
+  if (drafts.has(to)) {
+    return <span className={styles.statusDraft}>In progress</span>;
+  }
+  const s = sections[to];
+  if (s) {
+    const [notes, pending] = s;
+    return (
+      <span className={styles.statusCount}>
+        {notes} note{notes === 1 ? '' : 's'}{pending ? ` · ${pending} in progress` : ''}
+      </span>
+    );
+  }
+  return null;
+}
 
 /*
  * Tutorial Hub — a roadmap-style visual index of the docs.
@@ -106,11 +134,17 @@ const FIELDS = [
 ];
 
 export default function TutorialHub() {
+  const { drafts, sections } = useReadiness();
   return (
     <div className={styles.wrap}>
       <p className={styles.intro}>
         Pick a subject, then click any topic to deep-dive into its notes. Every topic has its
         own page — a growing library of everything on the quant path.
+      </p>
+      <p className={styles.legend}>
+        <span className={styles.statusDraft}>In progress</span> topics are outlines with what&rsquo;s
+        planned and where to learn it meanwhile; every other topic is written. Section topics show
+        how many notes they hold.
       </p>
       <div className={styles.grid}>
         {FIELDS.map((f) => (
@@ -123,6 +157,7 @@ export default function TutorialHub() {
                   <Link className={styles.link} to={t.to}>
                     <span className={styles.dot} />
                     <span className={styles.topicLabel}>{t.label}</span>
+                    <TopicStatus to={t.to} drafts={drafts} sections={sections} />
                     <span className={styles.go}>{'→'}</span>
                   </Link>
                 </li>

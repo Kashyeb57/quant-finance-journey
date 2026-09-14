@@ -78,3 +78,28 @@
   transition: opacity 0.15s, transform 0.15s;
 }
 .link:hover .go { opacity: 1; transform: translateX(0); }
+
+/* Readiness: drafts are marked; sections show how many notes they hold */
+.legend {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ifm-color-emphasis-600);
+  max-width: 700px;
+  margin: -1.2rem auto 2rem;
+}
+.statusDraft,
+.statusCount {
+  flex: 0 0 auto;
+  font-family: var(--ff-mono, var(--ifm-font-family-monospace));
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.statusDraft {
+  color: var(--amber-500, #e0a44a);
+  border: 1px solid var(--amber-500, #e0a44a);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  text-transform: uppercase;
+}
+.statusCount { color: var(--tx-muted, var(--ifm-color-emphasis-600)); }
