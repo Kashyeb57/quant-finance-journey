@@ -13,6 +13,7 @@ const CATEGORY_ORDER = [
   'Quant Interview Prep',
   'Probability, Puzzles & Math',
   'Markets & Trading Notes',
+  'Programming & Computer Science',
 ];
 
 export default function BookShelf({ books }) {
@@ -20,7 +21,12 @@ export default function BookShelf({ books }) {
 
   const categories = useMemo(() => {
     const present = CATEGORY_ORDER.filter((c) => books.some((b) => b.category === c));
-    return ['All', ...present];
+    // A category missing from CATEGORY_ORDER still gets a filter, after the
+    // ordered ones, so a book can never be reachable only under "All".
+    const unlisted = [...new Set(books.map((b) => b.category))].filter(
+      (c) => c && !CATEGORY_ORDER.includes(c),
+    );
+    return ['All', ...present, ...unlisted];
   }, [books]);
 
   const shown = active === 'All' ? books : books.filter((b) => b.category === active);

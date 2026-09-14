@@ -46,6 +46,10 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
   const [booted, setBooted] = useState(false);
   const nsRef = useRef(null);
   const execCount = useRef(0);
+  // Keyboard escape from the editor. Tab indents, so without this a keyboard
+  // user could never leave a cell (WCAG 2.1.2). Esc arms it: the next Tab moves
+  // focus instead of indenting. Shift+Tab is never intercepted.
+  const tabExit = useRef(false);
 
   // Restore saved cells after mount (SSR-safe).
   useEffect(() => {
@@ -159,7 +163,7 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
           ⌂ Reset examples
         </button>
         <span className={styles.tbNote}>
-          Shift+Enter runs a cell · numpy / pandas / matplotlib auto-load · work is saved in your browser
+          Shift+Enter runs a cell · Esc then Tab leaves a cell · numpy / pandas / matplotlib auto-load · work is saved in your browser
         </span>
       </div>
 
@@ -188,10 +192,16 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
                 rows={Math.min(Math.max(cell.source.split('\n').length, 2), 24)}
                 onChange={(e) => updateSource(cell.id, e.target.value)}
                 onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    tabExit.current = true;
+                    return;
+                  }
+                  const leaving = tabExit.current;
+                  tabExit.current = false;
                   if (e.key === 'Enter' && e.shiftKey) {
                     e.preventDefault();
                     runCell(cell);
-                  } else if (e.key === 'Tab') {
+                  } else if (e.key === 'Tab' && !e.shiftKey && !leaving) {
                     e.preventDefault();
                     const el = e.target;
                     const { selectionStart: s, selectionEnd: t } = el;
@@ -199,6 +209,7 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
                     requestAnimationFrame(() => el.setSelectionRange(s + 4, s + 4));
                   }
                 }}
+                onBlur={() => { tabExit.current = false; }}
                 aria-label={`Code cell ${i + 1}`}
               />
 

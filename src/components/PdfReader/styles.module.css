@@ -95,6 +95,13 @@
 }
 
 .outlineItem {
+  /* rendered as a <button>: reset the native look, keep the list-row look */
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  font: inherit;
   padding: 0.4rem 0.5rem;
   font-size: 0.85rem;
   color: var(--ifm-color-emphasis-700);

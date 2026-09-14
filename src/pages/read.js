@@ -2,6 +2,7 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import BrowserOnly from '@docusaurus/BrowserOnly';
+import Head from '@docusaurus/Head';
 import PdfReader from '@site/src/components/PdfReader';
 import styles from './read.module.css';
 
@@ -33,6 +34,8 @@ function Reader() {
 
   return (
     <div className={styles.readerWrap}>
+      {/* Name the tab after the book, not just "Reader". */}
+      <Head><title>{`${title} | Reader`}</title></Head>
       <div className={styles.toolbar}>
         <Link to="/books" className={styles.back}>← Library</Link>
         <span className={styles.title} title={title}>{title}</span>

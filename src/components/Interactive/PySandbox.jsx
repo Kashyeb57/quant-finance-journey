@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import LabCard from './LabCard';
 import styles from './pysandbox.module.css';
 import { runPython, isPyodideLoaded } from './pyRuntime';
@@ -24,8 +24,18 @@ export default function PySandbox({ title = 'Python playground', code = '', rows
     setState('idle');
   };
 
+  // Keyboard escape from the editor (WCAG 2.1.2): Tab indents, so Esc arms the
+  // next Tab to move focus instead. Shift+Tab is never intercepted.
+  const tabExit = useRef(false);
+
   const onKeyDown = (e) => {
-    if (e.key === 'Tab') {
+    if (e.key === 'Escape') {
+      tabExit.current = true;
+      return;
+    }
+    const leaving = tabExit.current;
+    tabExit.current = false;
+    if (e.key === 'Tab' && !e.shiftKey && !leaving) {
       e.preventDefault();
       const el = e.target;
       const { selectionStart: s, selectionEnd: t } = el;
@@ -47,6 +57,7 @@ export default function PySandbox({ title = 'Python playground', code = '', rows
         spellCheck={false}
         onChange={(e) => setSrc(e.target.value)}
         onKeyDown={onKeyDown}
+        onBlur={() => { tabExit.current = false; }}
         aria-label="Python code editor"
       />
       <div className={styles.bar}>
@@ -60,7 +71,7 @@ export default function PySandbox({ title = 'Python playground', code = '', rows
         <span className={styles.note}>
           {state === 'loading'
             ? 'first run downloads the runtime (~10 MB), then it’s instant'
-            : 'runs in your browser · Ctrl+Enter to run'}
+            : 'runs in your browser · Ctrl+Enter to run · Esc then Tab leaves the editor'}
         </span>
         {(output || error) && (
           <button

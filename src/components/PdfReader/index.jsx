@@ -66,12 +66,14 @@ function OutlineNode({ item, onNavigate }) {
   const hasChildren = item.items && item.items.length > 0;
   return (
     <div className={styles.outlineNode}>
-      <div 
-        className={styles.outlineItem} 
+      {/* A real button, so chapters are reachable by keyboard and announced as controls. */}
+      <button
+        type="button"
+        className={styles.outlineItem}
         onClick={() => onNavigate(item.dest)}
       >
         {item.title}
-      </div>
+      </button>
       {hasChildren && (
         <div className={styles.outlineChildren}>
           {item.items.map((child, i) => (
@@ -94,6 +96,13 @@ export default function PdfReader({ url, title }) {
   const [jumpPage, setJumpPage] = useState('');
   const [outline, setOutline] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  // On a phone the 260px contents column leaves only a sliver for the page, so
+  // start collapsed there; the ☰ button still opens it.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
+      setSidebarOpen(false);
+    }
+  }, []);
   const baseSize = useRef(null); // { w, h } of page 1 at scale 1
   const rootRef = useRef(null);
   const scrollRef = useRef(null);
@@ -249,10 +258,13 @@ export default function PdfReader({ url, title }) {
     <div className={styles.reader} ref={rootRef}>
       <div className={styles.controls}>
         {outline && outline.length > 0 && (
-          <button 
-            className={styles.sidebarToggle} 
+          <button
+            type="button"
+            className={styles.sidebarToggle}
             onClick={() => setSidebarOpen(!sidebarOpen)}
             title="Toggle Table of Contents"
+            aria-label="Table of contents"
+            aria-expanded={sidebarOpen}
           >
             ☰
           </button>
@@ -267,6 +279,7 @@ export default function PdfReader({ url, title }) {
                 value={jumpPage}
                 onChange={(e) => setJumpPage(e.target.value)}
                 placeholder="Page"
+                aria-label={`Go to page, 1 to ${numPages}`}
                 className={styles.pageInput}
               />
               <span className={styles.pageCount}>/ {numPages}</span>
@@ -298,14 +311,14 @@ export default function PdfReader({ url, title }) {
 
       <div className={styles.mainArea}>
         {sidebarOpen && outline && outline.length > 0 && (
-          <div className={styles.sidebar}>
+          <nav className={styles.sidebar} aria-label="Table of contents">
             <div className={styles.sidebarHeader}>Table of Contents</div>
             <div className={styles.outlineTree}>
               {outline.map((item, i) => (
                 <OutlineNode key={i} item={item} onNavigate={handleOutlineClick} />
               ))}
             </div>
-          </div>
+          </nav>
         )}
 
         <div className={styles.scroll} ref={scrollRef}>

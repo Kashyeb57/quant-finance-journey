@@ -5,8 +5,8 @@ import styles from './styles.module.css';
 
 /*
  * Quant Roadmap — five pillars × three levels. Click any node to mark it
- * complete; progress is saved to localStorage and scored against the three
- * career tracks.
+ * complete; progress is saved to localStorage and scored against every career
+ * track in TRACKS. Never hard-code how many there are — use TRACKS.length.
  */
 
 const STORAGE_KEY = 'quantRoadmapProgressV1';
@@ -193,7 +193,7 @@ const DATA = {
 // Career tracks. Required level per pillar (3 = Mastery). Finance is foundational
 // across all tracks but was not gated in the source roadmap, so it is shown but
 // not counted toward track completion.
-const TRACKS = [
+export const TRACKS = [
   {
     id: 'analyst', name: 'Quant Analyst', req: { math: 3, cs: 2, ml: 2, prob: 3 },
     does: [
@@ -369,7 +369,7 @@ function RoadmapInner() {
       <div className={styles.intro}>
         <p>
           Five pillars, three levels. Tick off each topic as you learn it &mdash;
-          your progress saves automatically and scores you against the three quant
+          your progress saves automatically and scores you against the {TRACKS.length} quant
           career tracks below.
         </p>
       </div>
