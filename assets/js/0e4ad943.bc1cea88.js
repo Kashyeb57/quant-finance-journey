@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkmy_study_site=globalThis.webpackChunkmy_study_site||[]).push([[9581],{2379(s,t,u){u.r(t),u.d(t,{default:()=>a});u(6540);var e=u(6347),r=u(4848);function a(){return(0,r.jsx)(e.rd,{to:"/resources"})}}}]);
