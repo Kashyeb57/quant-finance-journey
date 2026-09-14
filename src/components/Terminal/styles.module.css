@@ -300,6 +300,13 @@
   max-height: 520px;
   padding: 0.25rem 0;
 }
+.newsLegend {
+  margin: 0;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.68rem;
+  color: var(--ifm-color-emphasis-600);
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
 .newsMsg {
   padding: 1.5rem 1rem;
   text-align: center;
@@ -958,4 +965,21 @@
   border-top: 1px solid var(--line);
   font-size: 0.72rem;
   color: var(--tx-muted);
+}
+
+/* Touch devices: the dense terminal controls measured ~19–22px tall — under the
+   24×24px WCAG 2.2 minimum and hard to hit with a finger. Desktop (fine pointer)
+   keeps the compact terminal look; buttons centre their label natively, so no
+   display change is needed. */
+@media (pointer: coarse) {
+  .tfBtn,
+  .tab,
+  .gexSymSel {
+    min-height: 32px;
+    min-width: 32px;
+  }
+  .refreshBtn {
+    width: 36px;
+    height: 36px;
+  }
 }

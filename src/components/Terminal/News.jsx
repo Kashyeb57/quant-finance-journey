@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import styles from './styles.module.css';
 
 /*
@@ -130,21 +130,52 @@ function parseFeed(xmlText, feed) {
     .filter((x) => x.title);
 }
 
-async function fetchFeed(feed) {
+// Public proxies sometimes accept a connection and never answer. Without a bound,
+// one hung request held the whole load (and the loading state) open indefinitely.
+const PROXY_TIMEOUT_MS = 8000;
+
+async function fetchWithTimeout(url, ms, outerSignal) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  const onAbort = () => ctrl.abort();
+  if (outerSignal) outerSignal.addEventListener('abort', onAbort);
+  try {
+    return await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+    if (outerSignal) outerSignal.removeEventListener('abort', onAbort);
+  }
+}
+
+async function fetchFeed(feed, signal) {
   // Cache-bust per ~2-minute bucket: fresh enough to avoid day-old data, but lets the
   // proxy reuse a cached copy within the window so we don't get rate-limited.
   const bucket = Math.floor(Date.now() / 120000);
   const bust = (feed.url.includes('?') ? '&' : '?') + '_=' + bucket;
   const target = feed.url + bust;
   for (const proxy of PROXIES) {
+    if (signal && signal.aborted) return [];
     try {
-      const res = await fetch(proxy(target), { cache: 'no-store' });
+      const res = await fetchWithTimeout(proxy(target), PROXY_TIMEOUT_MS, signal);
       if (!res.ok) continue;
       const items = parseFeed(await res.text(), feed);
       if (items.length) return items;
-    } catch (e) { /* next proxy */ }
+    } catch (e) { /* timed out, aborted or failed: next proxy */ }
   }
   return [];
+}
+
+function mergeHeadlines(prev, fresh) {
+  const seen = new Set();
+  const out = [];
+  for (const it of [...fresh, ...prev]) {
+    const key = it.link || it.title;
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(it);
+  }
+  out.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+  return out.slice(0, 120);
 }
 
 // Map tickers to the names a headline is likely to use, so we can tell when a
@@ -183,36 +214,58 @@ export default function News({ ticker }) {
     return () => clearInterval(id);
   }, []);
 
+  // Each load gets a sequence number and an AbortController. A newer load (a
+  // category switch) or unmount cancels the old one, so its results can never
+  // land in the wrong category. Polls skip while a load is still running.
+  const loadSeq = useRef(0);
+  const inFlight = useRef(null);
+
   const load = useCallback(async (c, initial) => {
-    if (initial) { setLoading(true); setError(null); }
+    if (!initial && inFlight.current) return;
+    if (inFlight.current) inFlight.current.abort();
+    const ctrl = new AbortController();
+    inFlight.current = ctrl;
+    const seq = ++loadSeq.current;
+    const current = () => seq === loadSeq.current;
+
+    if (initial) { setLoading(true); setError(null); setItems([]); }
     const feeds = FEEDS.filter((f) => c === 'ALL' || f.cat === c);
-    const results = await Promise.allSettled(feeds.map(fetchFeed));
-    const fresh = [];
-    for (const r of results) if (r.status === 'fulfilled') fresh.push(...r.value);
-    setItems((prev) => {
-      const base = initial ? [] : prev;
-      const seen = new Set();
-      const out = [];
-      for (const it of [...fresh, ...base]) {
-        const key = it.link || it.title;
-        if (!key || seen.has(key)) continue;
-        seen.add(key);
-        out.push(it);
-      }
-      out.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
-      return out.slice(0, 120);
-    });
-    if (initial) {
+    let received = 0;
+
+    // Show each feed's headlines as soon as it arrives instead of waiting for
+    // the slowest proxy; any success also clears an earlier error.
+    await Promise.allSettled(feeds.map(async (feed) => {
+      const fresh = await fetchFeed(feed, ctrl.signal);
+      if (!current() || fresh.length === 0) return;
+      received += fresh.length;
+      setItems((prev) => mergeHeadlines(prev, fresh));
       setLoading(false);
-      if (fresh.length === 0) setError('Could not load headlines right now. Try refresh.');
-    }
+      setError(null);
+    }));
+
+    if (!current()) return;
+    inFlight.current = null;
+    setLoading(false);
+    // A failed poll keeps the last good headlines on screen; only a load that
+    // starts from nothing and gets nothing is an error.
+    if (initial && received === 0) setError('Could not reach the news sources right now. Retrying automatically.');
+  }, []);
+
+  // Invalidate and abort whatever load is running (category switch or unmount).
+  const cancelLoads = useCallback(() => {
+    loadSeq.current++;
+    if (inFlight.current) inFlight.current.abort();
+    inFlight.current = null;
   }, []);
 
   useEffect(() => {
     load(cat, true);
     const id = setInterval(() => load(cat, false), 30 * 1000);
-    return () => clearInterval(id);
-  }, [cat, load]);
+    return () => {
+      clearInterval(id);
+      cancelLoads();
+    };
+  }, [cat, load, cancelLoads]);
 
   const view = useMemo(() => {
     const r = RANGES.find((x) => x.code === range);
@@ -235,10 +288,11 @@ export default function News({ ticker }) {
         <input
           className={styles.searchBox}
           placeholder="Search headlines or $ticker…"
+          aria-label="Search headlines or ticker"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button className={styles.refreshBtn} onClick={() => load(cat, true)} title="Refresh">↻</button>
+        <button className={styles.refreshBtn} onClick={() => load(cat, true)} title="Refresh" aria-label="Refresh headlines">↻</button>
       </div>
       <div className={styles.termRow}>
         {CATEGORIES.map((c) => (
@@ -267,10 +321,20 @@ export default function News({ ticker }) {
         )}
       </div>
 
+      {/* The arrows are a word-list heuristic; say so where people read them. */}
+      <p className={styles.newsLegend}>
+        ▲ ▼ = keyword tone of the headline, not a sentiment model or the market&rsquo;s reaction
+      </p>
       <div className={styles.newsList}>
         {loading && <div className={styles.newsMsg}>Loading headlines…</div>}
         {error && !loading && <div className={styles.newsMsg}>{error}</div>}
-        {!loading && !error && view.length === 0 && <div className={styles.newsMsg}>No headlines match.</div>}
+        {!loading && !error && view.length === 0 && (
+          <div className={styles.newsMsg}>
+            {items.length === 0
+              ? 'No headlines from these sources yet.'
+              : 'No headlines match these filters.'}
+          </div>
+        )}
         {!loading && !error &&
           view.map((it, i) => (
             <a key={it.link || it.title || i} className={`${styles.row} ${matchesTicker(it, ticker) ? styles.rowMatch : ''}`} href={it.link} target="_blank" rel="noreferrer">
@@ -280,7 +344,9 @@ export default function News({ ticker }) {
               <span className={styles.rowTitle}>{it.title}</span>
               <span className={`${styles.rowImpact} ${styles['imp_' + it.impact]}`}>
                 {it.tags.map((t) => (<span key={t} className={styles.tag}>{t}</span>))}
-                {arrow(it.impact)}
+                <span title="Keyword tone of the headline, not a sentiment model or the market's reaction">
+                  {arrow(it.impact)}
+                </span>
               </span>
             </a>
           ))}
