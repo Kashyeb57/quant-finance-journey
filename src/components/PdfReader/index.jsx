@@ -120,10 +120,14 @@ export default function PdfReader({ url, title }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // On a phone the 260px contents column leaves only a sliver for the page, so
   // start collapsed there; the ☰ button still opens it.
+  // Also collapse it if the window later becomes phone-width (rotation, resize).
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches) {
-      setSidebarOpen(false);
-    }
+    if (typeof window === 'undefined') return undefined;
+    const mq = window.matchMedia('(max-width: 768px)');
+    if (mq.matches) setSidebarOpen(false);
+    const onChange = (e) => { if (e.matches) setSidebarOpen(false); };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
   }, []);
   const baseSize = useRef(null); // { w, h } of page 1 at scale 1
   const rootRef = useRef(null);

@@ -35,6 +35,41 @@ plt.show()`,
 let nextId = 1;
 const newCell = (source = '') => ({ id: nextId++, source });
 
+// Export / import in the "percent" script format (# %% between cells) that VS
+// Code, Spyder and Jupytext all read, so work can leave the browser and come
+// back. Import also accepts a real .ipynb (its code cells).
+const CELL_MARK = '# %%';
+
+function cellsToScript(cells) {
+  return cells.map((c) => `${CELL_MARK}\n${c.source.replace(/\s+$/, '')}\n`).join('\n');
+}
+
+function scriptToSources(text) {
+  const normalized = text.replace(/\r\n?/g, '\n');
+  if (!normalized.split('\n').some((line) => line.startsWith(CELL_MARK))) {
+    return [normalized.replace(/\s+$/, '')];
+  }
+  return normalized
+    .split('\n')
+    .reduce((acc, line) => {
+      if (line.startsWith(CELL_MARK)) acc.push([]);
+      else if (acc.length) acc[acc.length - 1].push(line);
+      else acc.push([line]); // text before the first marker becomes its own cell
+      return acc;
+    }, [])
+    .map((lines) => lines.join('\n').replace(/^\n+|\s+$/g, ''))
+    .filter((src) => src.length);
+}
+
+function notebookToSources(text) {
+  const nb = JSON.parse(text);
+  if (!nb || !Array.isArray(nb.cells)) throw new Error('not a Jupyter notebook');
+  return nb.cells
+    .filter((c) => c.cell_type === 'code')
+    .map((c) => (Array.isArray(c.source) ? c.source.join('') : String(c.source || '')).replace(/\s+$/, ''))
+    .filter((src) => src.length);
+}
+
 /**
  * A Jupyter-style multi-cell Python notebook running fully in the browser.
  * <Notebook /> or <Notebook initialCells={['print(1)']} storageKey="my-lesson" />
@@ -177,6 +212,39 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
     setCells(STARTER_CELLS.map(newCell));
   };
 
+  // Download the cells as a .py script (code only; outputs aren't included).
+  const exportCells = () => {
+    const blob = new Blob([cellsToScript(cells)], { type: 'text/x-python' });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = 'notebook.py';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 1000);
+  };
+
+  // Load a .py (split on "# %%") or .ipynb file; the old cells stay one Undo away.
+  const fileInput = useRef(null);
+  const [importError, setImportError] = useState(null);
+  const importCells = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = ''; // allow re-importing the same file
+    if (!file) return;
+    setImportError(null);
+    try {
+      const text = await file.text();
+      const sources = /\.ipynb$/i.test(file.name) ? notebookToSources(text) : scriptToSources(text);
+      if (!sources.length) throw new Error('no code cells found');
+      setUndo({ label: `Imported ${sources.length} cell${sources.length === 1 ? '' : 's'} from ${file.name}`, cells });
+      restartKernel();
+      setCells(sources.map(newCell));
+    } catch (err) {
+      setImportError(`Couldn’t import ${file.name}: ${err.message}`);
+    }
+  };
+
   const stateLabel = { booting: '⏳ starting Python…', packages: '📦 loading packages…', running: '⏳ running…' };
 
   return (
@@ -202,13 +270,37 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
         <button className={styles.tbBtn} onClick={resetExamples} disabled={kernelBusy}>
           ⌂ Reset examples
         </button>
+        <button
+          className={styles.tbBtn}
+          onClick={exportCells}
+          title="Download your cells as a .py file (# %% between cells, opens in VS Code or Jupyter)"
+        >
+          ⤓ Export
+        </button>
+        <button
+          className={styles.tbBtn}
+          onClick={() => fileInput.current && fileInput.current.click()}
+          disabled={kernelBusy}
+          title="Load cells from a .py (# %% cells) or .ipynb file — Undo brings your current cells back"
+        >
+          ⤒ Import
+        </button>
+        <input
+          ref={fileInput}
+          type="file"
+          accept=".py,.ipynb,text/x-python,application/x-ipynb+json"
+          onChange={importCells}
+          hidden
+          aria-label="Import cells from a .py or .ipynb file"
+        />
         <span className={styles.tbNote}>
           Shift+Enter runs a cell · Esc then Tab leaves a cell · numpy / pandas / matplotlib auto-load · cell code is saved in this browser (variables are not)
         </span>
       </div>
 
-      {(undo || saveFailed) && (
+      {(undo || saveFailed || importError) && (
         <div className={styles.notice} role="status">
+          {importError && <span className={styles.noticeWarn}>{importError}</span>}
           {saveFailed && (
             <span className={styles.noticeWarn}>
               Couldn&rsquo;t save to this browser (storage full or blocked) — copy anything you want to keep.

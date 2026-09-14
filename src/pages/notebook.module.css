@@ -18,11 +18,6 @@
   line-height: 1.65;
 }
 
-.note {
-  font-size: 0.85rem;
-  color: var(--ifm-color-emphasis-600);
-}
-
 .tips {
   margin-top: 1.25rem;
   font-size: 0.85rem;
@@ -40,4 +35,34 @@
   padding: 0 0.3rem;
   font-size: 0.75rem;
   background: var(--ifm-background-surface-color);
+}
+
+/* "How it works", folded away so the editor is reached sooner */
+.how {
+  margin-top: 0.4rem;
+  font-size: 0.88rem;
+  color: var(--ifm-color-emphasis-700);
+}
+.how summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ifm-color-emphasis-800);
+}
+.how ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .wrap {
+    padding: 1.25rem 0.6rem 3rem;
+  }
+  .head {
+    margin-bottom: 0.9rem;
+  }
+  .head h1 {
+    font-size: 1.6rem;
+    margin-bottom: 0.4rem;
+  }
 }
