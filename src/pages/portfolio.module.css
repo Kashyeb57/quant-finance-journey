@@ -167,7 +167,7 @@
   line-height: 1.5;
 }
 
-/* ── Range pills (v1: 3M fixed; the rest arrive with the Worker change) ─ */
+/* ── Range pills: the active one follows the history window the Worker returned ─ */
 .pills {
   display: flex;
   align-items: center;
@@ -237,6 +237,41 @@
   border-radius: var(--r-md);
   overflow: hidden;
 }
+/* Since-start strip above the metrics grid: its own 3-cell grid, so the 6-cell
+   border rules on .metrics stay untouched. */
+.perf {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0 0 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.perf .metric { border-bottom: 0; }
+.perf .metric:first-child { border-left: 0; }
+.perf .metric:not(:first-child) { border-left: 1px solid var(--line); }
+
+.readNote {
+  margin: 0.85rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--tx-muted);
+}
+.readNote strong { color: var(--tx-secondary); font-weight: 600; }
+
+/* Start / end dates and the start value under the equity curve */
+.chartRefs {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.3rem 1.6rem 0;
+  font-family: var(--ff-mono);
+  font-size: 0.66rem;
+  color: var(--tx-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .metric { padding: 0.95rem 1.1rem; border-left: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .metric:nth-child(3n+1) { border-left: 0; }
 .metric:nth-child(n+4) { border-bottom: 0; }
@@ -653,3 +688,10 @@
   text-underline-offset: 2px;
 }
 .ownerLink:hover { color: var(--tx-secondary); }
+
+/* Since-start strip stacks on small phones */
+@media (max-width: 520px) {
+  .perf { grid-template-columns: 1fr; }
+  .perf .metric { border-bottom: 0; }
+  .perf .metric:not(:first-child) { border-left: 0; border-top: 1px solid var(--line); }
+}

@@ -4,13 +4,16 @@ import Link from '@docusaurus/Link';
 import PageHeader from '@site/src/components/PageHeader';
 import {fmtPrice, isCrypto, fetchSnapshot} from '@site/src/components/Terminal/marketData';
 import {SECTIONS} from '@site/src/components/Terminal/tickers';
+import {getBars} from '@site/src/lib/market';
 import styles from './portfolio.module.css';
 
 /*
  * Portfolio — "Spatial Command Deck". A Robinhood-grade read of the Alpaca
  * *paper* account, plus the analytics Robinhood never ships. Two audiences:
- *   • Everyone      — a live, read-only view. Held-symbol trade streams tick the
- *                     equity value and position marks in real time.
+ *   • Everyone      — a live, read-only view. Each held symbol's snapshot is
+ *                     polled every 5s to tick the equity value and position marks
+ *                     (Alpaca's free tier allows one stream, so not per-symbol
+ *                     sockets).
  *   • The owner     — unlocks a buy/sell panel with a passphrase (stored only in
  *                     the browser, sent as X-Trade-Token). The real gate is the
  *                     Worker: POST /_m/order and /_m/cancel reject anything
@@ -44,6 +47,15 @@ function fmtWhen(iso, withTime) {
     if (withTime) { o.hour = '2-digit'; o.minute = '2-digit'; o.hour12 = false; }
     return new Intl.DateTimeFormat('en-US', o).format(new Date(iso)) + (withTime ? ' CT' : '');
   } catch (_) { return '—'; }
+}
+
+// Trading date (YYYY-MM-DD, New York) of an epoch-seconds stamp. Portfolio
+// history stamps day D at 00:00 UTC of D+1 (20:00 New York on D) and daily bars
+// at 00:00 New York on D, so both map to D here and can be matched.
+function nyDay(sec) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date(sec * 1000));
+  } catch (_) { return ''; }
 }
 
 // Equity-curve timestamps are Alpaca epoch *seconds* (guard covers ms too).
@@ -229,6 +241,17 @@ function Content() {
     try { const t = localStorage.getItem(TRADE_TOKEN_KEY); if (t) setToken(t); } catch (_) { /* ignore */ }
   }, []);
 
+  // SPY daily closes, once, as a benchmark for the since-start return. Purely
+  // context: if it fails, the benchmark cell just stays empty.
+  const [spyBars, setSpyBars] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    getBars('SPY', '1Day')
+      .then((d) => { if (!cancelled && d && Array.isArray(d.bars)) setSpyBars(d.bars); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function pull() {
@@ -310,7 +333,7 @@ function Content() {
     );
   }
 
-  const {account: a, positions, orders, closed, realizedTotal, history, asOf} = state.data;
+  const {account: a, positions, orders, closed, realizedTotal, history, historyPeriod = '3M', asOf} = state.data;
 
   // Drop Alpaca's pre-funding value:0 padding so the curve doesn't rocket from $0.
   const hist = (history || []).filter((p) => p && Number.isFinite(p.value) && p.value > 0);
@@ -358,6 +381,35 @@ function Content() {
     ? {v: hist[sel].value - hist[0].value, pct: hist[0].value ? ((hist[sel].value - hist[0].value) / hist[0].value) * 100 : null, label: fmtDay(hist[sel].t)}
     : {v: dayPLlive, pct: dayPctLive, label: 'Today'};
 
+  // ── Context for reading the numbers (what a return means here) ──
+  // The start date is only certain when the history reaches back past funding:
+  // Alpaca pads days before the account existed with value 0.
+  const inceptionKnown = hist.length > 0 && (history || []).some((p) => p && p.value === 0);
+  const startPoint = hist.length ? hist[0] : null;
+  const startValue = startPoint ? startPoint.value : null;
+  const sinceStart = equity != null && startValue ? {v: equity - startValue, pct: ((equity - startValue) / startValue) * 100} : null;
+  const windowLabel = inceptionKnown ? 'since inception' : historyPeriod === '1A' ? 'last 12 months' : 'last 3 months';
+  const daysLive = startPoint ? Math.max(0, Math.floor((Date.now() / 1000 - startPoint.t) / 86400)) : null;
+  // SPY close-to-close from the same starting trading day to its latest close.
+  let spy = null;
+  if (spyBars && spyBars.length && startPoint) {
+    const d0 = nyDay(startPoint.t);
+    const b0 = spyBars.find((b) => nyDay(b.time) >= d0);
+    const b1 = spyBars[spyBars.length - 1];
+    if (b0 && b1 && b0.close && b1.time > b0.time) spy = {pct: (b1.close / b0.close - 1) * 100};
+  }
+  const perf = [
+    {
+      label: inceptionKnown ? 'Since inception' : windowLabel,
+      val: sinceStart ? signedMoney(sinceStart.v) : '—',
+      tone: dirCls(sinceStart && sinceStart.v),
+      sub: sinceStart && startPoint ? `${signedPct(sinceStart.pct)} on ${money(startValue)} · ${fmtDay(startPoint.t)}` : null,
+    },
+    {label: 'SPY, same dates', val: spy ? signedPct(spy.pct) : '—', tone: '', sub: spy ? 'benchmark, for context' : null},
+    {label: 'Track record', val: daysLive != null ? `${daysLive} days` : '—', tone: '', sub: `${orders.length} orders · ${closed.length} closed`},
+  ];
+  const rangeOn = inceptionKnown ? 'ALL' : historyPeriod === '1A' ? '1Y' : '3M';
+
   const metrics = [
     {label: 'Realized P/L', val: signedMoney(realizedTotal), tone: dirCls(realizedTotal), sub: closed.length ? `${closed.length} round-trips` : null},
     {label: 'Unrealized', val: signedMoney(unrealTotal), tone: dirCls(unrealTotal), sub: positions.length ? `${positions.length} open` : null},
@@ -401,17 +453,39 @@ function Content() {
 
         <EquityChart points={hist} scrubIdx={scrubIdx} onScrub={setScrubIdx} />
 
+        {/* Dates and the starting value the curve is measured from. */}
+        {hist.length > 1 && (
+          <div className={styles.chartRefs}>
+            <span>{fmtDay(hist[0].t)}</span>
+            <span>dashed line = start, {money(hist[0].value)}</span>
+            <span>{fmtDay(hist[hist.length - 1].t)}</span>
+          </div>
+        )}
+
         <div className={styles.pills} aria-hidden="true">
           {['1D', '1W', '1M', '3M', '1Y', 'ALL'].map((r) => (
-            <span key={r} className={`${styles.pill} ${r === '3M' ? styles.pillOn : styles.pillSoon}`}>{r}</span>
+            <span key={r} className={`${styles.pill} ${r === rangeOn ? styles.pillOn : styles.pillSoon}`}>{r}</span>
           ))}
-          <span className={styles.pillNote}>3-month · daily</span>
+          <span className={styles.pillNote}>{windowLabel} · daily</span>
         </div>
       </div>
 
-      {/* ── Left Column: Allocation & Holdings ── */}
+      {/* ── Left Column: Trade & Allocation ── */}
       <div className={styles.leftCol}>
-        <div className={`p-card ${styles.allocCard}`} data-reveal style={{'--i': 1}}>
+        {!owner ? (
+          <div className={`p-card ${styles.tradeCard}`} data-reveal style={{'--i': 1}}>
+            <div className={styles.tradeHead}>
+              <h2 className={styles.h2}>Trade <span className={styles.count}>owner · paper</span></h2>
+            </div>
+            <div style={{padding: '1rem 1.7rem 1.6rem'}}>
+              <button className={styles.submitBtn} onClick={unlock}>Unlock Terminal</button>
+            </div>
+          </div>
+        ) : (
+          <TradePanel token={token} symbols={positions.map((p) => p.symbol)} onPlaced={() => pullRef.current && pullRef.current()} onLock={lock} />
+        )}
+
+        <div className={`p-card ${styles.allocCard}`} data-reveal style={{'--i': 2}}>
           <h2 className={styles.h2}>Allocation <span className={styles.count}>{pctWhole(exposure)} invested</span></h2>
           <div className={styles.allocBar}>
             {segs.map((s) => (
@@ -430,8 +504,11 @@ function Content() {
             )}
           </div>
         </div>
+      </div>
 
-        <div className={`p-card ${styles.holdingsCard}`} data-reveal style={{'--i': 2}}>
+      {/* ── Right Column: Holdings, Performance, Ledger ── */}
+      <div className={styles.rightCol}>
+        <div className={`p-card ${styles.holdingsCard}`} data-reveal style={{'--i': 3}}>
           <h2 className={styles.h2}>Holdings <span className={styles.count}>{positions.length} open</span></h2>
           {livePos.length === 0 ? (
             <p className={styles.empty}>No open positions — the account’s capital is parked in cash.</p>
@@ -464,14 +541,18 @@ function Content() {
             </div>
           )}
         </div>
-      </div>
 
-      {/* ── Right Column: Trade (owner) · Performance · Ledger ── */}
-      <div className={styles.rightCol}>
-        {owner && <TradePanel token={token} symbols={positions.map((p) => p.symbol)} onPlaced={() => pullRef.current && pullRef.current()} onLock={lock} />}
-
-        <div className={`p-card ${styles.metricsCard}`} data-reveal style={{'--i': 3}}>
+        <div className={`p-card ${styles.metricsCard}`} data-reveal style={{'--i': 4}}>
           <h2 className={styles.h2}>The read <span className={styles.count}>performance</span></h2>
+          <dl className={styles.perf}>
+            {perf.map((m, i) => (
+              <div key={i} className={styles.metric}>
+                <dt className={styles.metricLabel}>{m.label}</dt>
+                <dd className={`${styles.metricVal} ${m.tone || ''}`}>{m.val}</dd>
+                {m.sub && <div className={styles.metricSub}>{m.sub}</div>}
+              </div>
+            ))}
+          </dl>
           <dl className={styles.metrics}>
             {metrics.map((m, i) => (
               <div key={i} className={styles.metric}>
@@ -481,9 +562,23 @@ function Content() {
               </div>
             ))}
           </dl>
+          <p className={styles.readNote}>
+            <strong>How to read this.</strong> A paper account: Alpaca simulates the fills, with no
+            commissions and none of the market impact, queue position or slippage a real order would
+            face. Return is measured against {inceptionKnown ? 'the starting balance' : `the account value at the start of the ${windowLabel}`};
+            a paper account has no deposits or withdrawals to distort it.
+            {closed.length < 10 && (
+              <>
+                {' '}With {closed.length === 0 ? 'no closed trades' : `only ${closed.length} closed trade${closed.length === 1 ? '' : 's'}`} so
+                far, this is an experiment, not a track record — win rate and best/worst trade fill in as
+                positions close.
+              </>
+            )}
+            {' '}SPY is a broad US-market benchmark shown for context, not a target.
+          </p>
         </div>
 
-        <div className={`p-card ${styles.ledgerCard}`} data-reveal style={{'--i': 4}}>
+        <div className={`p-card ${styles.ledgerCard}`} data-reveal style={{'--i': 5}}>
           <div className={styles.ledgerHeader}>
             <h2 className={styles.h2}>Ledger</h2>
             <div className={styles.ledgerTabs}>
@@ -551,7 +646,7 @@ function Content() {
         </div>
       </div>
 
-      <p className={styles.foot} data-reveal style={{'--i': 5}}>
+      <p className={styles.foot} data-reveal style={{'--i': 6}}>
         Read-only paper account via Alpaca · auto-refreshes every 30s
         {asOf && <> · updated {fmtWhen(asOf, true)}</>} · live prices refresh every few seconds · scrub the curve to read any day ·
         {' '}watch the tape on the <Link to="/terminal">market terminal</Link>.

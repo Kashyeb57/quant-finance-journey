@@ -305,8 +305,20 @@ async function handleLedger(request, env) {
     alpacaTrade('/positions', env),
     alpacaTrade('/orders?status=all&limit=100&direction=desc', env),
     alpacaTrade('/account/activities/FILL?page_size=500', env),
-    alpacaTrade('/account/portfolio/history?period=3M&timeframe=1D', env),
+    alpacaTrade('/account/portfolio/history?period=1A&timeframe=1D', env),
   ]);
+
+  // A year of daily history, not three months. The account was funded at the
+  // close on 2026-06-22, so a 3M window would silently drop its start around
+  // 2026-09-22 and turn the page's "since inception" curve into "last 3 months".
+  // (Daily points are stamped 00:00 UTC after the trading day = 20:00 New York.) Fall back to 3M if
+  // the longer request is ever refused, and report which window was used.
+  let historyPeriod = '1A';
+  let historyResult = histR;
+  if (!histR.ok) {
+    historyResult = await alpacaTrade('/account/portfolio/history?period=3M&timeframe=1D', env);
+    historyPeriod = '3M';
+  }
 
   if (!acctR.ok) {
     return json(request, { error: softAuth(acctR.status) ? 'not_connected' : acctR.error }, softAuth(acctR.status) ? 200 : acctR.status);
@@ -372,7 +384,7 @@ async function handleLedger(request, env) {
   closes.reverse(); // newest first
 
   // Equity curve from portfolio history.
-  const h = histR.ok ? (histR.data || {}) : {};
+  const h = historyResult.ok ? (historyResult.data || {}) : {};
   const ts = Array.isArray(h.timestamp) ? h.timestamp : [];
   const eq = Array.isArray(h.equity) ? h.equity : [];
   const history = [];
@@ -387,6 +399,7 @@ async function handleLedger(request, env) {
     closed: closes.slice(0, 100),
     realizedTotal,
     history,
+    historyPeriod,
     baseValue: numOr(h.base_value),
     asOf: new Date().toISOString(),
   }, 200, 12);
