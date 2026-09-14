@@ -12,7 +12,7 @@ import styles from './styles.module.css';
 
 const FEEDS = [
   // MKT — Markets
-  { source: 'MARKETWATCH', cat: 'MKT', url: 'https://feeds.marketwatch.com/marketwatch/topstories/' },
+  { source: 'MARKETWATCH', cat: 'MKT', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
   { source: 'CNBC', cat: 'MKT', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114' },
   { source: 'INVESTING', cat: 'MKT', url: 'https://www.investing.com/rss/news.rss' },
   { source: 'SEEKING ALPHA', cat: 'MKT', url: 'https://seekingalpha.com/market_currents.xml' },
@@ -43,8 +43,8 @@ const FEEDS = [
 
   // Fast-updating, market-only wires (verified live) — near-instant on breaking
   // market moves. These feed the "⚡ Breaking" view (see FAST below).
-  { source: 'MW REALTIME', cat: 'MKT', url: 'https://feeds.marketwatch.com/marketwatch/realtimeheadlines/' },
-  { source: 'MW BREAKING', cat: 'MKT', url: 'https://feeds.marketwatch.com/marketwatch/bulletins/' },
+  { source: 'MW REALTIME', cat: 'MKT', url: 'https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines' },
+  { source: 'MW BREAKING', cat: 'MKT', url: 'https://feeds.content.dowjones.io/public/rss/mw_bulletins' },
   { source: 'NASDAQ', cat: 'MKT', url: 'https://www.nasdaq.com/feed/rssoutbound?category=Markets' },
   { source: 'BENZINGA', cat: 'MKT', url: 'https://www.benzinga.com/feed' },
   { source: 'PR NEWSWIRE', cat: 'MKT', url: 'https://www.prnewswire.com/rss/financial-services-latest-news/financial-services-latest-news-list.rss' },

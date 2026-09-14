@@ -886,7 +886,7 @@ async function handleQuotes(request, env, url) {
 // the panel lists (keep in step with FEEDS in src/components/Terminal/News.jsx),
 // the body must be an RSS/Atom document, and it is size- and time-bounded.
 const RSS_HOSTS = new Set([
-  'feeds.marketwatch.com', 'search.cnbc.com', 'www.investing.com', 'seekingalpha.com',
+  'feeds.content.dowjones.io', 'feeds.marketwatch.com', 'search.cnbc.com', 'www.investing.com', 'seekingalpha.com',
   'feeds.bbci.co.uk', 'www.fxstreet.com', 'www.economist.com', 'feeds.a.dj.com',
   'techcrunch.com', 'www.wired.com', 'oilprice.com', 'www.coindesk.com',
   'cointelegraph.com', 'decrypt.co', 'www.aljazeera.com', 'www.theguardian.com',
