@@ -879,8 +879,90 @@ async function handleQuotes(request, env, url) {
   }, 200, 60);
 }
 
+// ── News feeds (GET /_m/rss?url=…) ─────────────────────────────────────
+// The Terminal's news panel used to depend on free public CORS proxies, and
+// when both were down the panel was simply empty. This fetches the feed itself.
+// It is NOT an open proxy: https only, the host must be one of the news sources
+// the panel lists (keep in step with FEEDS in src/components/Terminal/News.jsx),
+// the body must be an RSS/Atom document, and it is size- and time-bounded.
+const RSS_HOSTS = new Set([
+  'feeds.marketwatch.com', 'search.cnbc.com', 'www.investing.com', 'seekingalpha.com',
+  'feeds.bbci.co.uk', 'www.fxstreet.com', 'www.economist.com', 'feeds.a.dj.com',
+  'techcrunch.com', 'www.wired.com', 'oilprice.com', 'www.coindesk.com',
+  'cointelegraph.com', 'decrypt.co', 'www.aljazeera.com', 'www.theguardian.com',
+  'www.france24.com', 'www.sec.gov', 'www.federalreserve.gov', 'www.ecb.europa.eu',
+  'www.nasdaq.com', 'www.benzinga.com', 'www.prnewswire.com', 'www.ft.com', 'www.theblock.co',
+]);
+const RSS_MAX_BYTES = 3 * 1024 * 1024;
+const RSS_TIMEOUT_MS = 8000;
+const RSS_CACHE_SECONDS = 120;
+
+function rssTarget(raw) {
+  let u;
+  try { u = new URL(raw); } catch (_) { return null; }
+  if (u.protocol !== 'https:' || u.username || u.password || u.port) return null;
+  if (!RSS_HOSTS.has(u.hostname)) return null;
+  u.searchParams.delete('_'); // the client's cache-buster; the edge cache below does that job
+  u.hash = '';
+  return u;
+}
+
+function rssResponse(request, body, status, cacheSeconds) {
+  return new Response(body, {
+    status,
+    headers: {
+      'Content-Type': status === 200 ? 'application/xml; charset=utf-8' : 'text/plain; charset=utf-8',
+      'Cache-Control': cacheSeconds ? `public, max-age=${cacheSeconds}` : 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+      ...corsHeaders(request),
+    },
+  });
+}
+
+async function handleRss(request, env, url, ctx) {
+  const target = rssTarget(url.searchParams.get('url') || '');
+  if (!target) return rssResponse(request, 'Feed not allowed', 400, 0);
+
+  const cache = caches.default;
+  const cacheKey = new Request(`https://rss.internal/${encodeURIComponent(target.href)}`);
+  const hit = await cache.match(cacheKey);
+  if (hit) return rssResponse(request, await hit.text(), 200, RSS_CACHE_SECONDS);
+
+  let res;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), RSS_TIMEOUT_MS);
+  try {
+    res = await fetch(target.href, {
+      signal: ctrl.signal,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; joyebkashyeb.com.np news reader)',
+        'Accept': 'application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5',
+      },
+    });
+  } catch (_) {
+    return rssResponse(request, 'Feed unreachable', 504, 0);
+  } finally {
+    clearTimeout(timer);
+  }
+  // A redirect must not carry us off the allowlist.
+  if (res.url && !rssTarget(res.url)) return rssResponse(request, 'Feed redirected off the allowlist', 502, 0);
+  if (!res.ok) return rssResponse(request, `Feed returned ${res.status}`, 502, 0);
+  const declared = Number(res.headers.get('Content-Length') || 0);
+  if (declared > RSS_MAX_BYTES) return rssResponse(request, 'Feed too large', 502, 0);
+
+  const text = await res.text();
+  if (text.length > RSS_MAX_BYTES) return rssResponse(request, 'Feed too large', 502, 0);
+  if (!/<(rss|feed|rdf:RDF)[\s>]/i.test(text.slice(0, 4096))) return rssResponse(request, 'Not a feed', 502, 0);
+
+  const stored = new Response(text, { headers: { 'Cache-Control': `public, max-age=${RSS_CACHE_SECONDS}` } });
+  if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(cacheKey, stored));
+  else await cache.put(cacheKey, stored);
+  return rssResponse(request, text, 200, RSS_CACHE_SECONDS);
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (url.pathname === '/_m/stream') return handleStream(request, env, url);
@@ -907,6 +989,7 @@ export default {
     if (url.pathname === '/_m/ledger')    return handleLedger(request, env);
     if (url.pathname === '/_m/notes')     return handleNotesGet(request, env);
     if (url.pathname === '/_m/gex')       return handleGex(request, env, url);
+    if (url.pathname === '/_m/rss')       return handleRss(request, env, url, ctx);
     if (url.pathname === '/_m/health')    return json(request, { ok: true });
 
     return json(request, { error: 'Not found' }, 404);

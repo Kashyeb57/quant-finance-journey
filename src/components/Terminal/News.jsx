@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { rssUrl } from '@site/src/lib/market';
 import styles from './styles.module.css';
 
 /*
  * News terminal — live financial headlines from a curated set of RSS feeds
- * (Fincept feed list) fetched through a CORS proxy and parsed client-side.
+ * (Fincept feed list) fetched through the market Worker (public CORS proxies as
+ * a fallback) and parsed client-side.
  * Features: category tabs, time-range filter, text/ticker search, relative
  * timestamps, and a heuristic impact indicator (keyword sentiment + ticker tags).
  */
@@ -65,7 +67,10 @@ const RANGES = [
   { code: 'ALL', h: null },
 ];
 
+// The site's own Worker first; the public proxies only as a fallback, since
+// they go down without notice (both were down together on 2026-09-14).
 const PROXIES = [
+  (u) => rssUrl(u),
   (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
   (u) => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
 ];

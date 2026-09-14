@@ -10,7 +10,7 @@
  * (the portfolio page) or merely means "hide this panel" (the chart overlays).
  */
 
-import { getJson, postJson } from './api';
+import { apiUrl, getJson, postJson } from './api';
 
 /* ------------------------------------------------------------ market data */
 
@@ -58,6 +58,15 @@ export async function getQuotes(symbols, opts) {
  */
 export function getGex(symbol, exp = 'day', opts) {
   return getJson(`/_m/gex?symbol=${encodeURIComponent(symbol)}&exp=${encodeURIComponent(exp)}`, opts);
+}
+
+/**
+ * URL that returns a news feed's raw RSS/Atom XML through the Worker. Only the
+ * hosts the Terminal's news panel uses are allowed (RSS_HOSTS in the Worker).
+ * A URL rather than a fetch because the panel owns its own timeout and abort.
+ */
+export function rssUrl(feedUrl) {
+  return apiUrl(`/_m/rss?url=${encodeURIComponent(feedUrl)}`);
 }
 
 /* ------------------------------------------------- paper trading account */
