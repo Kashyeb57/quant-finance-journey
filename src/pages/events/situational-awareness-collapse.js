@@ -186,7 +186,7 @@ export default function SituationalAwarenessCollapse() {
   return (
     <Layout
       title="The Situational Awareness fund collapse"
-      description="A deep post-mortem of how Leopold Aschenbrenner's ~4x-levered, hyper-concentrated AI-infrastructure fund went from +439% to a 67% wipe-out in six trading days — the trigger, the positions, the failed hedges, the margin calls, and the block trade to Citadel.">
+      description="A deep post-mortem of how Leopold Aschenbrenner's ~4x-levered, hyper-concentrated AI-infrastructure fund went from +439% to a 67% loss in July 2026, ending in the forced sale of its entire public book — the trigger, the positions, the failed hedges, the margin calls, and the block trade to Citadel.">
       <header className="hero hero--primary" style={{ padding: '2.2rem 1rem' }}>
         <div className="container">
           <Heading as="h1" className="hero__title" style={{ fontSize: '2rem' }}>
@@ -533,15 +533,15 @@ export default function SituationalAwarenessCollapse() {
                   </blockquote>
                   <p>
                     He was not reducing risk. He was doubling down, asking investors to contribute
-                    fresh capital starting <strong>August 1</strong>. The fundraise never
-                    happened — the margin calls arrived on July 29, five days later. There was no
-                    August 1.
+                    fresh capital starting <strong>August 1</strong>. The margin calls arrived first,
+                    on July 29 &mdash; five days after the letter, and three days before the new
+                    money could come in.
                   </p>
                   <p>
                     This is not evidence that Aschenbrenner was incompetent. His AI thesis may
                     well prove correct over years. The letter is evidence of something more
-                    dangerous: at extreme leverage, <em>even a correct thesis can be timed out of
-                    existence</em>. You can be right and still not survive to collect.
+                    dangerous: at extreme leverage, <em>even a correct thesis can be forced out of its
+                    positions before it pays off</em>. You can be right and still not survive to collect.
                   </p>
                   <p className={styles.letterNote}>
                     Source: reported by Reuters, CNBC, Inc. and others citing the investor
@@ -645,18 +645,21 @@ export default function SituationalAwarenessCollapse() {
               That gap between the forced-seller price and where willing owners valued the same shares
               a day later is the whole lesson in one number. The market didn&rsquo;t decide AI
               infrastructure was worthless. A single over-levered holder <em>had</em> to sell into a
-              vacuum, and price briefly detached from value. The fund didn&rsquo;t die because it was
-              wrong; it died because it couldn&rsquo;t survive being early.
+              vacuum, and price briefly detached from value. The fund didn&rsquo;t lose its public book
+              because it was wrong; it lost it because it couldn&rsquo;t carry its leverage long enough
+              to be early.
             </p>
           </section>
 
           <section className={styles.section}>
             <h2 id="s-after">10. The aftermath</h2>
             <p>
-              July closed with the fund down about <strong>67%</strong>. What survived was largely{' '}
+              July closed with the fund down about <strong>67%</strong>. Bloomberg reported on July 30 that its
+              assets had fallen to about <strong>$10 billion</strong>, and TechCrunch that it still held its
+              Anthropic shares. What remained was largely{' '}
               <strong>illiquid</strong>: a private stake in Anthropic reported around <strong>$5 billion</strong>,
               acquired earlier in 2026 &mdash; valuable, but impossible to sell into a margin call. The
-              firm began trying to raise fresh capital on August 1. The cruel irony wrote itself: the
+              fund&rsquo;s July 24 letter had asked investors for fresh capital from August 1. The cruel irony wrote itself: the
               man who literally authored &ldquo;Situational Awareness&rdquo; was undone by a blind spot
               in his own &mdash; the tail risk hiding inside his leverage and his hedges.
             </p>

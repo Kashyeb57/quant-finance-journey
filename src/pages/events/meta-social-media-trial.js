@@ -8,8 +8,9 @@ import styles from './styles.module.css';
  * Meta's social-media child-safety trial (California, August 2026). A coalition
  * of state AGs led by California's Rob Bonta put Meta on trial in Oakland federal
  * court, arguing Facebook/Instagram were designed to addict kids and that Meta
- * knew and hid the harm — the "Big Tobacco moment" for social media. It ended in
- * a $17B settlement on Aug 26, 2026 (no admission of wrongdoing, no jury verdict).
+ * knew and hid the harm — the "Big Tobacco moment" for social media. On Aug 26,
+ * 2026 a proposed settlement of up to $17B was announced, subject to court
+ * approval (no jury verdict). Source of record: California DOJ release.
  * The allegations were never adjudicated; the page is framed accordingly.
  */
 
@@ -22,9 +23,9 @@ const SCALE = [
 ];
 
 const STATS = [
-  { v: '$17B', label: 'What Meta agreed to pay, over 10 years (Aug 26, 2026) — with no admission of wrongdoing', dir: 'down' },
-  { v: '47 states', label: 'States in the settlement; 29 sued in the 2023 federal action, 4 — CA, CO, KY, NJ — argued the trial' },
-  { v: 'Ended wk 2', label: 'Trial opened Aug 18; settled Aug 26 — before Zuckerberg was due to testify. No jury verdict' },
+  { v: '$17B', label: 'Up to this much, paid over 10 years, in a proposed settlement still subject to court approval (Aug 26, 2026)', dir: 'down' },
+  { v: '51 AGs', label: 'Attorneys general in the settlement coalition, per California DOJ; 29 sued in the 2023 federal action, 4 — CA, CO, KY, NJ — argued the trial' },
+  { v: 'Week 2', label: 'Trial opened Aug 18; proposed settlement announced Aug 26 — before Zuckerberg was due to testify. No jury verdict' },
   { v: '~2,000+', label: 'Related child-harm suits still waiting behind this one — the settlement doesn’t resolve them' },
   { v: '$201B', label: 'Meta 2025 revenue — the business the case targeted' },
   { v: '$206B', label: 'Big Tobacco’s 1998 settlement — the precedent that loomed over it' },
@@ -34,8 +35,8 @@ const STATS = [
 // as the trial runs. Newest first.
 const UPDATES = [
   {
-    d: 'Aug 26, 2026 · Settled',
-    b: 'Midway through the second week — and before Mark Zuckerberg was due to take the stand — Meta agreed to a $17 billion settlement, ending the trial. Reported across 47 states, it is paid over ten years; California’s share (~$1.5–2.1 billion) is earmarked for youth mental-health prevention and treatment. Meta did not admit wrongdoing, but agreed to an injunction barring further “false, misleading, or deceptive” statements about its safety features, an independent auditor with expansive access and a direct line to the attorneys general, and a slate of product changes for minors: default 2-hour daily time limits, parent-set nightly blocks, no “like” counts for under-18s, a non-algorithmic feed option, no push notifications during school hours, a ban on cosmetic-surgery filters, and age-assurance measures. AG Bonta said Meta “has agreed to make massive transformations that will reduce the risk of harm” within months.',
+    d: 'Aug 26, 2026 · Proposed settlement',
+    b: 'Midway through the second week — and before Mark Zuckerberg was due to take the stand — Meta and a coalition of 51 attorneys general announced a proposed settlement of up to $17 billion, paid over ten years and still subject to court approval; California’s share (~$1.5–2.1 billion) is earmarked for youth mental-health prevention and treatment. Meta did not admit wrongdoing, but agreed to an injunction barring further “false, misleading, or deceptive” statements about its safety features, an independent auditor with expansive access and a direct line to the attorneys general, and a slate of product changes for minors: default 2-hour daily time limits, parent-set nightly blocks, no “like” counts for under-18s, a non-algorithmic feed option, no push notifications during school hours, a ban on cosmetic-surgery filters, and age-assurance measures. AG Bonta said Meta “has agreed to make massive transformations that will reduce the risk of harm” within months.',
   },
   {
     d: 'Aug 24–25, 2026 · Week 2',
@@ -71,7 +72,7 @@ const TIMELINE = [
   { d: 'Aug 18, 2026', b: 'Opening statements before an eight-person jury. Deputy AG Megan O’Neill says Meta’s model was to “hook the users, hold them … harvest their data, and then hide the truth.” Meta counters that its products aren’t defective and that it has built extensive teen-safety tools. The trial is expected to run ~6–7 weeks.', crash: true },
   { d: 'Aug 19, 2026', b: 'Whistleblower Arturo Béjar, a former Meta safety engineer, becomes the states’ first witness — describing a “don’t ask, don’t tell” culture, the “move fast and break things” mantra, Reels shipped without safety review, and having briefed Zuckerberg on product harms ~100 times.', crash: true },
   { d: 'Aug 24–25, 2026', b: 'Week two: Béjar returns (“if Mark makes something a priority, mountains move in months”); a former Meta engineering director testifies Zuckerberg subordinated child safety to engagement and growth; Instagram head Adam Mosseri takes the stand to defend Meta’s record.' },
-  { d: 'Aug 26, 2026', b: 'Meta settles for $17 billion (paid over 10 years) — before Zuckerberg testifies — ending the trial. No admission of wrongdoing, but an injunction against deceptive safety claims, an independent auditor, and product changes for minors: default 2-hour limits, no under-18 “like” counts, a non-algorithmic feed option, school-hours notification blocks, and more.', crash: true },
+  { d: 'Aug 26, 2026', b: 'A proposed settlement of up to $17 billion (paid over 10 years, subject to court approval) is announced — before Zuckerberg testifies. No admission of wrongdoing, but an injunction against deceptive safety claims, an independent auditor, and product changes for minors: default 2-hour limits, no under-18 “like” counts, a non-algorithmic feed option, school-hours notification blocks, and more.', crash: true },
 ];
 
 const WAVES = [
@@ -93,15 +94,16 @@ const WAVES = [
   },
   {
     name: 'Social media',
-    year: '2026 (settled)',
-    plaintiffs: '47 states, led by California',
+    year: '2026 (proposed settlement)',
+    plaintiffs: '51 attorneys general, led by California',
     knew: 'Internal docs: “bring them in as tweens”; 11-yos 4× more likely to return',
     theory: 'Product design-defect + COPPA + false advertising',
-    outcome: '$17B settlement over 10 yrs + app changes for minors; no admission of wrongdoing',
+    outcome: 'Proposed: up to $17B over 10 yrs + app changes for minors, pending court approval',
   },
 ];
 
 const SOURCES = [
+  { t: 'California DOJ — “Attorney General Bonta Secures Transformative $17 Billion Settlement with Meta” (Aug 26, 2026) — the primary source for the settlement terms', u: 'https://www.oag.ca.gov/news/press-releases/attorney-general-bonta-secures-transformative-17-billion-settlement-meta' },
   { t: 'NPR — “Meta, states agree to $17 billion settlement in child safety trial” (Aug 26, 2026)', u: 'https://www.npr.org/2026/08/26/nx-s1-5944781/meta-settlement-child-safety-lawsuit' },
   { t: 'Oaklandside — “Meta reaches $17 billion settlement in landmark trial over teen social media addiction” (Aug 26, 2026)', u: 'https://oaklandside.org/2026/08/26/meta-reaches-17-billion-settlement-trial-oakland-teen-social-media-addiction/' },
   { t: 'Texas Public Radio — “Meta, states agree to $17 billion settlement in child safety trial” (Aug 26, 2026)', u: 'https://www.tpr.org/2026-08-26/meta-states-agree-to-17-billion-settlement-in-child-safety-trial' },
@@ -166,13 +168,13 @@ export default function MetaSocialMediaTrial() {
   return (
     <Layout
       title="Meta on trial: the social-media reckoning"
-      description="A Big Event: a coalition of state attorneys general, led by California's Rob Bonta, put Meta on trial in Oakland federal court in August 2026 — arguing Facebook and Instagram were deliberately designed to addict children, and that Meta knew and hid the harm. The 'Big Tobacco moment' for social media — the allegations, the internal documents, why Section 230 didn't save Meta this time, and how it ended in a $17 billion settlement.">
+      description="A Big Event: a coalition of state attorneys general, led by California's Rob Bonta, put Meta on trial in Oakland federal court in August 2026 — arguing Facebook and Instagram were deliberately designed to addict children, and that Meta knew and hid the harm. The 'Big Tobacco moment' for social media — the allegations, the internal documents, why Section 230 didn't save Meta this time, and the proposed settlement of up to $17 billion announced mid-trial.">
       <header className="hero hero--primary" style={{ padding: '2.2rem 1rem' }}>
         <div className="container">
           <Heading as="h1" className="hero__title" style={{ fontSize: '2rem' }}>
             Meta on trial: the social-media reckoning
           </Heading>
-          <p className="hero__subtitle">August 2026 · states argued the feed was built to addict kids — Meta settled for $17 billion</p>
+          <p className="hero__subtitle">August 2026 · states argued the feed was built to addict kids — a proposed settlement of up to $17 billion</p>
         </div>
       </header>
 
@@ -180,8 +182,8 @@ export default function MetaSocialMediaTrial() {
         <article className={styles.article}>
           <Link className={styles.backLink} to="/events">← All Big Events</Link>
           <div className={styles.articleMeta}>
-            <span className={styles.developing}>Settled · $17B · Aug 26, 2026</span>
-            <span>Opened Aug 18 · settled Aug 26, 2026 · updated Aug 28 · ~12 min read · by Joyeb Kashyeb</span>
+            <span className={styles.developing}>Proposed settlement · up to $17B · pending court approval</span>
+            <span>Opened Aug 18 · settlement announced Aug 26, 2026 · updated Sep 13 · ~12 min read · by Joyeb Kashyeb</span>
           </div>
 
           <p className={styles.dek}>
@@ -197,9 +199,10 @@ export default function MetaSocialMediaTrial() {
           <div className={styles.plainBox} style={{ borderLeftColor: 'var(--viz-s3)' }}>
             <Heading as="h2">A note before we start</Heading>
             <p>
-              This case ended in a <strong>settlement, not a verdict</strong>. On{' '}
-              <strong>August 26, 2026</strong>, Meta agreed to pay <strong>$17 billion</strong> over ten
-              years and to change its apps &mdash; <strong>without admitting wrongdoing</strong>. So the
+              This case is heading to a <strong>settlement, not a verdict</strong>. On{' '}
+              <strong>August 26, 2026</strong>, a <strong>proposed settlement</strong> was announced: up to{' '}
+              <strong>$17 billion</strong> over ten years and changes to Meta&rsquo;s apps. It{' '}
+              <strong>remains subject to court approval</strong>, and Meta did not admit wrongdoing. So the
               states&rsquo; allegations were never carried to a jury conclusion: a settlement is a
               negotiated resolution, not a finding of guilt, and Meta continues to deny it designed its
               products to harm children. This page explains what the case was, what Meta agreed to, and
@@ -463,8 +466,8 @@ export default function MetaSocialMediaTrial() {
             </p>
             <p className={styles.plainBox} style={{ borderLeftColor: 'var(--viz-good)' }}>
               <strong>How it resolved.</strong> In the end the &ldquo;medicine&rdquo; came by settlement,
-              not verdict. On <strong>Aug 26, 2026</strong> Meta agreed to <strong>$17 billion over ten
-              years</strong> &mdash; California&rsquo;s share (~$1.5&ndash;2.1B) earmarked for youth
+              not verdict. On <strong>Aug 26, 2026</strong> a proposed settlement was announced for{' '}
+              <strong>up to $17 billion over ten years</strong>, subject to court approval &mdash; California&rsquo;s share (~$1.5&ndash;2.1B) earmarked for youth
               mental-health care &mdash; and to exactly the kind of <em>product changes</em> the states
               were after: default 2-hour daily limits, parent-set nightly blocks,{' '}
               <strong>no &ldquo;like&rdquo; counts for under-18s</strong>, a non-algorithmic feed option
@@ -540,10 +543,11 @@ export default function MetaSocialMediaTrial() {
             <h2 id="s-watch">8. What to watch next</h2>
             <div className={styles.lessons}>
               <ul>
+                <li><strong>Court approval.</strong> The settlement is proposed, not final: it takes effect only if the court approves it and enters a consent judgment. Until then the terms, including the up-to-$17B figure, can still change.</li>
                 <li><strong>Do the product changes actually ship — and stick.</strong> The settlement&rsquo;s teeth are the app changes for minors plus an independent auditor with a line to the AGs. Whether Meta rolls out the 2-hour caps, kills under-18 &ldquo;like&rdquo; counts and offers the non-algorithmic feed on schedule is the real thing to track.</li>
                 <li><strong>The ~2,000 cases behind it.</strong> This state-enforcement deal does <em>not</em> resolve the personal-injury and school-district suits consolidated before the same judge. A $17B state settlement — on top of the March <em>K.G.M.</em> verdict — reprices every one of them.</li>
                 <li><strong>The other defendants.</strong> TikTok, Snap and YouTube still face parallel cases. A $17B Meta number becomes the benchmark the next settlement talks start from — this stays a sector event, not a single-stock one.</li>
-                <li><strong>No settled precedent.</strong> Because it settled, no jury or appellate court ruled on the design-defect theory <em>here</em>, so the big Section 230 / First Amendment questions remain open for the industry — the <em>K.G.M.</em> bellwether verdict is the one that stands.</li>
+                <li><strong>No settled precedent.</strong> Because the case is settling rather than reaching a verdict, no jury or appellate court ruled on the design-defect theory <em>here</em>, so the big Section 230 / First Amendment questions remain open for the industry — the <em>K.G.M.</em> bellwether verdict is the one that stands.</li>
                 <li><strong>Where the money goes.</strong> California earmarked its ~$1.5&ndash;2.1B for youth mental-health prevention and treatment; watch how the states actually deploy the funds.</li>
               </ul>
             </div>
@@ -575,7 +579,7 @@ export default function MetaSocialMediaTrial() {
                   reaches every company monetizing attention.
                 </li>
                 <li>
-                  <strong>A settlement isn&rsquo;t a verdict.</strong> Meta paid $17B and agreed to
+                  <strong>A settlement isn&rsquo;t a verdict.</strong> Meta agreed, pending court approval, to pay up to $17B and to
                   change the apps <em>without admitting wrongdoing</em>, so the design-defect theory was
                   never finally adjudicated here &mdash; the deeper Section 230 / First Amendment
                   questions stay open for the industry. But a $17B cheque plus a forced product redesign
@@ -616,14 +620,16 @@ export default function MetaSocialMediaTrial() {
               ))}
             </ol>
             <p className={styles.disclaimer}>
-              The trial <strong>ended in a settlement</strong> on Aug 26, 2026: Meta agreed to pay
-              <strong> $17 billion</strong> over ten years and to change its apps,{' '}
+              A <strong>proposed settlement</strong> was announced on Aug 26, 2026: up to
+              <strong> $17 billion</strong> over ten years and changes to Meta&rsquo;s apps,{' '}
               <strong>without admitting wrongdoing</strong> &mdash; there was <strong>no jury
-              verdict</strong>. The states&rsquo; claims were <strong>allegations Meta denied</strong>; a
+              verdict</strong>, and the settlement <strong>remains subject to court approval</strong>. The states&rsquo; claims were <strong>allegations Meta denied</strong>; a
               settlement resolves the case without a finding of guilt. Internal-document quotes are as
-              reported by news outlets and court filings. Figures (state counts reported 29&ndash;47, and
-              the settlement terms and California&rsquo;s share) vary slightly by source and were current
-              as of late August 2026. This is an educational explainer of a public court case, not legal
+              reported by news outlets and court filings. The settlement terms follow the California DOJ release of Aug 26, 2026
+              (a coalition of 51 attorneys general; up to $17B; California&rsquo;s share $1.5&ndash;2.1B),
+              which some news headlines rounded to a final &ldquo;$17 billion settlement&rdquo;.{' '}
+              <em>Corrected Sep 13, 2026:</em> earlier versions called the settlement final, gave the
+              amount without &ldquo;up to&rdquo;, and cited 47 states. This is an educational explainer of a public court case, not legal
               or investment advice.
             </p>
           </div>

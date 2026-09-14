@@ -8,7 +8,7 @@ import styles from './styles.module.css';
  * Jane Street's $15 billion month — August 2026 post-mortem.
  * The world's most profitable trading firm takes its first losing month in a
  * decade, from its "hedge-fund side" (AI + Asian directional bets, including a
- * stake in the Situational Awareness fund). Same July storm that wiped out SA —
+ * stake in the Situational Awareness fund). Same July storm that forced SA to liquidate its public book —
  * opposite outcome, because of scale, diversification and internal capital.
  */
 
@@ -16,7 +16,7 @@ import styles from './styles.module.css';
 const SCALE = [
   { label: 'July 2026 loss', note: 'the one down month', val: 15, kind: 'loss' },
   { label: '2025 net trading revenue', note: 'prior Wall Street record', val: 39.6, kind: 'rev' },
-  { label: '2026 revenue · Jan–Jul', note: 'already a new record, after the loss', val: 40, kind: 'rev' },
+  { label: '2026 revenue · Jan–Jul', note: 'already above all of 2025, after the loss', val: 40, kind: 'rev' },
   { label: 'Members’ equity', note: 'internal capital — no outside investors', val: 45, kind: 'cap' },
 ];
 
@@ -32,8 +32,8 @@ const LOSSES = [
 
 const STATS = [
   { v: '~$15B', label: 'July trading loss — its first losing month in ~a decade', dir: 'down' },
-  { v: '>$40B', label: '2026 net trading revenue through July — already a new record', dir: 'up' },
-  { v: '~$650M', label: 'Average loss per trading day in July', dir: 'down' },
+  { v: '>$40B', label: 'Net trading revenue, Jan–Jul 2026 — already above all of 2025', dir: 'up' },
+  { v: '~$680M', label: 'Average loss per trading day in July (22 sessions)', dir: 'down' },
   { v: '$39.6B', label: '2025 net trading revenue — the prior Wall Street record' },
   { v: '~$45B', label: 'Members’ equity — its own capital, no outside LPs' },
   { v: '$14.6B', label: 'Bonds issued days later (led by JPMorgan)' },
@@ -56,7 +56,7 @@ const TIMELINE = [
   { d: '2025 (full year)', b: 'A record year: ~$39.6B in net trading revenue — more than Citadel Securities (~$12.2B), Hudson River Trading (~$12.3B), or JPMorgan’s entire trading division (~$35.8B). Members’ equity has grown ~2,000% since 2016 to ~$45B.' },
   { d: 'Early July 2026', b: 'The AI-infrastructure trade cracks. SK Hynix’s U.S. listing (Jul 10) and Meta’s “Meta Compute” reveal (Jul 17) touch off a rout in memory, power and the small “neocloud” names — the same storm engulfing the Situational Awareness fund.' },
   { d: 'Jul 24–30, 2026', b: 'Situational Awareness — which Jane Street had invested in — is margin-called and force-sells its entire public book to Citadel. Through the month Jane Street’s own AI-adjacent longs and its directional bets in Asian equities bleed, while its put-option hedges give back only a fraction against the slow grind down.', crash: true },
-  { d: 'End of July 2026', b: 'Jane Street closes the month with a ~$15B loss — its first unprofitable month in roughly a decade, and one of the largest single-firm trading losses in history. Yet 2026 net trading revenue still exceeds $40B, already a new annual record.', crash: true },
+  { d: 'End of July 2026', b: 'Jane Street closes the month with a ~$15B loss — its first unprofitable month in roughly a decade, and one of the largest single-firm trading losses in history. Yet its net trading revenue for January–July 2026 still exceeds $40B — already more than all of 2025.', crash: true },
   { d: 'Aug 14–15, 2026', b: 'Bloomberg and the FT report the loss. Partner Turner Batty says “July was a bad month,” adding the firm has “closed a significant portion of our risk in the specific areas we lost on in July” and cut risk elsewhere.' },
   { d: 'Week of Aug 17, 2026', b: 'Jane Street issues $14.6B in bonds — led by JPMorgan, with PIMCO, Capital Group and Fidelity buying — to refinance floating-rate debt and reorganize its ~$11B capital stack. A firm that just lost $15B is met with strong demand for its paper.' },
 ];
@@ -120,7 +120,7 @@ export default function JaneStreet15bLoss() {
   return (
     <Layout
       title="Jane Street’s $15 billion month"
-      description="A post-mortem of how Jane Street — the most profitable trading firm on Wall Street — took a ~$15B loss in July 2026, its first down month in a decade, from its 'hedge-fund side': AI-infrastructure bets, Asian equities, and a stake in the Situational Awareness fund. Why the same July storm wiped out one fund and barely dented the other.">
+      description="A post-mortem of how Jane Street — the most profitable trading firm on Wall Street — took a ~$15B loss in July 2026, its first down month in a decade, from its 'hedge-fund side': AI-infrastructure bets, Asian equities, and a stake in the Situational Awareness fund. Why the same July storm cost one fund about two-thirds of its value and barely dented the other.">
       <header className="hero hero--primary" style={{ padding: '2.2rem 1rem' }}>
         <div className="container">
           <Heading as="h1" className="hero__title" style={{ fontSize: '2rem' }}>
@@ -145,7 +145,7 @@ export default function JaneStreet15bLoss() {
             The loss didn&rsquo;t come from the market-making machine that made it famous. It came from
             its <em>other</em> side &mdash; the hedge-fund-style directional bets it has quietly grown,
             including a stake in the same <Link to="/events/situational-awareness-collapse">Situational
-            Awareness</Link> fund that got wiped out in the very same storm.
+            Awareness</Link> fund that lost about two-thirds of its value in the very same storm.
           </p>
 
           <div className={styles.plainBox}>
@@ -162,10 +162,11 @@ export default function JaneStreet15bLoss() {
             </p>
             <p>
               The result was a ~$15B loss &mdash; among the largest single-firm trading losses ever.
-              And yet: Jane Street barely flinched. It funds itself with <strong>~$45B of its own
-              capital</strong> (no outside investors to redeem, no prime broker to margin-call it),
-              2026 is <em>still its best year ever</em> at <strong>$40B+</strong> in net trading
-              revenue, and within days it sold <strong>$14.6B of bonds</strong> to eager buyers. Same
+              And yet: Jane Street barely flinched. It runs on <strong>~$45B of its own
+              capital</strong> (no outside investors to redeem), its borrowing is term debt rather than
+              margin loans a lender can call overnight, its net trading revenue for{' '}
+              <em>January&ndash;July 2026 alone</em> &mdash; <strong>$40B+</strong> &mdash; already tops all
+              of 2025, and within days it sold <strong>$14.6B of bonds</strong> to eager buyers. Same
               July storm as Situational Awareness &mdash; opposite ending. The difference wasn&rsquo;t
               the thesis. It was the <strong>structure</strong>: scale, diversification, and capital
               that can&rsquo;t be yanked away.
@@ -290,8 +291,8 @@ export default function JaneStreet15bLoss() {
               So the two stories are the same storm seen from two altitudes. For Situational Awareness,
               the rout was <em>terminal</em>: concentrated, leveraged, and unable to meet the margin
               calls. For Jane Street, the same rout was a <em>line item</em> &mdash; painful, but its
-              stake reportedly finished the year roughly <strong>flat</strong> and remained profitable
-              over its life. One fund died; its backer took a bruise. That contrast is the entire
+              stake was reportedly still roughly <strong>flat</strong> for the year so far and remained profitable
+              over its life. One fund lost two-thirds of its value; its backer took a bruise. That contrast is the entire
               lesson, and it&rsquo;s worth reading the two pages side by side.
             </p>
           </section>
@@ -329,22 +330,23 @@ export default function JaneStreet15bLoss() {
                 max={45}
                 valueFmt={(v) => `$${v}B`}
                 fillFor={(r) => (r.kind === 'loss' ? 'var(--viz-crit)' : r.kind === 'cap' ? 'var(--viz-muted)' : 'var(--viz-s1)')}
-                ariaLabel="Jane Street's roughly 15 billion dollar July loss compared with its 39.6 billion 2025 revenue, 40 billion 2026 revenue, and 45 billion members' equity"
+                ariaLabel="Jane Street's roughly 15 billion dollar July loss compared with its 39.6 billion 2025 revenue, 40 billion January-to-July 2026 revenue, and 45 billion members' equity"
               />
               <figcaption className={styles.figCaption}>
                 The <span style={{ color: 'var(--viz-crit)', fontWeight: 700 }}>red</span> loss is
-                about <strong>a third</strong> of a single year&rsquo;s revenue and roughly
+                <strong>more than a third</strong> of 2025&rsquo;s revenue and roughly
                 <strong> a third</strong> of the firm&rsquo;s own equity. Because Jane Street runs on
-                its own ~$45B of capital, there is no outside investor to redeem and no lender to force
-                a sale. Figures are as reported; the 2026 revenue figure is through July.
+                its own ~$45B of capital, there is no outside investor to redeem, and its debt is term
+                financing rather than margin loans a lender can recall. Figures are as reported; the 2026 revenue figure is through July.
               </figcaption>
             </figure>
 
             <p>
-              This is the quiet superpower of being your own bank. Situational Awareness died because
-              other people&rsquo;s money &mdash; prime-broker loans &mdash; could be recalled at the
-              worst possible moment. Jane Street can&rsquo;t be margin-called out of a position, because
-              nobody is lending it the position in the first place. When you can choose <em>whether</em>{' '}
+              This is the quiet superpower of funding yourself with permanent capital. Situational Awareness
+              was forced to sell because other people&rsquo;s money &mdash; prime-broker loans &mdash; could
+              be recalled at the worst possible moment. Jane Street does borrow &mdash; it refinanced with
+              $14.6B of bonds in August &mdash; but as term debt, so no lender can margin-call it out of a
+              position overnight. When you can choose <em>whether</em>{' '}
               and <em>when</em> to sell, a $15B loss is a bad month. When you can&rsquo;t, a far smaller
               loss is the end.
             </p>
