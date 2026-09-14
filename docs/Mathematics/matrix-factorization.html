@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Joyeb Kashyeb","url":"https://joyebkashyeb.com.np","jobTitle":"Computer Science & Data Science student (quantitative finance)","alumniOf":"Jacksonville State University","knowsAbout":["Quantitative Finance","Derivatives Pricing","Probability","Statistics","Stochastic Calculus","Machine Learning","Python"],"sameAs":["https://github.com/Kashyeb57","https://www.linkedin.com/in/joyeb-kashyeb-b46468361","https://www.instagram.com/kashyeb57/"]}</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.28/dist/katex.min.css" crossorigin="anonymous">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Caveat:wght@400;600;700&amp;family=Kalam:wght@300;400;700&amp;display=swap"><link rel="stylesheet" href="/assets/css/styles.22c376e7.css">
-<script src="/assets/js/runtime~main.6795b3c8.js" defer="defer"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Caveat:wght@400;600;700&amp;family=Kalam:wght@300;400;700&amp;display=swap"><link rel="stylesheet" href="/assets/css/styles.377ff762.css">
+<script src="/assets/js/runtime~main.0c44e081.js" defer="defer"></script>
 <script src="/assets/js/main.2799f1df.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -52,7 +52,7 @@ eigvals, eigvecs = eigvals[::-1], eigvecs[:, ::-1]   # sort descending
 explained = eigvals / eigvals.sum()
 print(&quot;variance explained by each component:&quot;, np.round(explained, 3))
 print(&quot;PC1 loadings:&quot;, np.round(eigvecs[:, 0], 2))
-print(&quot;true betas (rescaled):&quot;, np.round(betas / np.linalg.norm(betas), 2))</textarea><div class="bar_EMFu"><button class="runBtn_B3Rj">▶ Run</button><span class="note_fc6H">runs in your browser · Ctrl+Enter to run</span></div></div></div>
+print(&quot;true betas (rescaled):&quot;, np.round(betas / np.linalg.norm(betas), 2))</textarea><div class="bar_EMFu"><button class="runBtn_B3Rj">▶ Run</button><span class="note_fc6H">runs in your browser · Ctrl+Enter to run · Esc then Tab leaves the editor</span></div></div></div>
 <p>The first component explains most of the variance, and its loadings recover the betas we
 secretly used to build the data — PCA <em>found the market factor</em> without being told it
 existed.</p>
