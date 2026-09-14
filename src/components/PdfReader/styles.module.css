@@ -228,6 +228,7 @@
 }
 
 .page {
+  position: relative; /* anchors the text layer over the canvas */
   box-shadow: 0 3px 14px rgba(0, 0, 0, 0.28);
   background: #fff;
   border-radius: 2px;
@@ -236,6 +237,32 @@
 .page canvas {
   display: block;
   border-radius: 2px;
+}
+
+/* pdf.js 3.11 text layer (mirrors pdf_viewer.css): transparent glyphs positioned
+   exactly over the rendered canvas, so selection and find match the image. */
+.textLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  line-height: 1;
+  text-align: initial;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  z-index: 2;
+}
+.textLayer span,
+.textLayer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+.textLayer ::selection {
+  background: rgba(37, 194, 160, 0.35);
 }
 
 .pagePlaceholder {

@@ -50,6 +50,20 @@ function PdfPage({ pdf, pageNumber, scale, registerObserver }) {
       await page.render({ canvasContext: ctx, viewport }).promise;
       el.innerHTML = '';
       el.appendChild(canvas);
+
+      // Invisible, positioned text over the canvas so the page can be selected,
+      // found with Ctrl+F, and read by a screen reader — a canvas alone is just
+      // pixels. pdf.js sizes the layer from --scale-factor on an ancestor.
+      try {
+        el.style.setProperty('--scale-factor', String(viewport.scale));
+        const textLayer = document.createElement('div');
+        textLayer.className = styles.textLayer;
+        const textContentSource = await page.getTextContent();
+        await window.pdfjsLib.renderTextLayer({ textContentSource, container: textLayer, viewport, textDivs: [] }).promise;
+        el.appendChild(textLayer);
+      } catch (e) {
+        /* scanned page or no text: the canvas still shows */
+      }
       setRendered(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
