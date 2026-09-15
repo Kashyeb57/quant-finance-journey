@@ -18,7 +18,7 @@ const AUM = [
   { t: 12, value: 9 },
   { t: 16, value: 18, xLabel: 'Mar 2026' },
   { t: 20, value: 45, tag: 'Peak', sub: '≈$20–45B', xLabel: 'early Jul 2026', tagSide: 'left' },
-  { t: 21, value: 10, tag: 'Wipe-out', sub: '~$10B left', xLabel: '6 days later', tagSide: 'left' },
+  { t: 21, value: 10, tag: 'Public book sold', sub: '~$10B reported', xLabel: '6 days later', tagSide: 'left' },
 ];
 
 // Normalized investor returns — base 100 at launch (Nov 2024).
@@ -57,12 +57,14 @@ const JULY_DECLINES = [
   { label: 'Nvidia',           pct: -16, note: 'hedge name (fund held puts)',    kind: 'hedge' },
 ];
 
-// A ~30% fall in the longs, at ~4x leverage, is a ~120% hit to the fund's own
-// capital before hedges; the short book clawed it back to the −67% investors took.
+// ~4× is GROSS leverage (longs + shorts); the split wasn't published. As an
+// illustration only: 3× long + 1× short. A ~30% fall in the longs then costs ~90%
+// of equity before the shorts, hedges and financing; the reported −67% implies
+// those offset roughly 23 points. (All 4× long would have been −120%.)
 const LEVERAGE = [
   { label: 'AI-infra longs, July', note: 'many names fell 27–54%', pct: -30 },
-  { label: 'Hit to fund capital at ~4×', note: 'before hedges — worse than a full wipe-out', pct: -120 },
-  { label: 'Actual loss after hedges', note: 'what investors took', pct: -67 },
+  { label: 'Long book at 3× long', note: 'illustration: 3× long + 1× short = 4× gross', pct: -90 },
+  { label: 'Reported July loss', note: 'after shorts, hedges and costs', pct: -67 },
 ];
 
 const STATS = [
@@ -70,7 +72,7 @@ const STATS = [
   { v: '~$45B', label: 'Reported peak assets (from ~$225M)' },
   { v: '~4×', label: 'Gross leverage (~400%)' },
   { v: '−67%', label: 'Loss in July 2026 alone', dir: 'down' },
-  { v: '6 days', label: 'From margin call to full liquidation', dir: 'down' },
+  { v: '6 days', label: 'From the July 24 investor letter to the July 30 sale of the public book', dir: 'down' },
   { v: '~$5B', label: 'Illiquid Anthropic stake left over' },
 ];
 
@@ -84,7 +86,7 @@ const POSITIONS = [
 ];
 
 const GLOSSARY = [
-  ['Gross leverage', 'The size of your total positions divided by your own capital. At ~4× (≈400%), $1 of investor money controls ~$4 of market exposure — so every move is felt four times over.'],
+  ['Gross leverage', 'Long positions plus short positions (both counted as positive), divided by your own capital. At ~4× (≈400%), $1 of investor money carries ~$4 of combined long and short exposure. It is not the same as being 4× long: in a sell-off the shorts gain while the longs lose, so the loss depends on how the gross is split.'],
   ['Margin call', 'When a prime broker demands more collateral because a leveraged position is losing. The fund can’t refuse and doesn’t control the timing or the exit price.'],
   ['Prime broker', 'The bank that lends a hedge fund money and custodies its assets. Situational Awareness used three: Goldman Sachs, JPMorgan and Bank of America.'],
   ['Neocloud', 'A new breed of GPU-rental company (CoreWeave, IREN, Nebius) that buys Nvidia chips and rents out AI compute. Small, richly valued, and highly sensitive to the AI-capex narrative.'],
@@ -154,7 +156,7 @@ const TIMELINE = [
   { d: 'Through June 30, 2026', b: 'Riding the AI-infrastructure boom at ~4× leverage, the fund reportedly returns +439% net and swells to a reported $20–45B — one of the great runs in hedge-fund history.' },
   { d: 'July 10, 2026', b: 'SK Hynix — one of the fund’s largest longs — lists in the U.S. The event kicks off an unwind of leveraged Korean equity positions; Korea’s Kospi ultimately sheds roughly a third.' },
   { d: 'July 17, 2026', b: 'Meta unveils “Meta Compute,” stoking fears that the hyperscalers will crush the small “neocloud” GPU-rental names. CoreWeave, IREN and peers — core holdings — begin sliding hard.' },
-  { d: 'July 24, 2026', b: 'With the book already bleeding, Aschenbrenner writes to investors calling the selloff “one of the best buying opportunities in over a year,” and asks for fresh capital starting August 1. It never arrives.' },
+  { d: 'July 24, 2026', b: 'With the book already bleeding, Aschenbrenner writes to investors calling the selloff “one of the best buying opportunities in over a year,” and asks for fresh capital starting August 1. The margin calls come first.' },
   { d: 'July 29, 2026', b: 'Core holdings print yearly lows. All three prime brokers — Goldman, JPMorgan, Bank of America — issue margin calls the same day. The Fed holds rates with hawkish dissents, adding pressure.', crash: true },
   { d: 'July 30, 2026', b: 'Before the open, Citadel buys the entire public book — longs and shorts together — in a single block trade (per the WSJ). The dumped names instantly rip 20–30% higher, exposing how far below fair value the forced sale had pushed them. The fund ends July down ~67%.', crash: true },
   { d: 'August 3, 2026', b: 'The rebound continues — CoreWeave +41%, IREN +36%, SanDisk +27% off their July-29 lows — underlining that this was a leverage-and-liquidity blow-up, not the market rejecting the AI thesis.' },
@@ -226,8 +228,9 @@ export default function SituationalAwarenessCollapse() {
               In July 2026 the AI-infrastructure trade cracked. Because the book was ~4× leveraged
               and packed into a handful of correlated names &mdash; while its &ldquo;hedges&rdquo;
               were built on <em>different</em> stocks that didn&rsquo;t fall in step &mdash; a ~30%
-              drop in the longs became a fund-ending loss. Three prime brokers called for collateral
-              on the same day, and when a rescue raise failed, the whole public book was sold to
+              drop in the longs became a reported ~67% loss in a month. Three prime brokers called for
+              collateral on the same day, before the fresh capital the fund had asked investors for
+              could arrive, and the whole public book was sold to
               Citadel in a single block. The stocks bounced 20&ndash;30% the moment the forced seller
               was gone &mdash; proof it was a liquidity blow-up, not a verdict on AI.
             </p>
@@ -423,29 +426,34 @@ export default function SituationalAwarenessCollapse() {
             <h2 id="s-lev">5. Leverage: the multiplier in both directions</h2>
             <p>
               The same ~4× gross leverage that manufactured the +439% is what made a rough month
-              lethal. At 4×, a <strong>25% fall in the underlying positions mathematically wipes out
-              the entire equity</strong>. In July the longs fell closer to 30%:
+              lethal. Gross leverage counts longs and shorts together, so the arithmetic depends on the
+              split, which the fund didn&rsquo;t publish. Were all ~4× long, a{' '}
+              <strong>25% fall would erase the equity</strong>; at 3× long it takes a 33% fall from the
+              longs alone, and the shorts, which gain in a sell-off, push the other way. In July the
+              longs fell closer to 30%:
             </p>
 
             <figure className={styles.figure}>
-              <p className={styles.figTitle}>How ~4× leverage turned a 30% dip into a 67% loss</p>
+              <p className={styles.figTitle}>How leverage turns a ~30% fall in the longs into a loss of that size (illustrative split)</p>
               <LeverageBars rows={LEVERAGE} />
               <figcaption className={styles.figCaption}>
-                A ~30% decline in the longs, levered ~4×, is a ~120% hit to the fund&rsquo;s own
-                capital <em>before</em> hedges — i.e. worse than a total wipe-out. The short book
-                clawed part of it back, leaving the ~67% loss investors actually took. Leverage is
-                symmetric: it giveth the 439%, and it taketh the 67%.
+                An illustration, not the fund&rsquo;s disclosed book: take the reported ~4× gross as{' '}
+                <strong>3× long and 1× short</strong>. A ~30% decline in the longs then costs about{' '}
+                <strong>90%</strong> of the fund&rsquo;s capital (3 × 30%) <em>before</em> the short
+                side, hedges and financing. The reported ~67% loss implies those clawed back roughly 23
+                points. Had all ~4× been long, the same fall would have cost ~120% &mdash; more than
+                everything. Leverage is symmetric: it giveth the 439%, and it taketh the 67%.
               </figcaption>
             </figure>
 
             <figure className={styles.figure}>
-              <p className={styles.figTitle}>The leverage ladder — equity impact at every level</p>
-              <LeverageLadder actualDrop={-30} actualLev={4} />
+              <p className={styles.figTitle}>The leverage ladder — the long book&rsquo;s hit at each level of long exposure</p>
+              <LeverageLadder actualDrop={-30} actualLev={3} badge="3× long illustration" />
               <figcaption className={styles.figCaption}>
-                Each cell = underlying drop × leverage multiple = equity impact,{' '}
-                <em>before</em> any hedges. At <strong>4× leverage</strong>, a 25% underlying
-                drop already wipes out 100% of investor capital. The fund&rsquo;s longs fell
-                closer to 30%. The outlined cell is the Situational Awareness scenario.
+                Each cell = drop in the longs × long exposure = the long book&rsquo;s hit to equity,{' '}
+                <em>before</em> shorts, hedges and financing. At <strong>4× long</strong> a 25% drop
+                erases 100% of capital; at 3× long it takes 33%. The fund&rsquo;s longs fell closer
+                to 30%. The outlined cell is the 3×-long illustration, not a disclosed position.
               </figcaption>
             </figure>
           </section>
@@ -659,7 +667,10 @@ export default function SituationalAwarenessCollapse() {
               Anthropic shares. What remained was largely{' '}
               <strong>illiquid</strong>: a private stake in Anthropic reported around <strong>$5 billion</strong>,
               acquired earlier in 2026 &mdash; valuable, but impossible to sell into a margin call. The
-              fund&rsquo;s July 24 letter had asked investors for fresh capital from August 1. The cruel irony wrote itself: the
+              fund&rsquo;s July 24 letter had asked investors for fresh capital from August 1. What was
+              liquidated was the <strong>public book</strong>; the reports cited here describe remaining
+              assets and a request for new money, not a confirmed closure of the whole fund. The cruel
+              irony wrote itself all the same: the
               man who literally authored &ldquo;Situational Awareness&rdquo; was undone by a blind spot
               in his own &mdash; the tail risk hiding inside his leverage and his hedges.
             </p>
@@ -692,15 +703,16 @@ export default function SituationalAwarenessCollapse() {
                 </li>
                 <li>
                   <strong>Stress tests, not just averages.</strong> One scenario — &ldquo;AI complex
-                  −30%, correlations → 1&rdquo; — run at 4× prints a <em>&gt;100% equity loss</em>.
+                  −30%, correlations → 1&rdquo; — run on 3&ndash;4× of long exposure prints a{' '}
+                  <em>90&ndash;120% hit from the longs</em> before any short gains.
                   That is a number a risk committee vetoes before the trade is ever put on.
                 </li>
               </ul>
             </div>
             <p className={styles.analogy}>
-              <strong>The counterfactual:</strong> at <strong>2× instead of 4×</strong>, that same
-              ~30% drop is roughly a 60% gross hit — brutal, but with the hedges clawing part of it
-              back, survivable. No margin call forces the door; you live to see the very next day,
+              <strong>The counterfactual:</strong> at <strong>half the leverage</strong> &mdash; 1.5× long
+              instead of 3× in the illustration &mdash; the same ~30% drop costs the long book about 45%
+              before hedges: brutal, but with the short side clawing part of it back, survivable. No margin call forces the door; you live to see the very next day,
               when the same names bounced 20&ndash;30%. Halving the leverage doesn&rsquo;t just halve
               the loss — it changes the outcome from <em>terminal</em> to <em>temporary</em>. That is
               the whole game: size so that being early is survivable.
@@ -813,8 +825,10 @@ export default function SituationalAwarenessCollapse() {
             <p className={styles.disclaimer}>
               Figures are as reported by news outlets and analysts in late July and early August 2026
               and vary between sources (notably peak AUM and the exact size of the book) — treat the
-              specific numbers as approximate and the sequence of events as the reliable part. This
-              page is an educational post-mortem, not investment advice.
+              specific numbers as approximate and the sequence of events as the reliable part.{' '}
+              <em>Corrected Sep 14, 2026:</em> the leverage example now states an illustrative long/short
+              split (earlier versions treated ~4× gross as 4× long), and the page no longer describes
+              the fund as closed. This page is an educational post-mortem, not investment advice.
             </p>
           </div>
         </article>

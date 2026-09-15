@@ -2,16 +2,20 @@ import React from 'react';
 import styles from './charts.module.css';
 
 /*
- * LeverageLadder — heat-map table showing how gross leverage interacts with
- * an underlying asset drawdown to produce the actual equity loss.
+ * LeverageLadder — heat-map table of how LONG exposure turns a fall in the long
+ * positions into a loss of equity, before shorts, hedges and financing.
  *
- * Each cell = underlying_drop × leverage_multiple.
- * Cells where equity loss >= 100% are flagged deep red — "past wipe-out".
- * The actual Situational Awareness scenario (4×, ~30% drop) is outlined.
+ * Each cell = drop_in_longs × long_exposure_multiple.
+ * Cells where the loss reaches 100% are flagged deep red — "past wipe-out".
+ *
+ * It is deliberately about long exposure, not gross leverage: gross counts
+ * longs and shorts together, so a fund at 4× gross might be 3× long and 1×
+ * short, and its shorts move the other way in a sell-off.
  *
  * Props:
- *   actualDrop  — the scenario drop % (negative), default -30
- *   actualLev   — the scenario leverage,           default 4
+ *   actualDrop  — the scenario drop in the longs, % (negative), default -30
+ *   actualLev   — the long exposure to outline,               default 3
+ *   badge       — label for the outlined column,               default 'Illustration'
  */
 
 const LEVELS = [1, 2, 3, 4];
@@ -23,23 +27,23 @@ function equity(drop, lev) {
   return Number.isInteger(v) ? v : Math.round(v * 10) / 10;
 }
 
-export default function LeverageLadder({ actualDrop = -30, actualLev = 4 }) {
+export default function LeverageLadder({ actualDrop = -30, actualLev = 3, badge = 'Illustration' }) {
   return (
     <div className={styles.ladderWrap}>
       <table className={styles.ladder}>
         <thead>
           <tr>
             <th className={styles.ladderCornerCell}>
-              Underlying<br />asset drop
+              Drop in the<br />long positions
             </th>
             {LEVELS.map(lev => (
               <th
                 key={lev}
                 className={`${styles.ladderHeadCell} ${lev === actualLev ? styles.ladderActualColHead : ''}`}
               >
-                {lev}× leverage
+                {lev}× long
                 {lev === actualLev && (
-                  <span className={styles.ladderActualBadge}>SA fund</span>
+                  <span className={styles.ladderActualBadge}>{badge}</span>
                 )}
               </th>
             ))}
@@ -80,14 +84,15 @@ export default function LeverageLadder({ actualDrop = -30, actualLev = 4 }) {
         </tbody>
       </table>
       <p className={styles.ladderNote}>
-        Cells in{' '}
+        Each cell is the long book&rsquo;s contribution to the equity loss, <em>before</em> the
+        short side, hedges and financing costs. Cells in{' '}
         <strong style={{ color: 'var(--viz-crit)' }}>deep red</strong>{' '}
-        represent equity losses ≥ 100% <em>before</em> hedges — mathematically worse than a
-        complete wipe-out. The{' '}
+        reach 100% or more &mdash; the longs alone would erase the capital. The{' '}
         <strong style={{ color: 'var(--viz-crit)' }}>outlined cell</strong>{' '}
-        is the Situational Awareness scenario: ~4× leverage on an underlying
-        drawdown of roughly 30%, producing a ~120% hit to the fund's own
-        capital before the short book clawed some back.
+        is an illustration, not the fund&rsquo;s disclosed position: its reported ~4× is{' '}
+        <em>gross</em> leverage (longs and shorts together), and the long/short split was not
+        published. At 3× long and 1× short, a ~30% fall in the longs costs about 90% of equity
+        before the shorts; only if all ~4× were long would it be ~120%.
       </p>
     </div>
   );
