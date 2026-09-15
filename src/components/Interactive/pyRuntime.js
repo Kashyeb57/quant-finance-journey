@@ -42,6 +42,39 @@ matplotlib.use("AGG")
 import warnings
 warnings.filterwarnings("ignore", message="Matplotlib is currently using agg")`;
 
+// input() support. Python here cannot pause for typing: that needs
+// SharedArrayBuffer (see above), so answers are supplied up front, one line per
+// input() call, from the Input box the Run controls show when code uses input().
+// Each call echoes the prompt and the answer, as a terminal would. With nothing
+// left to read it raises EOFError saying where to type, instead of Pyodide's
+// bare "OSError: I/O error". chr(10) keeps backslashes out of this source.
+const STDIN_SETUP = `
+import builtins as _qf_b, io as _qf_io, sys as _qf_s
+class _QFStdin(_qf_io.TextIOBase):
+    def __init__(self, lines):
+        self._lines = list(lines)
+    def readable(self):
+        return True
+    def readline(self, size=-1):
+        return (self._lines.pop(0) + chr(10)) if self._lines else ""
+    def read(self, size=-1):
+        text = "".join(line + chr(10) for line in self._lines)
+        self._lines = []
+        return text
+_qf_in = _QFStdin(_qf_stdin_lines)
+def _qf_input(prompt=""):
+    _qf_s.stdout.write(str(prompt))
+    line = _qf_in.readline()
+    if not line:
+        _qf_s.stdout.write(chr(10))
+        raise EOFError("input() had nothing to read. Type your answer in the Input box, one line per input() call, then run again.")
+    _qf_s.stdout.write(line)
+    return line[:-1]
+_qf_b.input = _qf_input
+_qf_s.stdin = _qf_in
+del _qf_stdin_lines
+`;
+
 const STOPPED_MESSAGE =
   'KeyboardInterrupt: execution was stopped. The Python session was restarted, ' +
   'so variables from earlier runs are gone.';
@@ -52,6 +85,8 @@ importScripts(${JSON.stringify(CDN + 'pyodide.js')});
 var NL = String.fromCharCode(10);
 var COLLECT_FIGS = ${JSON.stringify(COLLECT_FIGS)};
 var AGG_SETUP = ${JSON.stringify(AGG_SETUP)};
+var STDIN_SETUP = ${JSON.stringify(STDIN_SETUP)};
+var CR = String.fromCharCode(13);
 var pyodide = null;
 var spaces = new Map();
 var nsSeq = 0;
@@ -110,6 +145,19 @@ async function handle(m) {
 
   pyodide.setStdout({ batched: function (s) { out += s + NL; } });
   pyodide.setStderr({ batched: function (s) { out += s + NL; } });
+
+  // Fresh answers for input() on every run (an empty box means none).
+  var raw = typeof m.stdin === 'string' ? m.stdin.split(CR).join('') : '';
+  var lines = raw === '' ? [] : raw.split(NL);
+  if (lines.length && lines[lines.length - 1] === '' && raw.charAt(raw.length - 1) === NL) lines.pop();
+  try {
+    var pyLines = pyodide.toPy(lines);
+    pyodide.globals.set('_qf_stdin_lines', pyLines);
+    pyLines.destroy();
+    pyodide.runPython(STDIN_SETUP);
+  } catch (e) {
+    // Without it input() fails the old way; the run itself still goes ahead.
+  }
 
   try {
     var result = await pyodide.runPythonAsync(m.code, opts);
@@ -238,20 +286,29 @@ export async function createNamespace() {
  * cell's imports and resolves { output, error, images } where images are
  * base64 PNGs of any matplotlib figures the cell drew.
  */
-export async function runPythonCell(code, ns, onStatus) {
+export async function runPythonCell(code, ns, onStatus, stdin = '') {
   // A handle from before a Stop points at a namespace that died with the old
   // worker: rebind it to a new, empty one instead of failing.
   if (ns && ns.generation !== generation) {
     ns.nsId = await call({ op: 'ns-new' }, 'ns');
     ns.generation = generation;
   }
-  return call({ op: 'run', code, nsId: ns ? ns.nsId : null, cell: true }, 'run', onStatus);
+  return call({ op: 'run', code, nsId: ns ? ns.nsId : null, cell: true, stdin }, 'run', onStatus);
 }
 
 /**
  * Run Python code, resolving { output, error }.
  * The repr of a trailing expression is appended, REPL-style.
+ * `stdin` holds the answers for input(), one per line.
  */
-export function runPython(code) {
-  return call({ op: 'run', code, nsId: null, cell: false }, 'run');
+export function runPython(code, stdin = '') {
+  return call({ op: 'run', code, nsId: null, cell: false, stdin }, 'run');
 }
+
+/** Whether code calls input() (so the Run controls should offer an Input box). */
+export function usesInput(code) {
+  return /(^|[^.\w])input\s*\(/m.test(code || '');
+}
+
+/** The message input() raises when the Input box ran out of lines. */
+export const INPUT_EXHAUSTED = 'input() had nothing to read';

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './notebook.module.css';
-import { createNamespace, runPythonCell, isPyodideLoaded, interruptPython } from './pyRuntime';
+import { createNamespace, runPythonCell, isPyodideLoaded, interruptPython, usesInput, INPUT_EXHAUSTED } from './pyRuntime';
+import StdinBox from './StdinBox';
 
 const STARTER_CELLS = [
   `# Welcome to your in-browser Python notebook!
@@ -77,6 +78,7 @@ function notebookToSources(text) {
 export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }) {
   const [cells, setCells] = useState(() => (initialCells || STARTER_CELLS).map(newCell));
   const [results, setResults] = useState({}); // id -> {count, output, error, images, state}
+  const [stdins, setStdins] = useState({}); // id -> answers for that cell's input() calls
   const [kernelBusy, setKernelBusy] = useState(false);
   const [booted, setBooted] = useState(false);
   // Snapshot of the cells before the last destructive action (delete, reset), so
@@ -129,8 +131,11 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
     });
     try {
       if (!nsRef.current) nsRef.current = await createNamespace();
-      const res = await runPythonCell(cell.source, nsRef.current, (s) =>
-        setResult(cell.id, { state: s === 'loading-packages' ? 'packages' : 'running' })
+      const res = await runPythonCell(
+        cell.source,
+        nsRef.current,
+        (s) => setResult(cell.id, { state: s === 'loading-packages' ? 'packages' : 'running' }),
+        stdins[cell.id] || ''
       );
       execCount.current += 1;
       setResult(cell.id, { ...res, state: 'done', count: execCount.current });
@@ -249,6 +254,9 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
 
   return (
     <div className={styles.nb}>
+      {/* Toolbar and notices stick together, so Undo is on screen (and never
+          underneath the toolbar) wherever in the notebook a cell was deleted. */}
+      <div className={styles.head}>
       <div className={styles.toolbar}>
         <button className={styles.tbBtn} onClick={runAll} disabled={kernelBusy}>
           ▶▶ Run all
@@ -319,6 +327,7 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
           )}
         </div>
       )}
+      </div>
 
       {cells.map((cell, i) => {
         const res = results[cell.id] || {};
@@ -372,6 +381,14 @@ export default function Notebook({ initialCells, storageKey = 'qf-notebook-v1' }
                 <button title="Insert cell below" onClick={() => addCell(i)}>＋</button>
                 <button title="Delete cell" onClick={() => deleteCell(cell.id)}>🗑</button>
               </div>
+
+              {/* Also shown when input() is called from a function defined in another cell. */}
+              {(usesInput(cell.source) || (res.error && res.error.includes(INPUT_EXHAUSTED))) && (
+                <StdinBox
+                  value={stdins[cell.id] || ''}
+                  onChange={(v) => setStdins((s) => ({ ...s, [cell.id]: v }))}
+                />
+              )}
 
               {busy && <div className={styles.status}>{stateLabel[res.state] || '⏳'}</div>}
 

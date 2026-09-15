@@ -1,24 +1,28 @@
 import React, { useRef, useState } from 'react';
 import LabCard from './LabCard';
 import styles from './pysandbox.module.css';
-import { runPython, isPyodideLoaded, interruptPython } from './pyRuntime';
+import { runPython, isPyodideLoaded, interruptPython, usesInput } from './pyRuntime';
+import StdinBox from './StdinBox';
 
 /**
  * Editable Python playground that runs entirely in the browser (Pyodide).
  *
- * <PySandbox title="Try it yourself" code={`print("hello")`} />
+ * <PySandbox title="Try it yourself" code={`print("hello")`} stdin="42" />
+ * `stdin` pre-fills the Input box (one answer per line) when the code uses input().
  */
-export default function PySandbox({ title = 'Python playground', code = '', rows }) {
+export default function PySandbox({ title = 'Python playground', code = '', rows, stdin: initialStdin = '' }) {
   const [src, setSrc] = useState(code.replace(/^\n+|\s+$/g, ''));
+  const [stdin, setStdin] = useState(initialStdin);
   const [output, setOutput] = useState(null);
   const [error, setError] = useState(null);
   const [state, setState] = useState('idle'); // idle | loading | running
+  const needsInput = usesInput(src);
 
   const run = async () => {
     setState(isPyodideLoaded() ? 'running' : 'loading');
     setOutput(null);
     setError(null);
-    const res = await runPython(src);
+    const res = await runPython(src, needsInput ? stdin : '');
     setOutput(res.output);
     setError(res.error);
     setState('idle');
@@ -60,6 +64,7 @@ export default function PySandbox({ title = 'Python playground', code = '', rows
         onBlur={() => { tabExit.current = false; }}
         aria-label="Python code editor"
       />
+      {needsInput && <StdinBox value={stdin} onChange={setStdin} />}
       <div className={styles.bar}>
         <button className={styles.runBtn} onClick={run} disabled={state !== 'idle'}>
           {state === 'loading'

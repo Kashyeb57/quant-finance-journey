@@ -1,0 +1,58 @@
+.box {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  padding: 0.45rem 0.6rem 0.55rem;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  background: var(--viz-panel-bg);
+}
+
+/* Joined to a code block above it (lesson snippets). */
+.attached {
+  border-top: none;
+}
+
+/* A separate rounded panel (playground, notebook cells). */
+.panel {
+  margin-top: 0.5rem;
+  border-radius: 8px;
+}
+
+.label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--viz-ink);
+}
+
+.hint {
+  font-size: 0.7rem;
+  color: var(--viz-muted);
+}
+
+.field {
+  grid-column: 1 / -1;
+  width: 100%;
+  resize: vertical;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 6px;
+  background: var(--viz-card-bg);
+  color: var(--viz-ink);
+}
+
+.field:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@media (max-width: 600px) {
+  .field {
+    font-size: 16px; /* stops iOS Safari zooming the page on focus */
+  }
+}
