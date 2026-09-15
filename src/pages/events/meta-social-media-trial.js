@@ -56,7 +56,7 @@ const GLOSSARY = [
   ['Section 230', 'The 1996 law that shields online platforms from liability for content their users post. For years it deflected suits like this. The new theory sidesteps it: the states aren’t suing over what users posted — they’re suing over how the product itself was designed.'],
   ['Design-defect / product liability', 'The claim that a product is dangerous because of how it was built — here, that infinite scroll, autoplay and constant notifications were engineered to be compulsive. Treating an app like a defective product is what gets a case past Section 230.'],
   ['COPPA', 'The Children’s Online Privacy Protection Act — federal law barring the collection of data on under-13s without verifiable parental consent. The judge found Meta failed to obtain consent meeting COPPA’s standard.'],
-  ['Engagement design', 'The features that maximize time-on-app: infinite scroll, autoplay, pull-to-refresh, push notifications, streaks and “likes.” The states argue these were tuned to “ensnare” young users — the core of the product-defect claim.'],
+  ['Engagement design', 'The features that maximize time-on-app: infinite scroll, autoplay, pull-to-refresh, push notifications, streaks and “likes.” The states argued these were tuned to “ensnare” young users — the core of the product-defect claim.'],
   ['MDL & bellwether', 'A Multi-District Litigation pools thousands of similar suits before one judge (here, ~2,000+ social-media harm cases before Judge Gonzalez Rogers). Early “bellwether” trials test the arguments and set the tone for the rest.'],
   ['Attorney-client privilege / crime-fraud', 'Companies can normally keep legal advice secret. But a court ruled Meta couldn’t hide internal teen-harm research behind privilege — finding its lawyers had advised staff to “remove,” “block” or “button up” damaging studies. That opened the documents to the jury.'],
   ['UCL / False Advertising Law', 'California’s Unfair Competition Law and False Advertising Law — the consumer-protection statutes the state is using to allege Meta misled the public about known risks.'],
@@ -69,7 +69,7 @@ const TIMELINE = [
   { d: 'Mar 25–26, 2026', b: 'In a separate bellwether (K.G.M. v. Meta et al.), a California jury finds Meta and YouTube liable for addictive design that harmed a minor — the first verdict of its kind, cracking the door for the ~2,000 cases behind it.', crash: true },
   { d: 'Summer 2026', b: 'The court “fully” denies Meta’s motion for summary judgment and finds Meta failed to obtain COPPA-compliant parental consent — AG Bonta’s “critical win” heading into trial.' },
   { d: 'Aug 12, 2026', b: 'Jury selection begins in Oakland for the states’ enforcement trial — the first time a coalition of AGs takes Meta to a jury over child safety.' },
-  { d: 'Aug 18, 2026', b: 'Opening statements before an eight-person jury. Deputy AG Megan O’Neill says Meta’s model was to “hook the users, hold them … harvest their data, and then hide the truth.” Meta counters that its products aren’t defective and that it has built extensive teen-safety tools. The trial is expected to run ~6–7 weeks.', crash: true },
+  { d: 'Aug 18, 2026', b: 'Opening statements before an eight-person jury. Deputy AG Megan O’Neill says Meta’s model was to “hook the users, hold them … harvest their data, and then hide the truth.” Meta counters that its products aren’t defective and that it has built extensive teen-safety tools. The trial was expected to run ~6–7 weeks; it settled eight days later.', crash: true },
   { d: 'Aug 19, 2026', b: 'Whistleblower Arturo Béjar, a former Meta safety engineer, becomes the states’ first witness — describing a “don’t ask, don’t tell” culture, the “move fast and break things” mantra, Reels shipped without safety review, and having briefed Zuckerberg on product harms ~100 times.', crash: true },
   { d: 'Aug 24–25, 2026', b: 'Week two: Béjar returns (“if Mark makes something a priority, mountains move in months”); a former Meta engineering director testifies Zuckerberg subordinated child safety to engagement and growth; Instagram head Adam Mosseri takes the stand to defend Meta’s record.' },
   { d: 'Aug 26, 2026', b: 'A proposed settlement of up to $17 billion (paid over 10 years, subject to court approval) is announced — before Zuckerberg testifies. No admission of wrongdoing, but an injunction against deceptive safety claims, an independent auditor, and product changes for minors: default 2-hour limits, no under-18 “like” counts, a non-algorithmic feed option, school-hours notification blocks, and more.', crash: true },
@@ -191,15 +191,15 @@ export default function MetaSocialMediaTrial() {
             <strong>state attorneys general</strong> (29 in the federal case) &mdash; led by California&rsquo;s Rob Bonta
             &mdash; began making a case that would have been unthinkable a decade ago: that{' '}
             <strong>Facebook and Instagram are defective products</strong>, engineered to addict
-            children, and that Meta <em>knew</em> the harm and hid it. It is the closest thing yet to a{' '}
-            <strong>&ldquo;Big Tobacco moment&rdquo; for social media</strong> &mdash; and win or lose,
-            it puts the entire attention-economy business model on trial.
+            children, and that Meta <em>knew</em> the harm and hid it. It was billed as the closest thing yet to a{' '}
+            <strong>&ldquo;Big Tobacco moment&rdquo; for social media</strong> &mdash; and even though it
+            ended without a verdict, it put the entire attention-economy business model on trial.
           </p>
 
           <div className={styles.plainBox} style={{ borderLeftColor: 'var(--viz-s3)' }}>
             <Heading as="h2">A note before we start</Heading>
             <p>
-              This case is heading to a <strong>settlement, not a verdict</strong>. On{' '}
+              This case ended in a <strong>settlement, not a verdict</strong>. On{' '}
               <strong>August 26, 2026</strong>, a <strong>proposed settlement</strong> was announced: up to{' '}
               <strong>$17 billion</strong> over ten years and changes to Meta&rsquo;s apps. It{' '}
               <strong>remains subject to court approval</strong>, and Meta did not admit wrongdoing. So the
@@ -211,7 +211,7 @@ export default function MetaSocialMediaTrial() {
           </div>
 
           <div className={styles.plainBox} style={{ borderLeftColor: 'var(--viz-crit)' }}>
-            <Heading as="h2">Latest from the courtroom</Heading>
+            <Heading as="h2">What happened in court, Aug 18&ndash;26, 2026</Heading>
             <ul className={styles.timeline} style={{ marginBottom: 0 }}>
               {UPDATES.map((u, i) => (
                 <li key={i} className={`${styles.tItem} ${styles.tItemCrash}`}>
@@ -227,25 +227,26 @@ export default function MetaSocialMediaTrial() {
             <p>
               For years, lawsuits against social-media companies died on <strong>Section 230</strong>,
               the law that shields platforms from liability for what users post. The states found a way
-              around it: they aren&rsquo;t suing over <em>content</em> &mdash; they&rsquo;re suing over{' '}
-              <em>design</em>. The claim is that features like <strong>infinite scroll, autoplay and
+              around it: they weren&rsquo;t suing over <em>content</em> &mdash; they were suing over{' '}
+              <em>design</em>. The claim was that features like <strong>infinite scroll, autoplay and
               relentless notifications</strong> were tuned to make kids compulsive users, that this
               damaged their mental health, and that Meta hid its own research showing it. Courts let the{' '}
-              <strong>product-defect</strong> theory proceed &mdash; and a jury is now hearing it.
+              <strong>product-defect</strong> theory proceed &mdash; and a jury heard the first week and a
+              half of it before the case settled.
             </p>
             <p>
-              The evidence the states will show is the part that makes this a genuine event: internal
+              The evidence the states put forward is the part that made this a genuine event: internal
               Meta documents like <em>&ldquo;if we wanna win big with teens, we must bring them in as
               tweens,&rdquo;</em> research that <strong>11-year-olds were four times more likely to keep
               returning to Instagram</strong> (which requires users to be 13), and a court finding that
               Meta&rsquo;s lawyers advised staff to <em>&ldquo;remove,&rdquo; &ldquo;block&rdquo;</em> or{' '}
-              <em>&ldquo;button up&rdquo;</em> damaging studies. The per-violation math tops out at a
-              theoretical <strong>~$1.4 trillion</strong>, but the states pointedly aren&rsquo;t naming a
+              <em>&ldquo;button up&rdquo;</em> damaging studies. The per-violation math topped out at a
+              theoretical <strong>~$1.4 trillion</strong>, but the states pointedly didn&rsquo;t name a
               number &mdash; Bonta noted Meta made ~$200B last year and left it at
               <em> &ldquo;maybe that amount &hellip; maybe more, maybe less&rdquo;</em> &mdash; plus
               court-ordered changes to the apps themselves. For a company that made <strong>$201B</strong>{' '}
-              in 2025 off exactly that engagement, the money is survivable &mdash; the <em>precedent</em>,
-              and the threat to the design, are not.
+              in 2025 off exactly that engagement, the money was survivable &mdash; the <em>precedent</em>,
+              and the threat to the design, were the real stakes.
             </p>
           </div>
 
@@ -256,7 +257,7 @@ export default function MetaSocialMediaTrial() {
           <nav className={styles.toc} aria-label="Table of contents">
             <div className={styles.tocTitle}>In this breakdown</div>
             <ol className={styles.tocList}>
-              <li><a href="#s-trial"><span className={styles.tocNum}>1</span>What&rsquo;s on trial</a></li>
+              <li><a href="#s-trial"><span className={styles.tocNum}>1</span>What was on trial</a></li>
               <li><a href="#s-design"><span className={styles.tocNum}>2</span>Addiction by design</a></li>
               <li><a href="#s-knew"><span className={styles.tocNum}>3</span>The evidence: &ldquo;they knew&rdquo;</a></li>
               <li><a href="#s-230"><span className={styles.tocNum}>4</span>Why Section 230 didn&rsquo;t save them</a></li>
@@ -281,38 +282,39 @@ export default function MetaSocialMediaTrial() {
           </div>
 
           <section className={styles.section}>
-            <h2 id="s-trial">1. What&rsquo;s on trial</h2>
+            <h2 id="s-trial">1. What was on trial</h2>
             <p>
-              The case is a <strong>state enforcement action</strong> &mdash; not a private lawsuit for
+              The case was a <strong>state enforcement action</strong> &mdash; not a private lawsuit for
               one family, but the government of <strong>29 states</strong> (led by California&rsquo;s
               Attorney General Rob Bonta) suing Meta on behalf of the public &mdash; with four of them,
-              California, Colorado, Kentucky and New Jersey, actually arguing the case at trial. It is
-              being heard in the{' '}
+              California, Colorado, Kentucky and New Jersey, actually arguing the case at trial. It was
+              heard in the{' '}
               <strong>U.S. District Court for the Northern District of California</strong> in Oakland,
               before <strong>Chief Judge Yvonne Gonzalez Rogers</strong>, who also oversees the ~2,000
               consolidated child-harm cases, in front of an <strong>eight-person jury</strong>. Jury
               selection began <strong>August 12</strong>; opening statements were{' '}
-              <strong>August 18, 2026</strong>; the trial is expected to run about{' '}
-              <strong>six to seven weeks</strong>.
+              <strong>August 18, 2026</strong>. The trial had been expected to run about{' '}
+              <strong>six to seven weeks</strong>; a proposed settlement was announced on{' '}
+              <strong>August 26</strong>, in its second week.
             </p>
             <p>
-              The legal claims are consumer-protection and child-privacy statutes, not &ldquo;free
+              The legal claims were consumer-protection and child-privacy statutes, not &ldquo;free
               speech&rdquo; territory: <strong>COPPA</strong> (collecting data on under-13s without
               proper parental consent), plus California&rsquo;s <strong>Unfair Competition</strong> and{' '}
               <strong>False Advertising</strong> laws (misleading the public about known risks). Heading
               in, the states scored a <em>&ldquo;critical win&rdquo;</em>: the judge <strong>fully denied
               Meta&rsquo;s motion for summary judgment</strong> and found the company failed to obtain
-              COPPA-compliant consent. The case would go to a jury on the facts.
+              COPPA-compliant consent. That sent the case to a jury on the facts.
             </p>
           </section>
 
           <section className={styles.section}>
             <h2 id="s-design">2. The core allegation: addiction by design</h2>
             <p>
-              The states&rsquo; theory is deceptively simple: Meta didn&rsquo;t just <em>host</em> content
+              The states&rsquo; theory was deceptively simple: Meta didn&rsquo;t just <em>host</em> content
               that happened to harm kids &mdash; it <strong>engineered the product to be compulsive</strong>.
               In a deputy AG&rsquo;s framing on day one, <em>&ldquo;profits won&rdquo;</em> over safety.
-              The specific features named are the ones every user knows by feel:
+              The specific features named were the ones every user knows by feel:
             </p>
             <div className={styles.lessons}>
               <ul>
@@ -323,7 +325,7 @@ export default function MetaSocialMediaTrial() {
               </ul>
             </div>
             <p>
-              The states argue these were tuned to <em>&ldquo;entice, engage, and ultimately ensnare
+              The states argued these were tuned to <em>&ldquo;entice, engage, and ultimately ensnare
               youth and teens&rdquo;</em> for as long as possible &mdash; and that the resulting
               compulsive use fed anxiety, depression, sleep loss and worse. Framing an app as a{' '}
               <strong>defectively designed product</strong>, rather than a neutral pipe for other
@@ -335,8 +337,8 @@ export default function MetaSocialMediaTrial() {
             <h2 id="s-knew">3. The evidence: &ldquo;they knew&rdquo;</h2>
             <p>
               Every landmark corporate-harm case turns on the same thing: internal documents showing the
-              company understood the danger. That is what the states say they have. A few of the exhibits
-              already public:
+              company understood the danger. That is what the states said they had. A few of the exhibits
+              made public before and during the trial:
             </p>
 
             <div className={styles.letterWrap}>
@@ -368,7 +370,7 @@ export default function MetaSocialMediaTrial() {
                   </blockquote>
                   <p>
                     A finding that the youngest, most-vulnerable users were the <em>stickiest</em> —
-                    which the states argue is a feature, not an accident.
+                    which the states argued was a feature, not an accident.
                   </p>
                 </div>
               </div>
@@ -389,7 +391,7 @@ export default function MetaSocialMediaTrial() {
                     portions of internal studies on the harm of social media to teens&rsquo; mental health.
                   </blockquote>
                   <p className={styles.letterNote}>
-                    Stripping privilege from a company&rsquo;s own research is rare and damaging — it puts
+                    Stripping privilege from a company&rsquo;s own research is rare and damaging — it put
                     the documents in front of the jury. Meta disputes the characterization.
                   </p>
                 </div>
@@ -397,10 +399,11 @@ export default function MetaSocialMediaTrial() {
             </div>
 
             <p>
-              Meta&rsquo;s response is that these are cherry-picked fragments, that its own research is
+              Meta&rsquo;s response was that these were cherry-picked fragments, that its own research was
               being mischaracterized, that the science does not establish its products <em>cause</em>{' '}
-              mental-health harm, and that it has since built Teen Accounts, age checks and parental
-              supervision tools. The jury &mdash; not this page &mdash; will weigh that.
+              mental-health harm, and that it had since built Teen Accounts, age checks and parental
+              supervision tools. The case settled before a jury weighed any of that, and this page
+              doesn&rsquo;t try to.
             </p>
           </section>
 
@@ -409,7 +412,7 @@ export default function MetaSocialMediaTrial() {
             <p>
               For two decades, <strong>Section 230</strong> was the platforms&rsquo; force field: you
               can&rsquo;t sue Facebook for what a user posted. Suit after suit died on it. The states&rsquo;
-              innovation was to stop suing about <em>content</em> at all. Their claim is that the{' '}
+              innovation was to stop suing about <em>content</em> at all. Their claim was that the{' '}
               <strong>machinery</strong> &mdash; the recommendation and engagement features &mdash; is a{' '}
               <em>defectively designed product</em>, independent of any particular post. Courts have
               increasingly agreed that <strong>design choices aren&rsquo;t protected speech</strong>,
@@ -426,17 +429,17 @@ export default function MetaSocialMediaTrial() {
           <section className={styles.section}>
             <h2 id="s-money">5. The money and the medicine</h2>
             <p>
-              There are two kinds of stakes, and the second is the bigger one. The first is{' '}
+              There were two kinds of stakes, and the second was the bigger one. The first was{' '}
               <strong>money</strong>. Run the per-violation penalties to their limit and the theoretical
-              maximum is a jaw-dropping <strong>~$1.4 trillion</strong> &mdash; a number Meta has been
-              keen to cite, precisely because it sounds absurd. The states are deliberately <em>not</em>{' '}
-              anchoring to it: Bonta said they aren&rsquo;t seeking a set figure, pointing instead to
+              maximum was a jaw-dropping <strong>~$1.4 trillion</strong> &mdash; a number Meta had been
+              keen to cite, precisely because it sounds absurd. The states deliberately did <em>not</em>{' '}
+              anchor to it: Bonta said they weren&rsquo;t seeking a set figure, pointing instead to
               Meta&rsquo;s ~$200B in annual revenue &mdash;{' '}
               <em>&ldquo;maybe that amount would be appropriate. Maybe more. Maybe less.&rdquo;</em> The
-              second stake is <strong>injunctive relief</strong> &mdash; a court ordering Meta to{' '}
+              second stake was <strong>injunctive relief</strong> &mdash; a court ordering Meta to{' '}
               <em>change the products</em>: age verification, default limits, turning off the most
               compulsive features for minors. For an ad business built on maximizing engagement, being
-              ordered to make the apps <em>less</em> engaging is the real threat.
+              ordered to make the apps <em>less</em> engaging was the real threat.
             </p>
 
             <figure className={styles.figure}>
@@ -451,10 +454,10 @@ export default function MetaSocialMediaTrial() {
               <figcaption className={styles.figCaption}>
                 A <span style={{ color: 'var(--viz-s3)', fontWeight: 700 }}>Big-Tobacco-scale</span>{' '}
                 outcome ($206B over 25 years) would roughly equal a single year of Meta&rsquo;s revenue.
-                Meta nets ~$60B a year, so even a tens-of-billions judgment is financially{' '}
-                <em>survivable</em> &mdash; which is exactly why the injunction (forcing changes to the
-                engagement engine that produces the $201B) and the <em>precedent</em> matter more than the
-                cheque. Figures: Meta FY2025; the 1998 Tobacco Master Settlement.
+                Meta nets ~$60B a year, so even a tens-of-billions outcome was financially{' '}
+                <em>survivable</em> &mdash; which is why, going into trial, the injunction (forcing changes
+                to the engagement engine that produces the $201B) and the <em>precedent</em> mattered more
+                than the cheque. Figures: Meta FY2025; the 1998 Tobacco Master Settlement.
               </figcaption>
             </figure>
 
@@ -515,15 +518,15 @@ export default function MetaSocialMediaTrial() {
             </table>
             <p className={styles.posCaption} style={{ marginBottom: 0 }}>
               Same pattern, three eras: a profitable product, internal knowledge of harm, and a coalition
-              of state AGs. Whether social media becomes the third entry at tobacco/opioid scale is what
-              this trial begins to decide.
+              of state AGs. Whether social media becomes the third entry at tobacco/opioid scale is still
+              open: this case settled, and the ~2,000 cases behind it will do more to decide it.
             </p>
           </section>
 
           <section className={styles.section}>
             <h2 id="s-wave">7. The wave behind it</h2>
             <p>
-              This one trial is a <strong>bellwether</strong> &mdash; the leading edge of a much larger
+              This one trial was a <strong>bellwether</strong> &mdash; the leading edge of a much larger
               front. Behind it sit roughly <strong>2,000+ personal-injury and school-district cases</strong>{' '}
               consolidated before the same judge, plus the parallel state-court proceedings. And the
               defendant list isn&rsquo;t just Meta: <strong>TikTok, Snap and Google&rsquo;s YouTube</strong>{' '}
@@ -533,8 +536,8 @@ export default function MetaSocialMediaTrial() {
               jury can react to this evidence.
             </p>
             <p>
-              That is why markets care about a single Oakland courtroom: it is a test of a legal theory
-              that, if it holds, applies to the entire <strong>attention economy</strong> &mdash; every
+              That is why markets watched a single Oakland courtroom: it was a test of a legal theory
+              that, had it held, would apply to the entire <strong>attention economy</strong> &mdash; every
               app whose revenue depends on keeping users, especially young ones, scrolling.
             </p>
           </section>
@@ -547,7 +550,7 @@ export default function MetaSocialMediaTrial() {
                 <li><strong>Do the product changes actually ship — and stick.</strong> The settlement&rsquo;s teeth are the app changes for minors plus an independent auditor with a line to the AGs. Whether Meta rolls out the 2-hour caps, kills under-18 &ldquo;like&rdquo; counts and offers the non-algorithmic feed on schedule is the real thing to track.</li>
                 <li><strong>The ~2,000 cases behind it.</strong> This state-enforcement deal does <em>not</em> resolve the personal-injury and school-district suits consolidated before the same judge. A $17B state settlement — on top of the March <em>K.G.M.</em> verdict — reprices every one of them.</li>
                 <li><strong>The other defendants.</strong> TikTok, Snap and YouTube still face parallel cases. A $17B Meta number becomes the benchmark the next settlement talks start from — this stays a sector event, not a single-stock one.</li>
-                <li><strong>No settled precedent.</strong> Because the case is settling rather than reaching a verdict, no jury or appellate court ruled on the design-defect theory <em>here</em>, so the big Section 230 / First Amendment questions remain open for the industry — the <em>K.G.M.</em> bellwether verdict is the one that stands.</li>
+                <li><strong>No settled precedent.</strong> Because the case settled rather than reaching a verdict, no jury or appellate court ruled on the design-defect theory <em>here</em>, so the big Section 230 / First Amendment questions remain open for the industry — the <em>K.G.M.</em> bellwether verdict is the one that stands.</li>
                 <li><strong>Where the money goes.</strong> California earmarked its ~$1.5&ndash;2.1B for youth mental-health prevention and treatment; watch how the states actually deploy the funds.</li>
               </ul>
             </div>
@@ -574,7 +577,7 @@ export default function MetaSocialMediaTrial() {
                   tweens&rdquo; is this era&rsquo;s version of a memo that should never have been written.
                 </li>
                 <li>
-                  <strong>It&rsquo;s a sector event, not a stock event.</strong> The theory on trial —
+                  <strong>It&rsquo;s a sector event, not a stock event.</strong> The theory that was on trial —
                   &ldquo;engagement design is a defective product&rdquo; — doesn&rsquo;t stop at Meta. It
                   reaches every company monetizing attention.
                 </li>
@@ -629,7 +632,8 @@ export default function MetaSocialMediaTrial() {
               (a coalition of 51 attorneys general; up to $17B; California&rsquo;s share $1.5&ndash;2.1B),
               which some news headlines rounded to a final &ldquo;$17 billion settlement&rdquo;.{' '}
               <em>Corrected Sep 13, 2026:</em> earlier versions called the settlement final, gave the
-              amount without &ldquo;up to&rdquo;, and cited 47 states. This is an educational explainer of a public court case, not legal
+              amount without &ldquo;up to&rdquo;, and cited 47 states. <em>Updated Sep 14, 2026:</em> passages
+              written while the trial was running now read as dated history. This is an educational explainer of a public court case, not legal
               or investment advice.
             </p>
           </div>
