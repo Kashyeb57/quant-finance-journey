@@ -72,6 +72,15 @@ function nyDay(sec) {
   } catch (_) { return ''; }
 }
 
+// "Sep 11" for a New York trading date string from nyDay(). Formatted at noon
+// UTC so no time zone can move it to the neighbouring day.
+function fmtIsoDay(day) {
+  if (!day) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', {timeZone: 'UTC', month: 'short', day: '2-digit'}).format(new Date(`${day}T12:00:00Z`));
+  } catch (_) { return ''; }
+}
+
 // Equity-curve timestamps are Alpaca epoch *seconds* (guard covers ms too).
 function fmtDay(t) {
   if (t == null) return '';
@@ -577,25 +586,38 @@ function Content() {
   const inceptionKnown = hist.length > 0 && (history || []).some((p) => p && p.value === 0);
   const startPoint = hist.length ? hist[0] : null;
   const startValue = startPoint ? startPoint.value : null;
-  const sinceStart = equity != null && startValue ? {v: equity - startValue, pct: ((equity - startValue) / startValue) * 100} : null;
+  // Both returns run close to close over the same trading days: from the first
+  // daily value to the curve's last daily close. The live equity in the hero
+  // moves during the day, so comparing it with SPY's last close mixed two
+  // different moments.
+  const endPoint = hist.length > 1 ? hist[hist.length - 1] : null;
+  const endDay = endPoint ? nyDay(endPoint.t) : null;
+  const sinceStart = endPoint && startValue ? {v: endPoint.value - startValue, pct: ((endPoint.value - startValue) / startValue) * 100} : null;
   const windowLabel = inceptionKnown ? 'since inception' : historyPeriod === '1A' ? 'last 12 months' : 'last 3 months';
   const daysLive = startPoint ? Math.max(0, Math.floor((Date.now() / 1000 - startPoint.t) / 86400)) : null;
-  // SPY close-to-close from the same starting trading day to its latest close.
   let spy = null;
-  if (spyBars && spyBars.length && startPoint) {
+  if (spyBars && spyBars.length && startPoint && endPoint) {
     const d0 = nyDay(startPoint.t);
     const b0 = spyBars.find((b) => nyDay(b.time) >= d0);
-    const b1 = spyBars[spyBars.length - 1];
-    if (b0 && b1 && b0.close && b1.time > b0.time) spy = {pct: (b1.close / b0.close - 1) * 100};
+    const upToEnd = spyBars.filter((b) => nyDay(b.time) <= endDay);
+    const b1 = upToEnd[upToEnd.length - 1];
+    if (b0 && b1 && b0.close && b1.time > b0.time) {
+      spy = {pct: (b1.close / b0.close - 1) * 100, sameDays: nyDay(b0.time) === d0 && nyDay(b1.time) === endDay, from: nyDay(b0.time), to: nyDay(b1.time)};
+    }
   }
   const perf = [
     {
       label: inceptionKnown ? 'Since inception' : windowLabel,
       val: sinceStart ? signedMoney(sinceStart.v) : '—',
       tone: dirCls(sinceStart && sinceStart.v),
-      sub: sinceStart && startPoint ? `${signedPct(sinceStart.pct)} on ${money(startValue)} · ${fmtDay(startPoint.t)}` : null,
+      sub: sinceStart ? `${signedPct(sinceStart.pct)} on ${money(startValue)} · ${fmtDay(startPoint.t)} to close ${fmtDay(endPoint.t)}` : null,
     },
-    {label: 'SPY, same dates', val: spy ? signedPct(spy.pct) : '—', tone: '', sub: spy ? 'benchmark, for context' : null},
+    {
+      label: spy && !spy.sameDays ? 'SPY, nearest dates' : 'SPY, same dates',
+      val: spy ? signedPct(spy.pct) : '—',
+      tone: '',
+      sub: spy ? `close ${fmtIsoDay(spy.from)} to close ${fmtIsoDay(spy.to)} · for context` : null,
+    },
     {label: 'Track record', val: daysLive != null ? `${daysLive} days` : '—', tone: '', sub: `${orders.length} orders · ${closed.length} closed`},
   ];
   const rangeOn = inceptionKnown ? 'ALL' : historyPeriod === '1A' ? '1Y' : '3M';
@@ -648,7 +670,7 @@ function Content() {
           <div className={styles.chartRefs}>
             <span>{fmtDay(hist[0].t)}</span>
             <span>dashed line = start, {money(hist[0].value)}</span>
-            <span>{fmtDay(hist[hist.length - 1].t)}</span>
+            <span>last close {fmtDay(hist[hist.length - 1].t)}</span>
           </div>
         )}
         {/* The curve in words, so nothing depends on hovering. */}
@@ -775,6 +797,9 @@ function Content() {
                 positions close.
               </>
             )}
+            {' '}Both returns here run close to close over the same trading days, ending at the
+            curve&rsquo;s last daily close{endPoint ? ` (${fmtDay(endPoint.t)})` : ''}; the account value at the top
+            is live, so during and after a session it can differ from that close.
             {' '}SPY is a broad US-market benchmark shown for context, not a target.
           </p>
         </div>
