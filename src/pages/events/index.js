@@ -35,7 +35,7 @@ const EVENTS = [
     date: 'July 2026',
     title: 'Jane Street’s $15 billion month',
     blurb:
-      'The most profitable trading firm on Wall Street — a secretive quant giant that out-earns every bank desk — had its first losing month in a decade: a ~$15B loss from its "hedge-fund side" (AI-infrastructure and Asian bets, plus a stake in the Situational Awareness fund). Among the largest single-firm trading losses ever — and yet, funded by its own ~$45B of capital, it barely flinched and still posted a record year. Same July storm as Situational Awareness; opposite ending.',
+      'The most profitable trading firm on Wall Street — a secretive quant giant that out-earns every bank desk — had its first losing month in a decade: a ~$15B loss from its "hedge-fund side" (AI-infrastructure and Asian bets, plus a stake in the Situational Awareness fund). Among the largest single-firm trading losses ever — and yet, funded by its own ~$45B of capital, it barely flinched: its reported January–July revenue still topped all of 2025. Same July storm as Situational Awareness; opposite ending.',
   },
   {
     slug: 'kospi-leverage-crash',
@@ -51,7 +51,7 @@ const EVENTS = [
     date: 'July 2026',
     title: 'The Situational Awareness fund collapse',
     blurb:
-      'Leopold Aschenbrenner — the ex-OpenAI researcher who wrote the famous "Situational Awareness" AGI manifesto — turned $225M into a reported ~$45B AI-infrastructure fund, then lost roughly two-thirds of it in a single month. Prime brokers forced a ~$16B fire sale to Citadel. A textbook leverage blow-up.',
+      'Leopold Aschenbrenner — the ex-OpenAI researcher who wrote the famous "Situational Awareness" AGI manifesto — turned $225M into a reported ~$45B AI-infrastructure fund, then reportedly lost about two-thirds of it in a single month. Margin calls from its prime brokers forced the sale of its entire public book to Citadel, reported at ~$16B. A textbook leverage blow-up.',
   },
 ];
 

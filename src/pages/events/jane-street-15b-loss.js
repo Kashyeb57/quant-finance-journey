@@ -43,11 +43,11 @@ const GLOSSARY = [
   ['Market maker', 'A firm that continuously quotes both a buy and a sell price and earns the spread between them, providing liquidity. Done well it is close to market-neutral — it makes money on volume and flow, not on the market going up or down. This is Jane Street’s core business.'],
   ['Proprietary (prop) trading', 'Trading the firm’s own capital for its own profit, rather than executing for clients. Jane Street is a prop firm: the money at risk is its own.'],
   ['Directional bet', 'A position that only profits if the market moves a particular way. Unlike market-making, it takes a view. This is the “hedge-fund side” of Jane Street — and where the July loss came from.'],
-  ['Members’ equity', 'The partners’ own capital retained inside the firm (~$45B). Jane Street funds its trading from this instead of outside investors — which means no external LP can pull money and no prime broker can margin-call the firm out of a position.'],
+  ['Members’ equity', 'The partners’ own capital retained inside the firm (~$45B). Jane Street funds its trading from this instead of outside investors — which means no external LP can pull money. It does not remove collateral obligations: a trading firm still posts margin to exchanges, clearing houses and trading counterparties.'],
   ['Put option', 'The right to sell an asset at a fixed price — insurance against a fall. It pays off in a sharp crash, but bleeds value (theta) and pays little in a slow, grinding decline. That gap is why Jane Street’s hedges “offered limited protection” in July.'],
   ['Net trading revenue', 'The headline metric for a trading firm: trading gains minus losses and costs. Jane Street’s $39.6B in 2025 was the largest of any firm on Wall Street.'],
   ['Situational Awareness', 'The ~4×-levered AI hedge fund (run by ex-OpenAI researcher Leopold Aschenbrenner) that Jane Street had invested in. It blew up in the same July rout and was force-sold to Citadel — the subject of a separate post-mortem on this site.'],
-  ['Margin call', 'A lender’s demand for more collateral against a falling position. It is what destroyed Situational Awareness — and precisely the mechanism Jane Street’s all-internal capital structure is built to never face.'],
+  ['Margin call', 'A demand for more collateral against a falling position, from a lender, broker or clearing house. Prime-broker margin calls forced Situational Awareness to sell. Jane Street’s structure makes a forced sale less likely — internal capital, reported term borrowing — but no trading firm is exempt from collateral calls.'],
 ];
 
 const TIMELINE = [
@@ -163,13 +163,13 @@ export default function JaneStreet15bLoss() {
             <p>
               The result was a ~$15B loss &mdash; among the largest single-firm trading losses ever.
               And yet: Jane Street barely flinched. It runs on <strong>~$45B of its own
-              capital</strong> (no outside investors to redeem), its borrowing is term debt rather than
-              margin loans a lender can call overnight, its net trading revenue for{' '}
+              capital</strong> (no outside investors to redeem), the borrowing it has disclosed is term debt
+              rather than margin loans a lender can call overnight, its reported net trading revenue for{' '}
               <em>January&ndash;July 2026 alone</em> &mdash; <strong>$40B+</strong> &mdash; already tops all
               of 2025, and within days it sold <strong>$14.6B of bonds</strong> to eager buyers. Same
               July storm as Situational Awareness &mdash; opposite ending. The difference wasn&rsquo;t
               the thesis. It was the <strong>structure</strong>: scale, diversification, and capital
-              that can&rsquo;t be yanked away.
+              that investors can&rsquo;t withdraw.
             </p>
           </div>
 
@@ -311,7 +311,8 @@ export default function JaneStreet15bLoss() {
               It is the same family of error that turned a bad month into a catastrophe for Situational
               Awareness: a hedge that looks like insurance on paper but pays pennies against the
               specific way the loss actually arrives. The difference is that Jane Street&rsquo;s hedge
-              underperforming cost it a slice of a record year, not its existence.
+              underperforming cost it a large part of a strong year &mdash; its reported January&ndash;July
+              revenue was still above all of 2025 &mdash; not its existence.
             </p>
           </section>
 
@@ -319,7 +320,7 @@ export default function JaneStreet15bLoss() {
             <h2 id="s-survive">6. Why a $15B loss didn&rsquo;t kill them</h2>
             <p>
               The whole point of this post-mortem is the part that <em>didn&rsquo;t</em> happen: no
-              collapse, no fire sale, no margin call. Set the loss against the numbers that absorbed
+              collapse, and no reported fire sale or forced liquidation. Set the loss against the numbers that absorbed
               it and the reason is obvious.
             </p>
 
@@ -336,8 +337,10 @@ export default function JaneStreet15bLoss() {
                 The <span style={{ color: 'var(--viz-crit)', fontWeight: 700 }}>red</span> loss is
                 <strong>more than a third</strong> of 2025&rsquo;s revenue and roughly
                 <strong> a third</strong> of the firm&rsquo;s own equity. Because Jane Street runs on
-                its own ~$45B of capital, there is no outside investor to redeem, and its debt is term
-                financing rather than margin loans a lender can recall. Figures are as reported; the 2026 revenue figure is through July.
+                its own ~$45B of capital, there is no outside investor to redeem, and the debt it has
+                disclosed is term financing rather than margin loans a lender can recall. It still owes
+                collateral on its positions to exchanges, clearing houses and counterparties. Figures are
+                as reported: 2025 is a full year, the 2026 revenue figure is January&ndash;July only.
               </figcaption>
             </figure>
 
@@ -345,8 +348,10 @@ export default function JaneStreet15bLoss() {
               This is the quiet superpower of funding yourself with permanent capital. Situational Awareness
               was forced to sell because other people&rsquo;s money &mdash; prime-broker loans &mdash; could
               be recalled at the worst possible moment. Jane Street does borrow &mdash; it refinanced with
-              $14.6B of bonds in August &mdash; but as term debt, so no lender can margin-call it out of a
-              position overnight. When you can choose <em>whether</em>{' '}
+              $14.6B of bonds in August &mdash; but as term debt, which a lender cannot recall overnight the
+              way a prime broker can pull a margin loan. Collateral owed on its trading positions is a
+              separate obligation, and a large enough loss can still strain it; internal capital makes
+              meeting it far easier. When you can choose <em>whether</em>{' '}
               and <em>when</em> to sell, a $15B loss is a bad month. When you can&rsquo;t, a far smaller
               loss is the end.
             </p>
@@ -444,14 +449,15 @@ export default function JaneStreet15bLoss() {
                 <tr><td><strong>Leverage</strong></td><td>~4×</td><td>Modest; internally funded</td></tr>
                 <tr><td><strong>Concentration</strong></td><td>Top 5 ≈ 76% of the book</td><td>Spread across thousands of markets</td></tr>
                 <tr><td><strong>July hit</strong></td><td style={{ color: 'var(--viz-crit)', fontWeight: 700 }}>−67% of the fund</td><td style={{ color: 'var(--viz-crit)', fontWeight: 700 }}>−$15B (~⅓ of one year)</td></tr>
-                <tr><td><strong>Could it be margin-called?</strong></td><td>Yes — and was</td><td>No — no external lender</td></tr>
-                <tr><td><strong>Outcome</strong></td><td>Wiped out; forced sale to Citadel</td><td>Absorbed; still a record year</td></tr>
+                <tr><td><strong>Investor redemptions?</strong></td><td>Possible (outside investors)</td><td>None — no outside investors</td></tr>
+                <tr><td><strong>Collateral calls?</strong></td><td>Prime brokers called margin, forcing sales</td><td>Still posts margin to exchanges and counterparties; disclosed borrowing is term debt, and no forced sale was reported</td></tr>
+                <tr><td><strong>Outcome</strong></td><td>Public book sold to Citadel after a reported ~67% July loss</td><td>Absorbed; reported Jan–Jul 2026 revenue still above all of 2025</td></tr>
               </tbody>
             </table>
             <p className={styles.posCaption} style={{ marginBottom: 0 }}>
               Same trigger, opposite ending. The variable that decided it wasn&rsquo;t who was
               &ldquo;right&rdquo; about AI &mdash; it was leverage, concentration, and whether the
-              capital could be taken away.
+              capital could be withdrawn or called away.
             </p>
           </section>
 
@@ -479,14 +485,16 @@ export default function JaneStreet15bLoss() {
                 </li>
                 <li>
                   <strong>Structure decides survival, not conviction.</strong> Situational Awareness and
-                  Jane Street held the same kind of trade in the same month. One is gone and one shrugged.
+                  Jane Street held the same kind of trade in the same month. One was forced to sell its public
+                  book; the other absorbed the loss.
                   The difference was leverage, diversification, and internal capital &mdash; not who was
                   smarter about AI.
                 </li>
                 <li>
                   <strong>Be your own bank if you can.</strong> Funding trading from ~$45B of your own
-                  equity means no redemptions and no margin calls. Nobody can force you to sell at the
-                  bottom, which converts &ldquo;terminal&rdquo; into &ldquo;temporary.&rdquo;
+                  equity means no investor redemptions, and a deep cushion for the collateral calls every
+                  trading firm still faces. That makes a forced sale at the bottom far less likely, which
+                  converts &ldquo;terminal&rdquo; into &ldquo;temporary.&rdquo;
                 </li>
                 <li>
                   <strong>Puts hedge crashes, not grinds.</strong> Option insurance pays for a sudden
@@ -495,7 +503,8 @@ export default function JaneStreet15bLoss() {
                 </li>
                 <li>
                   <strong>Absolute size is meaningless without context.</strong> $15B is one of the
-                  largest trading losses in history <em>and</em> a rounding item against a record year.
+                  largest trading losses in history <em>and</em> absorbable against reported
+                  January&ndash;July 2026 revenue of $40B+ and ~$45B of equity.
                   A loss only matters relative to the capital and income that stand behind it.
                 </li>
               </ul>
