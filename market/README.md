@@ -92,8 +92,12 @@ portfolio — nothing else to set up.
 - The free Alpaca tier serves the **IEX** feed. Prices are real trades in real
   time, but IEX is one exchange (a few percent of total US volume), so quotes
   can differ slightly from a full consolidated feed, and volume reads low.
-- Responses are edge-cached briefly (5–300s depending on timeframe) so repeated
-  visitors do not burn the rate limit.
+- Caching: only `/_m/gex` (option-chain maths) and `/_m/rss` (news feeds, 120s)
+  use Cloudflare's edge cache. Bars, snapshots, quotes and the portfolio go to
+  Alpaca/Yahoo on every request so prices stay live; their `Cache-Control`
+  headers are advisory and the site's own requests use `cache: 'no-store'`. At
+  the site's traffic this stays well inside Alpaca's free-tier rate limit; if it
+  ever doesn't, a few seconds of edge cache on `/_m/snapshot` is the first lever.
 - Only `joyebkashyeb.com.np` (and `localhost:3000` for local dev) may call the
   Worker — see `ALLOWED_ORIGINS` in `src/worker.js`.
 - **Until this Worker is deployed the Terminal still works** — it falls back to
