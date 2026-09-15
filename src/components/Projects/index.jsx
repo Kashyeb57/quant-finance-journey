@@ -17,14 +17,14 @@ const PROJECTS = [
     title: 'This Site — Interactive Quantitative Finance Platform',
     status: 'In Progress',
     overview: [
-      'A from-scratch interactive learning platform for quantitative finance, built on Docusaurus/React and deployed on Cloudflare in front of GitHub Pages. Every lesson is hands-on: Python runs directly in the browser (Pyodide), pricing and probability models have draggable inputs, and finished topics end with instant-feedback quizzes.',
+      'A from-scratch interactive learning platform for quantitative finance, built on Docusaurus/React and deployed on Cloudflare in front of GitHub Pages. Finished lessons are hands-on (some topics are still outlines): Python runs directly in the browser (Pyodide), pricing and probability models have draggable inputs, and many topics end with instant-feedback quizzes.',
       'Beyond the notes, it ships a browser-based Jupyter-style notebook (numpy / pandas / matplotlib), a custom in-site PDF reader, a self-hosted book library, and a live market terminal — all in a single static site.',
     ],
     sections: [
       {
         heading: 'Highlights',
         items: [
-          'In-browser Python with a Run button on every snippet (Pyodide)',
+          'In-browser Python with a Run button on every Python snippet (Pyodide)',
           'Interactive labs: Black–Scholes pricer with Greeks, GBM simulator, Bayesian prior→posterior, bell-curve explorer',
           'Custom PDF.js reader that range-streams large textbooks page-by-page',
           'LaTeX math via KaTeX, quizzes, and progress tracking in localStorage',
@@ -47,7 +47,7 @@ const PROJECTS = [
         heading: 'Engineering',
         items: [
           'Deployed on a Worker route so it intercepts /_a/* while the rest of the site stays static',
-          'Server-side geo / IP / device capture at the edge — can’t be spoofed by the client',
+          'IP address and location (country, city, network) come from Cloudflare’s connection data, which the page can’t set; path, referrer, screen size and time-on-page are reported by the beacon, and device/browser are parsed from the User-Agent header — both client-supplied, so they can be faked',
           'Time-on-page via per-view IDs and pagehide beacons; language from Accept-Language',
           'Token-guarded dashboard with traffic sources, top visitors, a 14-day chart, and filters',
         ],
