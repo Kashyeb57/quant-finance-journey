@@ -1,0 +1,16 @@
+# Store text with LF line endings in the repository; Windows checkouts may still
+# convert to CRLF locally (core.autocrlf), which is fine.
+* text=auto
+
+# Never touch binaries.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.xlsx binary
+*.zip binary
