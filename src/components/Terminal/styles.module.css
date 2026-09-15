@@ -1027,6 +1027,7 @@
     overflow-x: auto;
     scrollbar-width: none;
     gap: 0.4rem;
+    contain: inline-size; /* the scrolling strip must not widen the page */
   }
   .searchBox {
     min-height: 40px;

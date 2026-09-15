@@ -6,6 +6,8 @@
      which silently stopped the sticky header below from ever sticking. */
   overflow: hidden;
   overflow: clip;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────── */
@@ -261,6 +263,9 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
+    /* its one-row width must not size the page: without this the whole page
+       became wider than the phone and taps landed in the wrong place */
+    contain: inline-size;
   }
   .tbBtn {
     flex-shrink: 0;
