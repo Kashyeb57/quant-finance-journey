@@ -14,7 +14,10 @@ const FEEDS = [
   // MKT — Markets
   { source: 'MARKETWATCH', cat: 'MKT', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
   { source: 'CNBC', cat: 'MKT', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114' },
-  { source: 'INVESTING', cat: 'MKT', url: 'https://www.investing.com/rss/news.rss' },
+  // pubDate carries no zone ("2026-09-15 01:42:22"); checked 2026-09-14 against
+  // the server clock, it is UTC. Browsers read zone-less times as local, which
+  // put these headlines hours in the future for visitors in the Americas.
+  { source: 'INVESTING', cat: 'MKT', url: 'https://www.investing.com/rss/news.rss', tz: 'UTC' },
   { source: 'SEEKING ALPHA', cat: 'MKT', url: 'https://seekingalpha.com/market_currents.xml' },
   { source: 'BBC BIZ', cat: 'MKT', url: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
   { source: 'FXSTREET', cat: 'MKT', url: 'https://www.fxstreet.com/rss/news' },
@@ -115,9 +118,17 @@ function fullTimeCT(dateStr) {
   }).format(d) + ' CT';
 }
 
+function timeTitle(dateStr) {
+  const full = fullTimeCT(dateStr);
+  return isFutureDate(dateStr)
+    ? `Publisher's timestamp (${full}) is ahead of the current time, so this item isn't treated as recent`
+    : full;
+}
+
 function timeAgo(dateStr) {
   const d = new Date(dateStr);
   if (isNaN(d)) return '';
+  if (isFutureDate(dateStr)) return '—';
   const s = Math.floor((Date.now() - d.getTime()) / 1000);
   if (s < 60) return `${Math.max(s, 1)}s`;
   const m = Math.floor(s / 60);
@@ -147,7 +158,7 @@ function parseFeed(xmlText, feed) {
         n.querySelector('updated')?.textContent ||
         n.getElementsByTagName('dc:date')[0]?.textContent || '';
       const a = analyze(title);
-      return { title, link: link.trim(), pubDate: date.trim(), source: feed.source, cat: feed.cat, impact: a.impact, tags: a.tags };
+      return { title, link: link.trim(), pubDate: normalizeFeedDate(date, feed), source: feed.source, cat: feed.cat, impact: a.impact, tags: a.tags };
     })
     .filter((x) => x.title);
 }
@@ -185,6 +196,34 @@ async function fetchFeed(feed, signal) {
     } catch (e) { /* timed out, aborted or failed: next proxy */ }
   }
   return [];
+}
+
+// ── Feed dates ──────────────────────────────────────────────────────────
+// A feed marked `tz: 'UTC'` sends zone-less "YYYY-MM-DD HH:MM[:SS]" times that
+// are UTC; say so explicitly instead of letting the browser assume local time.
+// Other feeds' dates pass through untouched.
+function normalizeFeedDate(raw, feed) {
+  const s = String(raw || '').trim();
+  const m = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)$/.exec(s);
+  if (m && feed && feed.tz === 'UTC') return `${m[1]}T${m[2]}Z`;
+  return s;
+}
+
+// A publisher clock or zone error can stamp a story hours ahead. Beyond a few
+// minutes of clock skew such an item is treated as undated: shown as "—", kept
+// out of the time-range views, and sorted after dated headlines, so it can't
+// pose as just-published or sit at the top of the feed.
+const FUTURE_SLACK_MS = 5 * 60 * 1000;
+
+function isFutureDate(dateStr, now = Date.now()) {
+  const t = new Date(dateStr).getTime();
+  return Number.isFinite(t) && t > now + FUTURE_SLACK_MS;
+}
+
+// Sort key: dated items by time, undated/future ones after all of them.
+function newsTime(it, now = Date.now()) {
+  const t = new Date(it.pubDate).getTime();
+  return Number.isFinite(t) && t <= now + FUTURE_SLACK_MS ? t : -8.64e15;
 }
 
 // ── Grouping repeated coverage ──────────────────────────────────────────
@@ -234,16 +273,29 @@ function groupHeadlines(items) {
   return groups;
 }
 
-function mergeHeadlines(prev, fresh) {
-  const seen = new Set();
+// One publisher sometimes lists the same story twice under different URLs.
+// Same source + the same headline (case, spacing and punctuation aside) within
+// 12 hours counts as one; a reworded update or a later repeat stays separate.
+const SAME_SOURCE_WINDOW_MS = 12 * 3600 * 1000;
+const headlineKey = (title) => String(title || '').toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9$%]+/g, ' ').trim();
+
+function mergeHeadlines(prev, fresh, now = Date.now()) {
+  // Newest first; for a repeated link the fresh copy sorts ahead (stable sort).
+  const all = [...fresh, ...prev].sort((a, b) => newsTime(b, now) - newsTime(a, now));
+  const seenLinks = new Set();
+  const kept = new Map(); // source|headline -> times already kept
   const out = [];
-  for (const it of [...fresh, ...prev]) {
+  for (const it of all) {
     const key = it.link || it.title;
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
+    if (!key || seenLinks.has(key)) continue;
+    seenLinks.add(key);
+    const tk = `${it.source}|${headlineKey(it.title)}`;
+    const t = new Date(it.pubDate).getTime();
+    const times = kept.get(tk) || [];
+    if (times.some((k) => !Number.isFinite(k) || !Number.isFinite(t) || Math.abs(k - t) <= SAME_SOURCE_WINDOW_MS)) continue;
+    kept.set(tk, [...times, t]);
     out.push(it);
   }
-  out.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
   return out.slice(0, 120);
 }
 
@@ -342,7 +394,11 @@ export default function News({ ticker }) {
     const q = query.trim().toLowerCase();
     return items.filter((it) => {
       if (breaking && !FAST.has(it.source)) return false;
-      if (cutoff) { const d = new Date(it.pubDate); if (!isNaN(d) && d.getTime() < cutoff) return false; }
+      if (cutoff) {
+        const d = new Date(it.pubDate);
+        if (!isNaN(d) && d.getTime() < cutoff) return false;
+        if (isFutureDate(it.pubDate)) return false; // undated: not "in the last N hours"
+      }
       if (q && !it.title.toLowerCase().includes(q) && !it.tags.some((t) => t.toLowerCase().includes(q))) return false;
       if (onlyTicker && !matchesTicker(it, ticker)) return false;
       return true;
@@ -418,7 +474,7 @@ export default function News({ ticker }) {
           groups.map(({ lead: it, dupes }, i) => (
             <React.Fragment key={it.link || it.title || i}>
               <a className={`${styles.row} ${matchesTicker(it, ticker) ? styles.rowMatch : ''}`} href={it.link} target="_blank" rel="noreferrer">
-                <time className={styles.rowTime} dateTime={isNaN(new Date(it.pubDate)) ? undefined : new Date(it.pubDate).toISOString()} title={fullTimeCT(it.pubDate)}>
+                <time className={styles.rowTime} dateTime={isNaN(new Date(it.pubDate)) ? undefined : new Date(it.pubDate).toISOString()} title={timeTitle(it.pubDate)}>
                   {timeAgo(it.pubDate)}
                 </time>
                 <span className={`${styles.rowImpactDot} ${styles['imp_' + it.impact]}`} />
@@ -440,7 +496,7 @@ export default function News({ ticker }) {
                   {dupes.map((d) => (
                     <a key={d.link || d.title} className={styles.dupeLink} href={d.link} target="_blank" rel="noreferrer">
                       <span className={styles.rowSrc}>{d.source}</span>
-                      <time title={fullTimeCT(d.pubDate)}>{timeAgo(d.pubDate)}</time>
+                      <time title={timeTitle(d.pubDate)}>{timeAgo(d.pubDate)}</time>
                       <span>{d.title}</span>
                     </a>
                   ))}
