@@ -93,3 +93,19 @@ export function placeOrder({ symbol, side, qty }, token, opts) {
 export function cancelOrder(id, token, opts) {
   return postJson('/_m/cancel', { id }, { token, ...opts });
 }
+
+/* ------------------------------------------------------- position notes */
+
+/** Research notes per position. Public read: `{ notes: [...], unavailable? }`. */
+export function getNotes(opts) {
+  return getJson('/_m/notes', opts);
+}
+
+/**
+ * Save the note for one symbol (`{ symbol, thesis, horizon, risk, review }`).
+ * Owner-only. All-blank fields delete it: the response is `{ deleted: true }`,
+ * otherwise `{ note }`.
+ */
+export function saveNote(note, token, opts) {
+  return postJson('/_m/notes', note, { token, ...opts });
+}

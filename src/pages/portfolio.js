@@ -4,7 +4,7 @@ import Link from '@docusaurus/Link';
 import PageHeader from '@site/src/components/PageHeader';
 import {fmtPrice, isCrypto, fetchSnapshot} from '@site/src/components/Terminal/marketData';
 import {SECTIONS} from '@site/src/components/Terminal/tickers';
-import {getBars} from '@site/src/lib/market';
+import {getBars, getLedger, placeOrder, cancelOrder, getNotes, saveNote} from '@site/src/lib/market';
 import styles from './portfolio.module.css';
 
 /*
@@ -80,23 +80,6 @@ function fmtDay(t) {
   try {
     return new Intl.DateTimeFormat('en-US', {timeZone: 'America/Chicago', month: 'short', day: '2-digit'}).format(new Date(ms));
   } catch (_) { return ''; }
-}
-
-async function fetchLedger() {
-  const res = await fetch('/_m/ledger', {cache: 'no-store'});
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-async function postJson(path, token, body) {
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json', 'X-Trade-Token': token},
-    body: JSON.stringify(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  return data;
 }
 
 /* The signature line: full-bleed, no axes/grid, a dashed open-baseline, and a
@@ -221,7 +204,7 @@ function TradePanel({token, symbols, onPlaced, onLock}) {
     if (!symbol || !(qty > 0)) { setMsg({ok: false, text: 'Enter a symbol and a whole share count.'}); return; }
     setBusy(true); setMsg(null);
     try {
-      const r = await postJson('/_m/order', token, {symbol, side: form.side, qty});
+      const r = await placeOrder({symbol, side: form.side, qty}, token);
       setMsg({ok: true, text: `${form.side === 'buy' ? 'Bought' : 'Sold'} ${qty} ${symbol} — order ${r.order && r.order.status ? r.order.status : 'submitted'}.`});
       setForm((f) => ({...f, qty: ''}));
       onPlaced && onPlaced();
@@ -288,8 +271,7 @@ function PositionNotes({symbols, owner, token}) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/_m/notes', {cache: 'no-store'})
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+    getNotes()
       .then((d) => {
         if (cancelled) return;
         const map = {};
@@ -312,7 +294,7 @@ function PositionNotes({symbols, owner, token}) {
     setSaving(true);
     setError(null);
     try {
-      const d = await postJson('/_m/notes', token, {symbol: sym, ...draft});
+      const d = await saveNote({symbol: sym, ...draft}, token);
       setNotes((prev) => {
         const next = {...prev};
         if (d.deleted) delete next[sym];
@@ -453,7 +435,7 @@ function Content() {
     async function pull() {
       if (document.visibilityState === 'hidden') return;
       try {
-        const d = await fetchLedger();
+        const d = await getLedger();
         if (cancelled) return;
         if (d && d.account && !d.error) setState({status: 'ok', data: d});
         else setState((s) => (s.status === 'ok' ? s : {status: 'idle'}));
@@ -852,7 +834,7 @@ function Content() {
                           <td className={styles.num}>{o.filledAvgPrice != null ? money(o.filledAvgPrice) : '—'}</td>
                           <td>
                             <span className={`${styles.status} ${styles['st_' + (o.status || '').replace(/[^a-z_]/gi, '')]}`}>{o.status}</span>
-                            {cancelable && <button className={styles.cancelBtn} onClick={() => postJson('/_m/cancel', token, {id: o.id}).then(() => pullRef.current && pullRef.current()).catch(() => {})}>cancel</button>}
+                            {cancelable && <button className={styles.cancelBtn} onClick={() => cancelOrder(o.id, token).then(() => pullRef.current && pullRef.current()).catch(() => {})}>cancel</button>}
                           </td>
                         </tr>
                       );
