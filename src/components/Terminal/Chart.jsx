@@ -538,6 +538,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
             key={tf.key}
             className={`${styles.tfBtn} ${tf.key === timeframe ? styles.tfBtnActive : ''}`}
             onClick={() => setTimeframe && setTimeframe(tf.key)}
+            aria-pressed={tf.key === timeframe}
           >
             {tf.label}
           </button>
@@ -545,6 +546,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         <button
           className={`${styles.tfBtn} ${styles.gexBtn} ${showGex ? styles.tfBtnActive : ''}`}
           onClick={() => setShowGex((v) => !v)}
+          aria-pressed={showGex}
           disabled={!showGex && isCrypto(ticker) && gexFollows}
           title="Gamma exposure — dealer gamma-flip level and call/put walls"
           aria-label="Toggle gamma exposure (GEX)"
@@ -569,6 +571,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
             key={v}
             className={`${styles.tfBtn} ${styles.gexExpBtn} ${gexExp === v ? styles.tfBtnActive : ''}`}
             onClick={() => setGexExp(v)}
+            aria-pressed={gexExp === v}
             title={`Gamma expiry window: ${l}`}
           >
             {l}

@@ -424,13 +424,14 @@ export default function News({ ticker }) {
       </div>
       <div className={styles.termRow}>
         {CATEGORIES.map((c) => (
-          <button key={c} className={`${styles.tab} ${c === cat ? styles.tabActive : ''}`} onClick={() => setCat(c)} title={CATEGORY_HELP[c]}>{c}</button>
+          <button key={c} className={`${styles.tab} ${c === cat ? styles.tabActive : ''}`} onClick={() => setCat(c)} aria-pressed={c === cat} title={CATEGORY_HELP[c]}>{c}</button>
         ))}
       </div>
       <div className={styles.termRow}>
         <button
           className={`${styles.tab} ${styles.tabBreaking} ${breaking ? styles.tabActive : ''}`}
           onClick={() => setBreaking((v) => !v)}
+          aria-pressed={breaking}
           title="Only the fast market wires — a clean, low-noise breaking tape"
         >
           ⚡ Breaking
@@ -440,6 +441,7 @@ export default function News({ ticker }) {
             key={r.code}
             className={`${styles.tab} ${r.code === range ? styles.tabActive : ''}`}
             onClick={() => setRange(r.code)}
+            aria-pressed={r.code === range}
             title={r.h ? `Headlines from the last ${r.code.replace('H', ' hours').replace('D', ' days')}` : 'Headlines from any time'}
           >
             {r.code}

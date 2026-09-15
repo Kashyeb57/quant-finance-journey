@@ -995,13 +995,53 @@
   .tfBtn,
   .tab,
   .gexSymSel {
-    min-height: 32px;
-    min-width: 32px;
+    min-height: 40px;
+    min-width: 40px;
   }
   .refreshBtn {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
   }
+}
+
+/* Narrow screens get the same finger-sized controls even with a mouse (a small
+   window, or a desktop browser emulating a phone), and each control row becomes
+   one horizontally scrollable strip so the taller buttons don't stack up over
+   the chart or push the headlines down. */
+@media (max-width: 640px) {
+  .tfBtn,
+  .tab,
+  .gexSymSel {
+    min-height: 40px;
+    min-width: 40px;
+    flex-shrink: 0;
+  }
+  .chartToolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 4px;
+  }
+  .termRow {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 0.4rem;
+  }
+  .searchBox {
+    min-height: 40px;
+    font-size: 16px; /* stops iOS Safari zooming the page on focus */
+  }
+  .refreshBtn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.tfBtn:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--g-500, #25c2a0);
+  outline-offset: 1px;
 }
 
 /* news: same story from other outlets, folded under the lead headline */
