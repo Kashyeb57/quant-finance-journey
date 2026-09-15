@@ -2,10 +2,19 @@
   border: 1px solid var(--ifm-toc-border-color);
   border-radius: 14px;
   background: var(--viz-card-bg);
+  /* clip, not hidden: `overflow: hidden` makes this box a scroll container,
+     which silently stopped the sticky header below from ever sticking. */
   overflow: hidden;
+  overflow: clip;
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────── */
+.head {
+  position: sticky;
+  top: var(--ifm-navbar-height);
+  z-index: 3;
+}
+
 .toolbar {
   display: flex;
   align-items: center;
@@ -14,9 +23,6 @@
   padding: 0.6rem 0.9rem;
   border-bottom: 1px solid var(--ifm-toc-border-color);
   background: var(--viz-panel-bg);
-  position: sticky;
-  top: var(--ifm-navbar-height);
-  z-index: 3;
 }
 
 .tbBtn {
@@ -248,13 +254,23 @@
 }
 
 @media (max-width: 600px) {
+  /* One scrollable row, so the sticky header stays short on a phone. */
   .toolbar {
     gap: 0.35rem;
     padding: 0.45rem 0.5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
   .tbBtn {
+    flex-shrink: 0;
     font-size: 0.74rem;
-    padding: 0.35rem 0.55rem;
+    padding: 0.35rem 0.6rem;
+    min-height: 2.5rem;
+  }
+  .noticeBtn {
+    min-height: 2.5rem;
+    min-width: 2.5rem;
   }
   .tbNote {
     display: none; /* the same tips sit under the notebook */
