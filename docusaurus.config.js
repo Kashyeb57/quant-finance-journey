@@ -176,6 +176,7 @@ const config = {
             items: [
               {to: '/terminal', label: 'Terminal'},
               {to: '/portfolio', label: 'Portfolio'},
+              {to: '/brain', label: 'Brain'},
               {to: '/events', label: 'Big Events'},
             ],
           },

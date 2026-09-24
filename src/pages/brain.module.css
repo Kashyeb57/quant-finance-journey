@@ -1,0 +1,61 @@
+.main {max-width: 1180px; padding-top: 1.5rem; padding-bottom: 5rem;}
+.headerLinks {display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap;}
+.toolbar {display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; padding-bottom: 1.5rem;}
+.toolbar label {display: flex; align-items: center; gap: .65rem; font-size: .85rem; color: var(--tx-secondary);}
+.toolbar select, .controls input {
+  background: var(--bg-sunken); color: var(--tx-primary); border: 1px solid var(--line-strong);
+  border-radius: 6px; padding: .6rem; min-height: 44px; font: inherit; font-size: .85rem;
+}
+.status {margin-left: auto; font: .78rem var(--ff-mono); color: var(--tx-muted);}
+.file {cursor: pointer; border-bottom: 1px solid var(--line-strong); padding: .5rem 0;}
+.file input {max-width: 190px; font-size: .75rem; color: var(--tx-muted);}
+.section {border-top: 1px solid var(--line); padding: 1.7rem 0 2rem;}
+.sectionHead {display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem;}
+.sectionHead h2 {font-size: 1.35rem; margin: 0;}
+.sectionHead > span {font: .75rem var(--ff-mono); color: var(--tx-muted);}
+.readouts {display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 2rem; margin: 1rem 0 1.6rem;}
+.readouts > div {display: flex; flex-direction: column; gap: .6rem;}
+.readouts span {font-size: .78rem; color: var(--tx-muted);}
+.readouts strong {font: 1.4rem var(--ff-mono); color: var(--tx-primary);}
+.readouts strong.small {font-size: 1rem;}
+.muted {color: var(--tx-muted); font-size: .82rem; line-height: 1.7;}
+.message {border-left: 3px solid var(--amber-500); padding: .8rem 1rem; overflow-wrap: anywhere; color: var(--tx-secondary);}
+.chart {margin: 1.5rem 0; color: var(--tx-muted);}
+.chart svg {display: block; width: 100%; height: auto;}
+.legend {display: flex; gap: .6rem 1.6rem; flex-wrap: wrap; font-size: .82rem; margin-top: .6rem; color: var(--tx-secondary);}
+.legend span {display: inline-flex; align-items: center; gap: .5rem;}
+.legend svg {width: 34px; height: 10px; flex: none;}
+.scale {font: .75rem var(--ff-mono); color: var(--tx-muted); margin-top: .35rem;}
+.tableWrap {overflow-x: auto;}
+.tableWrap table {width: 100%; display: table; font-size: .85rem;}
+.tableWrap th, .tableWrap td {text-align: left; padding: .8rem; white-space: nowrap;}
+.checks {display: flex; flex-wrap: wrap; gap: .6rem 1.5rem; list-style: none; padding: 0; font-size: .82rem;}
+.checks li {display: inline-flex; align-items: center; gap: .5rem;}
+.pass, .fail {font: .72rem var(--ff-mono); padding: .15rem .45rem; border-radius: 4px; letter-spacing: .04em;}
+.pass {color: var(--g-300); border: 1px solid var(--g-600);}
+.fail {color: var(--amber-500); border: 1px dashed var(--amber-600);}
+.controls {display: flex; align-items: end; gap: .65rem; flex-wrap: wrap; margin: 1.5rem 0;}
+.controls label {display: flex; flex-direction: column; gap: .5rem; font-size: .8rem; color: var(--tx-secondary);}
+.controls button {
+  background: var(--surface); color: var(--tx-primary); padding: .65rem 1rem; min-height: 44px;
+  border: 1px solid var(--line-strong); border-radius: 6px; cursor: pointer; font: inherit; font-size: .82rem;
+}
+.controls button:hover:not(:disabled) {border-color: var(--g-500);}
+.controls button:disabled {opacity: .45; cursor: not-allowed;}
+.controls button:focus-visible, .toolbar select:focus-visible, .controls input:focus-visible, .file input:focus-visible {
+  outline: none; box-shadow: var(--focus-ring);
+}
+.empty {padding: 1.5rem 0; color: var(--tx-muted);}
+.help {border-top: 1px solid var(--line); padding-top: 1.2rem; font-size: .85rem;}
+.help summary {cursor: pointer; padding-bottom: 1rem;}
+@media (max-width: 700px) {
+  .readouts {grid-template-columns: 1fr; gap: 1rem;}
+  .sectionHead {flex-direction: column; gap: .5rem;}
+  .status {margin-left: 0;}
+  .toolbar {align-items: flex-start;}
+  .controls {align-items: stretch;}
+  .controls label {width: 100%;}
+  .controls input {font-size: 16px;} /* below 16px iOS Safari zooms the page on focus */
+  .file {max-width: 100%;}
+  .main {padding-left: 1rem; padding-right: 1rem;}
+}

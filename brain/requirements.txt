@@ -1,0 +1,5 @@
+brian2==2.8.0.4
+numpy>=1.24,<2
+pandas>=2,<3
+pyarrow>=12
+setuptools<81

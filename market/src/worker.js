@@ -20,6 +20,8 @@
  *                  write endpoints reject everything (read endpoints unaffected).
  */
 
+import { handleBrain } from './brain.mjs';
+
 const ALPACA = 'https://data.alpaca.markets/v2/stocks';
 // Paper TRADING API — the account + open positions for the portfolio panel.
 // (Live trading would be api.alpaca.markets; we deliberately use the paper
@@ -969,6 +971,10 @@ export default {
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(request) });
+    }
+
+    if (url.pathname.startsWith('/_m/brain/')) {
+      return handleBrain(request, env, url, { json, ownerOk, alpaca, alpacaTrade });
     }
 
     // Owner-only writes — token-gated inside each handler.

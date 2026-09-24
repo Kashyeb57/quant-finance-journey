@@ -19,11 +19,12 @@ const problems = [];
 const fail = (rule, where, detail) => problems.push(`${rule}: ${where}${detail ? ` (${detail})` : ''}`);
 
 const PRIVATE = [/(^|\/)CLAUDE\.md$/i, /(^|\/)AGENTS\.md$/i, /(^|\/)HANDOFF[^/]*\.md$/i, /(^|\/)DESIGN_HANDOFF\.md$/i,
-  /(^|\/)MS444_STATS_GAP_REPORT\.md$/i, /(^|\/)\.handoff\//, /(^|\/)\.dev\.vars$/];
+  /(^|\/)MS444_STATS_GAP_REPORT\.md$/i, /(^|\/)\.handoff\//, /(^|\/)\.dev\.vars$/,
+  /(^|\/)\.env(\.(?!example$)[^/]*)?$/];
 // Alpaca key ids are 20 characters, PK (paper) or AK (live) then 18 capitals/digits.
 const KEY_ID = /(?<![A-Za-z0-9+/])[PA]K[A-Z0-9]{18}(?![A-Za-z0-9+/])/;
 const SERVER_ONLY = /APCA-API-(SECRET-KEY|KEY-ID)/;
-const TEXT = /\.(js|mjs|cjs|jsx|ts|tsx|json|html|htm|css|md|mdx|txt|toml|yml|yaml|xml|map)$/i;
+const TEXT = /\.(js|mjs|cjs|jsx|ts|tsx|json|html|htm|css|md|mdx|txt|toml|yml|yaml|xml|map|py|sh|ps1|cfg|ini|env)$/i;
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {

@@ -34,6 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify Worker routes and paper-order safeguards
+        run: node --test tests/market-worker.test.mjs tests/brain-worker.test.mjs
+        env:
+          BRAIN_TESTS_REQUIRE_SQLITE: '1'
       - name: Deploy with Wrangler
         uses: cloudflare/wrangler-action@v3
         with:

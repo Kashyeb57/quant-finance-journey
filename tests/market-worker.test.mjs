@@ -11,6 +11,7 @@ import { root } from './extract.mjs';
 // Copied to .mjs so Node 20 (no ESM detection for .js) can import it.
 const dir = mkdtempSync(path.join(os.tmpdir(), 'market-worker-'));
 const file = path.join(dir, 'worker.mjs');
+copyFileSync(path.join(root, 'market/src/brain.mjs'), path.join(dir, 'brain.mjs'));
 copyFileSync(path.join(root, 'market/src/worker.js'), file);
 
 const cache = new Map();
@@ -155,4 +156,49 @@ test('position notes: owner saves, public reads, blank deletes', { skip: !Databa
   res = await post({ symbol: 'AVGO', thesis: '', horizon: ' ', risk: '', review: '' });
   assert.equal((await res.json()).deleted, true);
   assert.deepEqual((await (await call('/_m/notes', { env })).json()).notes, []);
+});
+
+// ── Brain routes through the real Worker entry point ─────────────────────────
+function d1(DB) {
+  const db = new DB(':memory:');
+  const stmt = (sql, args = []) => ({
+    bind: (...a) => stmt(sql, a),
+    run: async () => ({ meta: { changes: Number(db.prepare(sql).run(...args).changes) } }),
+    all: async () => ({ results: db.prepare(sql).all(...args) }),
+    first: async () => db.prepare(sql).get(...args) || null,
+  });
+  return { prepare: (sql) => stmt(sql), batch: async (list) => Promise.all(list.map((s) => s.run())) };
+}
+
+test('Brain write and control routes refuse a missing or wrong passphrase before any upstream call', { skip: !DatabaseSync && 'node:sqlite unavailable on this Node' }, async () => {
+  const env = { ...ENV, NOTES_DB: d1(DatabaseSync) };
+  const routes = [['/_m/brain/control', 'GET'], ['/_m/brain/control', 'POST', { enabled: true }], ['/_m/brain/report', 'POST', { mode: 'paper' }],
+    ['/_m/brain/order', 'POST', { symbol: 'SPY', target_position: 1 }], ['/_m/brain/resolve', 'POST', { client_id: 'joyeb-fly-SPY-1' }]];
+  for (const [route, method, body] of routes) {
+    for (const token of [undefined, 'wrong']) {
+      const res = await call(route, { method, body, token, env });
+      assert.equal(res.status, 401, `${method} ${route} token=${token}`);
+      assert.equal(res.headers.get('Access-Control-Allow-Origin'), SITE);
+    }
+  }
+  assert.deepEqual(calls, []);
+});
+
+test('Brain status is public, paused by default, and carries CORS for the site only', { skip: !DatabaseSync && 'node:sqlite unavailable on this Node' }, async () => {
+  const env = { ...ENV, NOTES_DB: d1(DatabaseSync) };
+  const res = await call('/_m/brain/status', { env, headers: { Origin: 'https://evil.example.com' } });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), SITE);
+  const body = await res.json();
+  assert.equal(body.enabled, false);
+  assert.equal(body.report, null);
+  assert.ok(!JSON.stringify(body).includes(ENV.ALPACA_SECRET_KEY) && !JSON.stringify(body).includes(TOKEN));
+  assert.deepEqual(calls, []);
+});
+
+test('Brain preflight answers with the owner header allowed', async () => {
+  const res = await worker.fetch(new Request(`${SITE}/_m/brain/order`, { method: 'OPTIONS', headers: { Origin: SITE, 'Access-Control-Request-Method': 'POST' } }), ENV, {});
+  assert.equal(res.status, 204);
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), SITE);
+  assert.match(res.headers.get('Access-Control-Allow-Headers'), /X-Trade-Token/);
 });
