@@ -1,13 +1,16 @@
-// Experimental SPY runner bridge. All brokerage calls use the existing,
+// Experimental single-stock runner bridge (Micron, MU; SPY until 2026-09-24).
+// All brokerage calls use the existing,
 // hard-coded PAPER transport. No request can supply a brokerage URL or key.
-const SYMBOL = 'SPY';
-const MAX_NOTIONAL = 1000;
+const SYMBOL = 'MU';
+// Refuse a buy quoted above this (1 share only). MU traded $739-$1,105 in the 60 days
+// before the switch; the cap is a sanity check, not a fill-price guarantee.
+const MAX_NOTIONAL = 1500;
 const MAX_DAILY_ENTRIES = 6;
 // A signal is usable only once its bar has settled: bar start + 15 min + 60 s,
 // so late IEX prints for that bar have arrived before anything is decided on it.
 const MIN_SIGNAL_AGE_MS = 960000;
 const TERMINAL = ['filled', 'canceled', 'expired', 'rejected'];
-const CLIENT_ID_RE = /^joyeb-fly-SPY-\d+$/;
+const CLIENT_ID_RE = new RegExp(`^joyeb-fly-${SYMBOL}-\\d+$`);
 // Uncertain rows may be resolved by the owner only after the broker has had time to show them.
 const RESOLVE_AFTER_MS = 300000;
 const lookupPath = clientId => `/orders:by_client_order_id?client_order_id=${encodeURIComponent(clientId)}`;
@@ -31,8 +34,11 @@ async function readState(db) {
   const control = await db.prepare('SELECT enabled FROM brain_control WHERE id = 1').first();
   const row = await db.prepare('SELECT payload, seen_at FROM brain_report WHERE id = 1').first();
   const { results } = await db.prepare('SELECT client_id, side, status, filled_qty, created_at FROM brain_orders ORDER BY created_at DESC LIMIT 20').all();
-  return { enabled: !!control?.enabled, report: row ? JSON.parse(row.payload) : null,
-    seen_at: row?.seen_at || null, online: !!row && Date.now() >= Date.parse(row.seen_at) && Date.now() - Date.parse(row.seen_at) < 120000,
+  const stored = row ? JSON.parse(row.payload) : null;
+  // A report for another symbol (the SPY experiment before the switch) is ignored.
+  const current = stored?.evaluation?.symbol === SYMBOL ? row : null;
+  return { enabled: !!control?.enabled, report: current ? stored : null,
+    seen_at: current?.seen_at || null, online: !!current && Date.now() >= Date.parse(current.seen_at) && Date.now() - Date.parse(current.seen_at) < 120000,
     orders: results || [], limits: { symbol: SYMBOL, max_shares: 1, max_buy_quote: MAX_NOTIONAL, max_daily_entries: MAX_DAILY_ENTRIES } };
 }
 
@@ -132,7 +138,7 @@ async function submit(request, env, body, h) {
       return h.json(request, { error: 'price_or_cash_limit' }, 409);
     }
   }
-  const clientId = `joyeb-fly-SPY-${Math.floor(bar/1000)}`;
+  const clientId = `joyeb-fly-${SYMBOL}-${Math.floor(bar/1000)}`;
   const latest = await readState(db);
   const ageBeforeClaim = Date.now()-bar;
   if (!latest.enabled) return h.json(request, { error: 'automation_paused' }, 409);

@@ -5,7 +5,7 @@ import re
 import threading
 from pathlib import Path
 
-from .data import RUNTIME, atomic_json, clean_bars, collect, request
+from .data import RUNTIME, SYMBOL, atomic_json, clean_bars, collect, request
 
 
 def neuron_count(text):
@@ -16,8 +16,8 @@ def neuron_count(text):
 
 
 def client_id(text):
-    if not re.fullmatch(r"joyeb-fly-SPY-\d+", text):
-        raise argparse.ArgumentTypeError("expected an order id like joyeb-fly-SPY-1758650400")
+    if not re.fullmatch(rf"joyeb-fly-{SYMBOL}-\d+", text):
+        raise argparse.ArgumentTypeError(f"expected an order id like joyeb-fly-{SYMBOL}-1758650400")
     return text
 
 
@@ -27,9 +27,9 @@ def main():
     prep = sub.add_parser("prepare", help="Extract measured subgraph from the downloaded research repository")
     prep.add_argument("--connectome", type=Path, default=Path.home()/"Documents"/"FlyBrain"/"Drosophila_brain_model")
     prep.add_argument("--neurons", type=neuron_count, default=512, help="64-4096 (default 512)")
-    get = sub.add_parser("collect", help="Download actual SPY IEX bars through the existing website")
+    get = sub.add_parser("collect", help=f"Download actual {SYMBOL} IEX bars through the existing website")
     get.add_argument("--days", type=int, default=120)
-    imp = sub.add_parser("import", help="Import an actual SPY 15-minute OHLCV CSV")
+    imp = sub.add_parser("import", help=f"Import an actual {SYMBOL} 15-minute OHLCV CSV")
     imp.add_argument("file", type=Path)
     sub.add_parser("train", help="Train and evaluate using purged chronological partitions")
     sub.add_parser("status", help="Print latest local run status")
@@ -59,7 +59,7 @@ def main():
                   "days are not filtered; after-hours bars on those days would be treated as regular session.")
         RUNTIME.mkdir(parents=True, exist_ok=True)
         frame.to_csv(RUNTIME/"bars.csv", index=False)
-        atomic_json(RUNTIME/"data.json", {"source": "User-provided SPY 15-minute CSV", "rows": len(frame),
+        atomic_json(RUNTIME/"data.json", {"symbol": SYMBOL, "source": f"User-provided {SYMBOL} 15-minute CSV", "rows": len(frame),
                                          "first": frame.time.iloc[0].isoformat(), "last": frame.time.iloc[-1].isoformat()})
         print(f"Imported {len(frame)} completed bars")
     elif args.command == "train":

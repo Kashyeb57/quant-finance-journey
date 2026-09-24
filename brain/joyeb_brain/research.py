@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .connectome import FlyFeatures, digest
-from .data import FEATURES, PIPELINE_VERSION, RUNTIME, atomic_json, clean_bars, features
+from .data import FEATURES, PIPELINE_VERSION, RUNTIME, SYMBOL, atomic_json, clean_bars, features
 
 COST = 0.0005  # illustrative 5 basis points per side, not an observed fill cost
 
@@ -92,7 +92,7 @@ def train(progress=print):
     graph = json.loads((RUNTIME / "graph.json").read_text())
     data_info = json.loads((RUNTIME / "data.json").read_text()) if (RUNTIME / "data.json").exists() else {"source": "User CSV"}
     report = {"schema": 1, "pipeline_version": PIPELINE_VERSION, "created_at": datetime.now(timezone.utc).isoformat(),
-              "symbol": "SPY", "timeframe": "15Min", "model_id": digest(model)[:16],
+              "symbol": SYMBOL, "timeframe": "15Min", "model_id": digest(model)[:16],
               "graph": graph, "data": data_info, "samples": n,
               "split": {"train": a-2, "validation": b-a-2, "test": n-b,
                         "train_end": samples.time.iloc[a-3].isoformat(),
@@ -118,6 +118,8 @@ class Predictor:
         with np.load(RUNTIME / "model.npz", allow_pickle=False) as stored:
             self.model = {name: stored[name] for name in stored.files}
         self.report = json.loads((RUNTIME / "evaluation.json").read_text())
+        if self.report.get("symbol") != SYMBOL:
+            raise ValueError(f"The saved model was trained on {self.report.get('symbol')}, not {SYMBOL}; collect and train before running")
         if str(self.model["pipeline_version"]) != PIPELINE_VERSION or self.report.get("pipeline_version") != PIPELINE_VERSION:
             raise ValueError("Pipeline changed; retrain before running")
         if list(self.model["feature_names"]) != FEATURES:
@@ -131,7 +133,7 @@ class Predictor:
     def signal(self, bars, now=None, settle_seconds=0, strict=True):
         cleaned = clean_bars(pd.DataFrame(bars), now=now, settle_seconds=settle_seconds, strict=strict)
         latest = cleaned.iloc[-1]
-        base = {"bar_time": latest.time.isoformat(), "symbol": "SPY", "price": float(latest.close),
+        base = {"bar_time": latest.time.isoformat(), "symbol": SYMBOL, "price": float(latest.close),
                 "predicted_return": None, "target_position": 0, "distribution_ok": False,
                 "active_readout_groups": 0, "model_id": self.report["model_id"]}
         eastern = latest.time.tz_convert("America/New_York")
@@ -149,7 +151,7 @@ class Predictor:
         forecast = float(predict(neural, (self.model["mean"], self.model["scale"], self.model["coef"], self.model["intercept"]))[0])
         # Out-of-distribution inputs are observable, but must not submit orders.
         distribution_ok = bool((abs((raw-self.model["input_mean"])/self.model["input_scale"]) <= 6).all())
-        return {"bar_time": row.time.isoformat(), "symbol": "SPY", "price": float(row.close),
+        return {"bar_time": row.time.isoformat(), "symbol": SYMBOL, "price": float(row.close),
                 "predicted_return": forecast, "target_position": int(distribution_ok and forecast > float(self.model["threshold"])),
                 "distribution_ok": distribution_ok,
                 "reason": "Model forecast" if distribution_ok else "Input outside training range; target flat",

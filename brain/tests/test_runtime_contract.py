@@ -11,7 +11,7 @@ from unittest.mock import patch
 import numpy as np
 
 from joyeb_brain import research
-from joyeb_brain.data import FEATURES, PIPELINE_VERSION, features
+from joyeb_brain.data import FEATURES, PIPELINE_VERSION, SYMBOL, features
 from joyeb_brain.research import Predictor
 from test_pipeline import fixture
 
@@ -60,7 +60,7 @@ class RuntimeContractTests(unittest.TestCase):
         np.savez(data, pipeline_version=version,
                  feature_names=np.array(names), graph_hash="test-graph")
         fingerprint = hashlib.sha256(data.getvalue()).hexdigest()
-        report = {"pipeline_version": PIPELINE_VERSION,
+        report = {"symbol": SYMBOL, "pipeline_version": PIPELINE_VERSION,
                   "model_id": model_id or fingerprint[:16]}
         data.seek(0)
         with np.load(data, allow_pickle=False) as archive:

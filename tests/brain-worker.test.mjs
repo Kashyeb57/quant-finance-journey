@@ -32,7 +32,7 @@ const helpers = {
     calls.push({path, init});
     if (path === '/clock') return {ok: true, data: {is_open: broker.open, next_close: broker.nextClose ?? null}};
     if (path === '/account') return {ok: true, data: {status: 'ACTIVE', equity: 10000, last_equity: 10000, cash: 10000, ...broker.account}};
-    if (path === '/positions') return {ok: true, data: broker.qty ? [{symbol: 'SPY', qty: String(broker.qty)}] : []};
+    if (path === '/positions') return {ok: true, data: broker.qty ? [{symbol: 'MU', qty: String(broker.qty)}] : []};
     if (path.startsWith('/orders?')) return {ok: true, data: broker.openOrders || []};
     if (path.startsWith('/orders:')) return broker.lookup || {ok: false, status: 404};
     if (path === '/orders' && init?.method === 'POST') {
@@ -49,7 +49,7 @@ function signal(target=1) {
   // Place the mocked clock inside the five-minute submission window.
   const now = Date.now();
   const bar = Math.floor(now/900000)*900000 - 900000;
-  return {bar_time: new Date(bar).toISOString(), target_position: target, symbol: 'SPY', model_id: MODEL, distribution_ok: true};
+  return {bar_time: new Date(bar).toISOString(), target_position: target, symbol: 'MU', model_id: MODEL, distribution_ok: true};
 }
 
 async function call(path, body, token=TOKEN) {
@@ -61,7 +61,7 @@ async function call(path, body, token=TOKEN) {
 }
 
 async function ready(s=signal()) {
-  await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: s});
+  await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: s});
   assert.equal((await call('control', {enabled: true})).status, 200);
   return s;
 }
@@ -85,7 +85,7 @@ t('brain defaults to paused and rejects unauthenticated writes', async () => {
 
 t('paper execution cannot enable without a current accepted evaluation', async () => {
   assert.equal((await call('control', {enabled: true})).status, 409);
-  await call('report', {mode: 'observe', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}});
+  await call('report', {mode: 'observe', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}});
   assert.equal((await call('control', {enabled: true})).status, 409);
 });
 
@@ -96,7 +96,7 @@ t('a fresh signal submits only one whole-share order and repeated calls hold', a
   const orders = calls.filter(c => c.init?.method === 'POST');
   assert.equal(orders.length, 1);
   assert.equal(orders[0].init.body.qty, '1');
-  assert.match(orders[0].init.body.client_order_id, /^joyeb-fly-SPY-/);
+  assert.match(orders[0].init.body.client_order_id, /^joyeb-fly-MU-/);
 });
 
 t('stale signals, arbitrary symbols, and short targets are rejected', async () => {
@@ -176,7 +176,7 @@ t('a partially filled canceled buy cannot cause a whole-share oversell', async (
 t('truthy nonboolean evaluation readiness cannot enable paper entries', async () => {
   for (const paperReady of ['false', 1, {}]) {
     const s = signal();
-    await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: paperReady}, signal: s});
+    await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: paperReady}, signal: s});
     assert.equal((await call('control', {enabled: true})).status, 409);
     assert.equal((await call('order', s)).status, 409);
   }
@@ -186,7 +186,7 @@ t('truthy nonboolean evaluation readiness cannot enable paper entries', async ()
 t('truthy nonboolean distribution flags never permit an entry', async () => {
   for (const distributionOk of ['false', 1, {}]) {
     const s = {...signal(), distribution_ok: distributionOk};
-    const report = await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: s});
+    const report = await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: s});
     assert.equal(report.status, 400);
     assert.equal((await call('control', {enabled: true})).status, 409);
     assert.equal((await call('order', s)).status, 409);
@@ -222,7 +222,7 @@ t('the daily entry limit blocks another buy but still permits a managed exit', a
 t('a failed evaluation blocks entries while allowing an existing managed position to exit', async () => {
   const exit = await ready(signal(0));
   seedFilledOrders(['buy']);
-  await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: false}, signal: exit});
+  await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false}, signal: exit});
   assert.equal((await call('order', exit)).status, 200);
   assert.equal(broker.qty, 0);
   const posted = calls.filter(c => c.init?.method === 'POST');
@@ -245,7 +245,7 @@ t('a candle that expires during a slow quote read cannot dispatch an order', asy
   helpers.alpaca = async (...args) => {
     // The runner keeps publishing, so only the candle's age can refuse this order.
     context.mock.timers.setTime(Date.now() + 5*60000);
-    await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: s});
+    await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: s});
     return original(...args);
   };
   try {
@@ -260,10 +260,10 @@ t('a candle that expires during a slow quote read cannot dispatch an order', asy
 
 t('an enabled runner cannot enter after its evaluation fails or inputs leave the training range', async () => {
   const entry = await ready();
-  await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: false}, signal: entry});
+  await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false}, signal: entry});
   assert.equal((await call('order', entry)).status, 409);
   const outside = {...entry, distribution_ok: false};
-  await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: outside});
+  await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: outside});
   assert.equal((await call('order', outside)).status, 409);
   assert.equal(calls.filter(c => c.init?.method === 'POST').length, 0);
 });
@@ -272,7 +272,7 @@ t('a replacement runner report invalidates a buy already awaiting a quote', asyn
   const entry = await ready();
   const original = helpers.alpaca;
   helpers.alpaca = async (...args) => {
-    await call('report', {mode: 'observe', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: false},
+    await call('report', {mode: 'observe', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false},
       signal: {...entry, target_position: 0, distribution_ok: false}});
     return original(...args);
   };
@@ -325,7 +325,7 @@ t('a runner that stopped publishing cannot trade', async context => {
 
 t('an observe-mode runner cannot trade even when enabled', async () => {
   const s = await ready();
-  await call('report', {mode: 'observe', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: s});
+  await call('report', {mode: 'observe', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: s});
   await refused(s, 409, 'runner_or_evaluation_not_ready');
 });
 
@@ -354,15 +354,15 @@ t('a 2% daily drawdown blocks new entries', async () => {
   await refused(s, 409, 'account_blocked_or_daily_loss_limit');
 });
 
-t('an open SPY order at the broker blocks automation', async () => {
+t('an open MU order at the broker blocks automation', async () => {
   const s = await ready();
-  broker.openOrders = [{symbol: 'SPY'}];
+  broker.openOrders = [{symbol: 'MU'}];
   await refused(s, 409, 'symbol_has_open_order');
 });
 
 t('price, quote age and cash limits each block a buy', async () => {
   const s = await ready();
-  const setups = [() => { broker.price = 1200; }, () => { broker.quoteTime = new Date(Date.now() - 4*60000).toISOString(); },
+  const setups = [() => { broker.price = 1600; }, () => { broker.quoteTime = new Date(Date.now() - 4*60000).toISOString(); },
     () => { broker.account = {cash: 500}; }];
   for (const setup of setups) {
     broker.price = undefined; broker.quoteTime = undefined; broker.account = undefined;
@@ -445,10 +445,10 @@ async function stuckOrder() {
 }
 
 t('resolve is owner-only and validates its input', async () => {
-  assert.equal((await call('resolve', {client_id: 'joyeb-fly-SPY-1'}, null)).status, 401);
-  assert.equal((await call('resolve', {client_id: 'joyeb-fly-SPY-1'}, 'wrong')).status, 401);
+  assert.equal((await call('resolve', {client_id: 'joyeb-fly-MU-1'}, null)).status, 401);
+  assert.equal((await call('resolve', {client_id: 'joyeb-fly-MU-1'}, 'wrong')).status, 401);
   assert.equal((await call('resolve', {client_id: 'x; DROP TABLE brain_orders'})).status, 400);
-  assert.equal((await call('resolve', {client_id: 'joyeb-fly-SPY-1'})).status, 404);
+  assert.equal((await call('resolve', {client_id: 'joyeb-fly-MU-1'})).status, 404);
 });
 
 t('resolve waits five minutes, then records a missing broker order as rejected', async context => {
@@ -492,20 +492,20 @@ async function refusedEarly(s, expectedStatus, expectedError) {
 
 t('a failed evaluation refuses an entry before any broker call', async () => {
   const s = await ready();
-  await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: false}, signal: s});
+  await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false}, signal: s});
   await refusedEarly(s, 409, 'runner_or_evaluation_not_ready');
 });
 
 t('inputs outside the training range refuse an entry before any broker call', async () => {
   const s = {...(await ready()), distribution_ok: false};
-  await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: s});
+  await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: s});
   await refusedEarly(s, 409, 'signal_report_mismatch');
 });
 
 t('a signal whose model differs from the evaluation is refused', async () => {
   const other = 'fedcba0987654321';
   const s = {...signal(), model_id: other};
-  await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: s});
+  await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: s});
   await call('control', {enabled: true});
   await refusedEarly(s, 409, 'signal_report_mismatch');
 });
@@ -527,7 +527,7 @@ t('a paper-mode replacement report that fails the gate invalidates a buy awaitin
   const entry = await ready();
   const original = helpers.alpaca;
   helpers.alpaca = async (...args) => {
-    await call('report', {mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: false}, signal: entry});
+    await call('report', {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false}, signal: entry});
     return original(...args);
   };
   try {
@@ -546,7 +546,7 @@ t('an order for another candle claimed by a second runner mid-check is refused',
   const original = helpers.alpaca;
   helpers.alpaca = async (...args) => {
     // Another runner claims a different candle between reconcile() and the claim.
-    db.prepare("INSERT INTO brain_orders (client_id,bar_time,side,status,created_at) VALUES ('joyeb-fly-SPY-1','2026-09-23T17:45:00.000Z','buy','submitting',?)")
+    db.prepare("INSERT INTO brain_orders (client_id,bar_time,side,status,created_at) VALUES ('joyeb-fly-MU-1','2026-09-23T17:45:00.000Z','buy','submitting',?)")
       .run(new Date().toISOString());
     return original(...args);
   };
@@ -594,4 +594,28 @@ t('a 4xx whose broker lookup also fails stays uncertain and blocks the next cand
     assert.equal(await errorOf(blocked), 'order_reconciliation_required');
     context.mock.timers.setTime(Date.now() - 900000);
   }
+});
+
+t('a stored report for another symbol is ignored and cannot be traded on', async () => {
+  const s = signal();
+  // As if the SPY experiment had published before the switch.
+  db.exec("CREATE TABLE IF NOT EXISTS brain_report (id INTEGER PRIMARY KEY, payload TEXT NOT NULL, seen_at TEXT NOT NULL)");
+  await call('status');
+  db.prepare('INSERT OR REPLACE INTO brain_report (id,payload,seen_at) VALUES (1,?,?)')
+    .run(JSON.stringify({mode: 'paper', evaluation: {symbol: 'SPY', model_id: MODEL, paper_ready: true}, signal: {...s, symbol: 'SPY'}}), new Date().toISOString());
+  const status = await (await call('status')).json();
+  assert.equal(status.report, null);
+  assert.equal(status.online, false);
+  assert.equal((await call('control', {enabled: true})).status, 409);
+  assert.equal(posts().length, 0);
+});
+
+t('the limits and a buy quote above $1,500 reflect the Micron switch', async () => {
+  const limits = (await (await call('status')).json()).limits;
+  assert.deepEqual(limits, {symbol: 'MU', max_shares: 1, max_buy_quote: 1500, max_daily_entries: 6});
+  const s = await ready();
+  broker.price = 1450;
+  assert.equal((await call('order', s)).status, 200);
+  assert.match(posts()[0].init.body.client_order_id, /^joyeb-fly-MU-\d+$/);
+  assert.equal(posts()[0].init.body.symbol, 'MU');
 });

@@ -12,6 +12,9 @@ import numpy as np
 import pandas as pd
 
 ORIGIN = "https://joyebkashyeb.com.np"
+# The one stock this experiment models and may trade (SPY until 2026-09-24).
+# Must match SYMBOL in market/src/brain.mjs.
+SYMBOL = "MU"
 FEATURES = ["return_1", "return_4", "volatility_8", "range", "body", "volume_ratio"]
 RUNTIME = Path(__file__).resolve().parents[1] / "runtime"
 PIPELINE_VERSION = "fly-v630-market-v1"
@@ -80,6 +83,10 @@ def fetch_bars(days=120):
     try:
         while True:
             page = request("/_m/brain/bars?" + urllib.parse.urlencode(query))
+            if page.get("symbol") != SYMBOL:
+                # The website serves another symbol (e.g. a Worker not yet redeployed):
+                # never save its prices under this symbol's name.
+                raise ValueError(f"Website served {page.get('symbol')} bars, expected {SYMBOL}; deploy the Worker first")
             bars.extend(page.get("bars", []))
             cursor = page.get("next_page_token")
             if not cursor:
@@ -93,7 +100,9 @@ def fetch_bars(days=120):
             raise
         # Bootstrap against the already deployed site. This endpoint has a
         # shorter window and a 1000-row cap; never claim it is a full history.
-        page = request("/_m/bars?symbol=SPY&tf=15Min")
+        page = request(f"/_m/bars?symbol={SYMBOL}&tf=15Min")
+        if page.get("symbol") != SYMBOL:
+            raise ValueError(f"Website served {page.get('symbol')} bars, expected {SYMBOL}")
         bars = page.get("bars", [])
         source = "Alpaca IEX via legacy endpoint (limited historical window)"
     return bars, source
@@ -104,7 +113,7 @@ def collect(days=120):
     frame = clean_bars(pd.DataFrame(bars))
     RUNTIME.mkdir(parents=True, exist_ok=True)
     frame.to_csv(RUNTIME / "bars.csv", index=False)
-    info = {"symbol": "SPY", "timeframe": "15Min", "source": source,
+    info = {"symbol": SYMBOL, "timeframe": "15Min", "source": source,
             "rows": len(frame), "collected_at": datetime.now(timezone.utc).isoformat(),
             "first": frame.time.iloc[0].isoformat(), "last": frame.time.iloc[-1].isoformat()}
     atomic_json(RUNTIME / "data.json", info)
@@ -157,7 +166,7 @@ def clean_bars(frame, now=None, settle_seconds=0, strict=True, require_offset=Fa
     frame = frame.loc[keep].reset_index(drop=True)
     frame.attrs["dropped_invalid"] = dropped
     if frame.empty:
-        raise ValueError("No completed regular-session SPY bars available")
+        raise ValueError(f"No completed regular-session {SYMBOL} bars available")
     return frame
 
 

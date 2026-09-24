@@ -173,7 +173,7 @@ function d1(DB) {
 test('Brain write and control routes refuse a missing or wrong passphrase before any upstream call', { skip: !DatabaseSync && 'node:sqlite unavailable on this Node' }, async () => {
   const env = { ...ENV, NOTES_DB: d1(DatabaseSync) };
   const routes = [['/_m/brain/control', 'GET'], ['/_m/brain/control', 'POST', { enabled: true }], ['/_m/brain/report', 'POST', { mode: 'paper' }],
-    ['/_m/brain/order', 'POST', { symbol: 'SPY', target_position: 1 }], ['/_m/brain/resolve', 'POST', { client_id: 'joyeb-fly-SPY-1' }]];
+    ['/_m/brain/order', 'POST', { symbol: 'MU', target_position: 1 }], ['/_m/brain/resolve', 'POST', { client_id: 'joyeb-fly-MU-1' }]];
   for (const [route, method, body] of routes) {
     for (const token of [undefined, 'wrong']) {
       const res = await call(route, { method, body, token, env });

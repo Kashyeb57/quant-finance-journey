@@ -29,7 +29,7 @@ class FakePredictor:
 
     def signal(self, bars, now=None, settle_seconds=0, strict=True):
         latest = data.clean_bars(pd.DataFrame(bars), now=now, settle_seconds=settle_seconds, strict=strict).time.iloc[-1]
-        return {"bar_time": latest.isoformat(), "symbol": "SPY", "target_position": self.target,
+        return {"bar_time": latest.isoformat(), "symbol": data.SYMBOL, "target_position": self.target,
                 "distribution_ok": self.distribution_ok, "model_id": MODEL, "predicted_return": 0.001}
 
 
@@ -223,10 +223,10 @@ class ResolveCommandTests(unittest.TestCase):
         out = io.StringIO()
         with patch.object(cli, "request", lambda path, body=None, token=None: calls.append((path, body, token)) or {"ok": True}), \
                 patch("getpass.getpass", lambda prompt="": TOKEN), \
-                patch.object(sys, "argv", ["joyeb_brain", "resolve", "joyeb-fly-SPY-1758650400"]), \
+                patch.object(sys, "argv", ["joyeb_brain", "resolve", f"joyeb-fly-{data.SYMBOL}-1758650400"]), \
                 contextlib.redirect_stdout(out):
             cli.main()
-        self.assertEqual(calls, [("/_m/brain/resolve", {"client_id": "joyeb-fly-SPY-1758650400"}, TOKEN)])
+        self.assertEqual(calls, [("/_m/brain/resolve", {"client_id": f"joyeb-fly-{data.SYMBOL}-1758650400"}, TOKEN)])
         self.assertNotIn(TOKEN, out.getvalue())
 
     def test_resolve_rejects_a_malformed_id_before_asking_for_the_token(self):
@@ -239,3 +239,27 @@ class ResolveCommandTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SymbolTests(unittest.TestCase):
+    def test_the_worker_and_the_runner_agree_on_the_symbol(self):
+        worker = (Path(__file__).resolve().parents[2] / "market" / "src" / "brain.mjs").read_text(encoding="utf-8")
+        self.assertIn(f"const SYMBOL = '{data.SYMBOL}';", worker)
+
+    def test_a_model_trained_on_another_symbol_refuses_to_run(self):
+        from joyeb_brain import research
+        with tempfile.TemporaryDirectory() as tmp:
+            runtime = Path(tmp)
+            (runtime / "evaluation.json").write_text(json.dumps({"symbol": "SPY", "pipeline_version": data.PIPELINE_VERSION}))
+            import numpy as np
+            np.savez(runtime / "model.npz", pipeline_version=np.array(data.PIPELINE_VERSION))
+            with patch.object(research, "RUNTIME", runtime):
+                with self.assertRaisesRegex(ValueError, "trained on SPY"):
+                    research.Predictor()
+
+
+class CollectSymbolTests(unittest.TestCase):
+    def test_bars_for_another_symbol_are_refused(self):
+        with patch.object(data, "request", lambda path, body=None, token=None: {"symbol": "SPY", "bars": [], "next_page_token": None}):
+            with self.assertRaisesRegex(ValueError, "expected MU"):
+                data.fetch_bars(days=5)

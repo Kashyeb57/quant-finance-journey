@@ -4,7 +4,7 @@ Updated 2026-09-24. How it works and how to run it: [README.md](README.md).
 
 ## Goal and definition of done
 
-Connect an experimental model to the website so its decisions can be observed and, only after validation and an explicit owner decision, placed as automatic Alpaca **paper** trades with visible orders, position limits, a pause control and recovery after failures. First scope: SPY, completed 15-minute bars, long one share or flat.
+Connect an experimental model to the website so its decisions can be observed and, only after validation and an explicit owner decision, placed as automatic Alpaca **paper** trades with visible orders, position limits, a pause control and recovery after failures. Scope: Micron (MU) since 2026-09-24 (SPY before), completed 15-minute bars, long one share or flat, buy quote capped at $1,500.
 
 The fruit-fly connectome is a research feature generator. It is not a trained financial brain and does not establish a trading advantage. Success means a working, tested paper-trading system and honest measurement; profitable results cannot be promised.
 
@@ -22,9 +22,11 @@ The fruit-fly connectome is a research feature generator. It is not a trained fi
 
 ## Current evidence (do not exaggerate)
 
-**Run 2 (2026-09-24, current).** 2,158 real IEX bars from the published `/_m/brain/bars` endpoint (2026-05-28 to 2026-09-24) gave 747 usable examples: 446 train, 147 validation, 150 test (2026-09-01 to 2026-09-24). On the 150 test bars the fly readout returned +0.010% after assumed costs with 2 order sides (one round trip, 0.7% of bars in the market), the market-only model 0.000% with no trades, and always-long −2.238% over a falling month. Three checks passed, but the gate failed on order sides (2 of the required 10), so the model is not paper-ready (model `a90b90d9fe90aa71`, pipeline `fly-v630-market-v1`). One round trip says nothing about skill: the readout mostly stayed flat through a decline.
+**MU:** switched on 2026-09-24 at the owner's request; no MU evaluation yet. A model trained on SPY cannot run on MU, so the first MU run starts from fresh MU history. MU typically moves several times more per day than SPY, so the SPY results below say nothing about MU.
 
-**Run 1 (2026-09-23, baseline).** 337 IEX bars from the short-window endpoint (2026-09-03 to 2026-09-23), 110 examples (64/20/22). On 22 test bars the fly readout returned −0.118% with 2 order sides, market-only 0.000%, always-long +0.201%. All four checks failed (model `1ca241f874892b71`).
+**SPY run 2 (2026-09-24, history).** 2,158 real IEX bars from the published `/_m/brain/bars` endpoint (2026-05-28 to 2026-09-24) gave 747 usable examples: 446 train, 147 validation, 150 test (2026-09-01 to 2026-09-24). On the 150 test bars the fly readout returned +0.010% after assumed costs with 2 order sides (one round trip, 0.7% of bars in the market), the market-only model 0.000% with no trades, and always-long −2.238% over a falling month. Three checks passed, but the gate failed on order sides (2 of the required 10), so the model is not paper-ready (model `a90b90d9fe90aa71`, pipeline `fly-v630-market-v1`). One round trip says nothing about skill: the readout mostly stayed flat through a decline.
+
+**SPY run 1 (2026-09-23, history).** 337 IEX bars from the short-window endpoint (2026-09-03 to 2026-09-23), 110 examples (64/20/22). On 22 test bars the fly readout returned −0.118% with 2 order sides, market-only 0.000%, always-long +0.201%. All four checks failed (model `1ca241f874892b71`).
 
 Next evidence steps: walk-forward periods and cost sensitivity before reading anything into a pass; a model that trades almost never cannot pass the order-sides check, and that check stays.
 
@@ -40,7 +42,7 @@ Next evidence steps: walk-forward periods and cost sensitivity before reading an
 - Start with observation, then published observation. Paper orders need a `--paper` runner, a passed gate and the owner's explicit enable.
 - The computer running the runner must stay on and awake; this version is not a hosted service. Moving to always-on hosting is a separate decision (no paid resources without the owner's approval).
 - Pause blocks new orders, including the scheduled exit; it never cancels or liquidates.
-- Manual SPY positions, partial fills and uncertain broker state halt automation. Settle uncertain orders with `python -m joyeb_brain resolve <client_id>`; never erase the ledger.
+- Manual MU positions in the paper account, partial fills and uncertain broker state halt automation. Settle uncertain orders with `python -m joyeb_brain resolve <client_id>`; never erase the ledger.
 - Before a supervised pilot: test timeout and restart reconciliation, confirm the correct paper account, and monitor daily.
 
 ## Guardrails

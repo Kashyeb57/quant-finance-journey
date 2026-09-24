@@ -1,6 +1,8 @@
 # Joyeb Brain
 
-An experimental research service for SPY that feeds a reduced, measured fruit-fly connectome with market features, trains a readout on its activity, and can place Alpaca **paper** orders through this website's Worker, but only after its research gate passes and the owner enables it. It is not a trained financial brain and it has not shown a trading advantage. Phases and current evidence: [ROADMAP.md](ROADMAP.md). Attribution: [THIRD_PARTY.md](THIRD_PARTY.md).
+An experimental research service for Micron (MU) that feeds a reduced, measured fruit-fly connectome with market features, trains a readout on its activity, and can place Alpaca **paper** orders through this website's Worker, but only after its research gate passes and the owner enables it. It is not a trained financial brain and it has not shown a trading advantage. Phases and current evidence: [ROADMAP.md](ROADMAP.md). Until 2026-09-24 the experiment used SPY; its two runs are kept in the roadmap as history.
+
+The symbol is one constant in two places that must match: `SYMBOL` in `joyeb_brain/data.py` and in `market/src/brain.mjs` (a test checks this). A model trained on another symbol refuses to run. Attribution: [THIRD_PARTY.md](THIRD_PARTY.md).
 
 All commands below run from this `brain/` folder in a Python 3.10+ environment with `python -m pip install -r requirements.txt`. Times shown on the website are Central Time.
 
@@ -24,9 +26,9 @@ python -m joyeb_brain collect --days 120
 python -m joyeb_brain train
 ```
 
-`prepare` extracts the reduced graph from a local checkout of the upstream model and its data (see THIRD_PARTY.md); it only needs repeating after a graph change. `collect` downloads SPY 15-minute IEX bars through the website's `/_m/brain/bars` endpoint (default 120 calendar days, maximum 365). If that endpoint is not deployed, it falls back to a short-window endpoint and says so: always check `runtime/data.json` for the source and the actual range before trusting an evaluation.
+`prepare` extracts the reduced graph from a local checkout of the upstream model and its data (see THIRD_PARTY.md); it only needs repeating after a graph change. `collect` downloads MU 15-minute IEX bars through the website's `/_m/brain/bars` endpoint (default 120 calendar days, maximum 365). If that endpoint is not deployed, it falls back to a short-window endpoint and says so: always check `runtime/data.json` for the source and the actual range before trusting an evaluation.
 
-Instead of `collect`, a genuine SPY 15-minute OHLCV CSV can be imported:
+Instead of `collect`, a genuine MU 15-minute OHLCV CSV can be imported:
 
 ```
 python -m joyeb_brain import <spy-15min.csv>
@@ -55,12 +57,12 @@ python -m joyeb_brain run --paper    # may request paper orders, see below
 
 Both prompt privately for the website's existing owner passphrase; it is never saved, printed, or put in a URL, and it is sent only as a header to the site's fixed HTTPS origin. The published report (mode, evaluation, latest signal, recent automated orders) is public; equity curves are thinned to 240 points so it stays under the website's size limit. Broker credentials live only in the Worker's Cloudflare secrets.
 
-A paper order needs all three: a runner in `--paper` mode, a passed research gate, and the owner enabling automation on `/brain`. The Worker then re-checks everything: the runner's heartbeat, the published signal and model, the candle's age (from bar end + 60 s to 20 minutes for entries, 30 minutes for exits), the 13:15–15:15 New York entry window, market hours and the last 20 minutes of the session, the account state, a 2% daily drawdown limit for entries, open orders, the managed position, the quote's price (at most $1,000), age and cash, and six entry attempts per UTC day (the count resets at 7:00 PM CT, 6:00 PM CT in winter). Each candle is claimed in the database before any order is sent, so retries, restarts and concurrent requests cannot double-order. Orders go only to Alpaca's paper endpoint; there is no live-money path.
+A paper order needs all three: a runner in `--paper` mode, a passed research gate, and the owner enabling automation on `/brain`. The Worker then re-checks everything: the runner's heartbeat, the published signal and model, the candle's age (from bar end + 60 s to 20 minutes for entries, 30 minutes for exits), the 13:15–15:15 New York entry window, market hours and the last 20 minutes of the session, the account state, a 2% daily drawdown limit for entries, open orders, the managed position, the quote's price (at most $1,500 per share), age and cash, and six entry attempts per UTC day (the count resets at 7:00 PM CT, 6:00 PM CT in winter). Each candle is claimed in the database before any order is sent, so retries, restarts and concurrent requests cannot double-order. Orders go only to Alpaca's paper endpoint; there is no live-money path.
 
 ## Pause and recovery
 
 - **Pause blocks every new automated order, including the scheduled flat exit.** It does not cancel submitted orders or close a position. If you pause while the bot holds its share, close or manage it yourself on the paper account.
-- The bot trades SPY only, holds zero or one share it bought itself, never shorts, and never adopts or sells a position opened by hand. Any mismatch between its own ledger and the account halts automation for investigation.
+- The bot trades MU only, holds zero or one share it bought itself, never shorts, and never adopts or sells a position opened by hand. Any mismatch between its own ledger and the account halts automation for investigation, so do not buy or sell MU by hand in the paper account while the bot is in use.
 - A definite broker rejection (4xx other than a timeout) is recorded as rejected and does not block later candles.
 - An uncertain submission (timeout, server error) blocks automation until it is settled. After five minutes, settle it with `python -m joyeb_brain resolve <client_id>` (the id is in the order table on `/brain`). This also applies after a rate-limit rejection (HTTP 429) when the broker could not be asked straight away whether the order exists. It copies what the broker reports, or records that the broker has no such order. Never delete ledger rows to force a retry.
 - Partial fills, manual trades, paper-account resets or drift need investigation; the bot will not sell a whole share against a fractional managed position.

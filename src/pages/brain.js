@@ -5,6 +5,11 @@ import PageHeader from '@site/src/components/PageHeader';
 import {getBrainStatus, getLocalBrainStatus, setBrainEnabled} from '@site/src/lib/brain';
 import styles from './brain.module.css';
 
+// The one stock this experiment models (Micron; SPY until 2026-09-24). The buy cap
+// shown comes from the Worker when it answers.
+const SYMBOL = 'MU';
+const DEFAULT_CAP = 1500;
+
 const number = (n, digits = 2) => Number.isFinite(n) ? n.toLocaleString('en-US', {maximumFractionDigits: digits}) : null;
 const pct = n => { const v = number(n); return v === null ? '—' : `${v}%`; };
 const plain = n => number(n, 0) ?? '—';
@@ -113,7 +118,7 @@ export default function Brain() {
     try {
       if (file.size > 1000000) throw new Error('Choose an evaluation file smaller than 1 MB.');
       const evaluation = JSON.parse(await file.text());
-      if (evaluation.schema !== 1 || evaluation.symbol !== 'SPY' || !evaluation.metrics?.fly || !evaluation.graph) throw new Error('This is not a Joyeb Brain evaluation file.');
+      if (evaluation.schema !== 1 || evaluation.symbol !== SYMBOL || !evaluation.metrics?.fly || !evaluation.graph) throw new Error('This is not a Joyeb Brain evaluation file.');
       setSource('file'); setState({report: {evaluation, mode: 'saved evaluation'}, online: false, orders: [], enabled: null}); setStale(false); setError('');
     } catch (e) { setError(e instanceof SyntaxError ? 'That file is not valid JSON.' : e.message); }
   }
@@ -128,9 +133,9 @@ export default function Brain() {
   const canEnable = source === 'website' && state?.online && ready && report?.mode === 'paper';
   const automation = source !== 'website' ? 'Not visible from here' : state?.enabled ? 'Enabled on backend' : state ? 'Paused' : 'Not connected';
 
-  return <Layout title="Brain · Paper Trading" description="An experimental fly-connectome readout for SPY, evaluated on market data and connected to a paper-trading runner that starts paused.">
+  return <Layout title="Brain · Paper Trading" description="An experimental fly-connectome readout for Micron (MU), evaluated on market data and connected to a paper-trading runner that starts paused.">
     <PageHeader eyebrow="Research experiment · Paper only" title="Brain"
-      subtitle="An experimental readout built on measured fruit-fly wiring, tested on SPY data. It is not a trained financial brain. The latest signal, the latest evaluation and recent automated paper orders appear here.">
+      subtitle="An experimental readout built on measured fruit-fly wiring, tested on Micron (MU) data. It is not a trained financial brain. The latest signal, the latest evaluation and recent automated paper orders appear here.">
       <div className={styles.headerLinks}><Link to="/portfolio">Paper account →</Link><Link to="/terminal">Market terminal →</Link></div>
     </PageHeader>
     <main className={`container ${styles.main}`}>
@@ -145,7 +150,7 @@ export default function Brain() {
       </div>
       {error && <p className={styles.message} role="status">{error}</p>}
       <section className={styles.section}>
-        <div className={styles.sectionHead}><h2>Latest decision</h2><span>SPY · completed 15-minute bars</span></div>
+        <div className={styles.sectionHead}><h2>Latest decision</h2><span>{SYMBOL} · completed 15-minute bars</span></div>
         <div className={styles.readouts}>
           <div><span>Target position</span><strong>{signal ? signal.target_position === 1 ? 'LONG · 1 share' : 'FLAT · 0 shares' : 'Waiting'}</strong></div>
           <div><span>Predicted next-bar return</span><strong>{Number.isFinite(signal?.predicted_return) ? `${number(signal.predicted_return * 10000)} bps` : '—'}</strong></div>
@@ -173,7 +178,7 @@ export default function Brain() {
       </section>
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>Paper execution</h2><span>{automation}</span></div>
-        <p>SPY only · at most one bot-owned share · buy quote capped at $1,000 · six entry attempts per day (the count resets at 7:00 PM CT, 6:00 PM CT in winter). The strategy targets flat on the 2:30 PM CT bar, exiting about 2:45 PM CT. Exits stay available after the entry limit. Positions opened by hand are never adopted or sold.</p>
+        <p>{SYMBOL} only · at most one bot-owned share · buy quote capped at ${(state?.limits?.max_buy_quote ?? DEFAULT_CAP).toLocaleString('en-US')} · six entry attempts per day (the count resets at 7:00 PM CT, 6:00 PM CT in winter). The strategy targets flat on the 2:30 PM CT bar, exiting about 2:45 PM CT. Exits stay available after the entry limit. Positions opened by hand are never adopted or sold.</p>
         <p className={styles.muted}>Pause blocks every new automated order, including that scheduled exit. It does not cancel submitted orders or close a position; close one yourself on the paper account if needed.</p>
         <div className={styles.controls}>
           <label>Owner passphrase<input type="password" value={token} onChange={e => setToken(e.target.value)} autoComplete="off" placeholder="Kept in this tab's memory only" /></label>
