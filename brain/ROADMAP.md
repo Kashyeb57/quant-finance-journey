@@ -15,14 +15,18 @@ The fruit-fly connectome is a research feature generator. It is not a trained fi
 | 1. Reuse the existing site | Done | Docusaurus site, Cloudflare Worker, Alpaca paper transport and owner passphrase reused |
 | 2. Local model and website integration | Done | Python runner, measured subgraph, evaluation, `/brain` page and protected Worker routes work together |
 | 3. Verify the first release | Done | Tests, retraining, build, browser checks and documentation complete |
-| 4. Publish website and Worker, paused | In progress | GitHub checks pass; `/brain` and `/_m/brain/status` live, automation disabled |
-| 5. Enough history, honest assessment | Next | Longer real dataset; evaluation reported once, without tuning to the test period |
+| 4. Publish website and Worker, paused | Done (2026-09-24) | GitHub checks pass; `/brain` and `/_m/brain/status` live, automation disabled |
+| 5. Enough history, honest assessment | In progress | Longer real dataset; evaluation reported once, without tuning to the test period |
 | 6. Observe, then supervised paper operation | Later | Signals visible; a qualified model submits and reconciles bounded paper orders; pause and restart tested |
 | 7. Reliability and research | Later | Recorded paper outcomes, failures and costs guide the next experiment |
 
 ## Current evidence (do not exaggerate)
 
-The first research run used 337 real IEX bars (2026-09-03 to 2026-09-23), obtained through the short-window endpoint, giving 110 usable examples: 64 train, 20 validation, 22 test. On the 22 test bars the fly readout returned −0.118% after assumed costs with 2 order sides, the market-only model 0.000% with no trades, and always-long +0.201%. All four gate checks failed (model `1ca241f874892b71`, pipeline `fly-v630-market-v1`). This result is kept as a baseline; it is too small to say anything about skill.
+**Run 2 (2026-09-24, current).** 2,158 real IEX bars from the published `/_m/brain/bars` endpoint (2026-05-28 to 2026-09-24) gave 747 usable examples: 446 train, 147 validation, 150 test (2026-09-01 to 2026-09-24). On the 150 test bars the fly readout returned +0.010% after assumed costs with 2 order sides (one round trip, 0.7% of bars in the market), the market-only model 0.000% with no trades, and always-long −2.238% over a falling month. Three checks passed, but the gate failed on order sides (2 of the required 10), so the model is not paper-ready (model `a90b90d9fe90aa71`, pipeline `fly-v630-market-v1`). One round trip says nothing about skill: the readout mostly stayed flat through a decline.
+
+**Run 1 (2026-09-23, baseline).** 337 IEX bars from the short-window endpoint (2026-09-03 to 2026-09-23), 110 examples (64/20/22). On 22 test bars the fly readout returned −0.118% with 2 order sides, market-only 0.000%, always-long +0.201%. All four checks failed (model `1ca241f874892b71`).
+
+Next evidence steps: walk-forward periods and cost sensitivity before reading anything into a pass; a model that trades almost never cannot pass the order-sides check, and that check stays.
 
 ## Phase 5 — what counts as evidence
 
