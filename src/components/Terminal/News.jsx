@@ -5,7 +5,8 @@ import styles from './styles.module.css';
 /*
  * News terminal — live financial headlines from a curated set of RSS feeds
  * (Fincept feed list) fetched through the market Worker (public CORS proxies as
- * a fallback) and parsed client-side.
+ * a fallback) and parsed client-side, plus short excerpts from a public
+ * WhatsApp channel served by the channel-feed Worker (see CHANNEL_FEEDS).
  * Features: category tabs, time-range filter, text/ticker search, relative
  * timestamps, and a heuristic impact indicator (keyword sentiment + ticker tags).
  */
@@ -55,12 +56,24 @@ const FEEDS = [
   { source: 'THE BLOCK', cat: 'CRPT', url: 'https://www.theblock.co/rss.xml' },
 ];
 
+// Public WhatsApp channels, read from the channel-feed Worker (not an RSS feed,
+// so not routed through the RSS proxies). The Worker only publishes channels on
+// its own allowlist, and only the first line of each post; posts have no
+// article page, so these rows carry a credit instead of a link.
+const CHANNEL_FEEDS = [
+  {
+    source: 'CAKTUSJXCK', cat: 'MKT',
+    endpoint: 'https://feed.joyebkashyeb.com.np/public/posts?limit=60',
+    credit: 'From the public WhatsApp channel CaktusJxck',
+  },
+];
+
 const CATEGORIES = ['ALL', 'MKT', 'ECO', 'TECH', 'NRG', 'CRPT', 'GEO', 'REG'];
 
 // The fast, market-moving wires. The "⚡ Breaking" toggle filters to just these,
 // so the feed reads like a clean market tape instead of a mixed world-news
 // stream (drops the sports/general noise the broad sources carry).
-const FAST = new Set(['MW BREAKING', 'MW REALTIME', 'PR NEWSWIRE', 'BENZINGA', 'NASDAQ', 'MARKETWATCH', 'CNBC', 'SEEKING ALPHA', 'INVESTING', 'FXSTREET']);
+const FAST = new Set(['MW BREAKING', 'MW REALTIME', 'PR NEWSWIRE', 'BENZINGA', 'NASDAQ', 'MARKETWATCH', 'CNBC', 'SEEKING ALPHA', 'INVESTING', 'FXSTREET', 'CAKTUSJXCK']);
 const RANGES = [
   { code: '1H', h: 1 },
   { code: '6H', h: 6 },
@@ -198,6 +211,21 @@ async function fetchFeed(feed, signal) {
   return [];
 }
 
+async function fetchChannelFeed(feed, signal) {
+  if (signal && signal.aborted) return [];
+  try {
+    const res = await fetchWithTimeout(feed.endpoint, PROXY_TIMEOUT_MS, signal);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (Array.isArray(data.posts) ? data.posts : [])
+      .map((p) => channelPostItem(p, feed))
+      .filter(Boolean)
+      .map((it) => ({ ...it, ...analyze(it.title) }));
+  } catch (e) {
+    return []; // timed out, aborted or failed: the RSS feeds still load
+  }
+}
+
 // ── Feed dates ──────────────────────────────────────────────────────────
 // A feed marked `tz: 'UTC'` sends zone-less "YYYY-MM-DD HH:MM[:SS]" times that
 // are UTC; say so explicitly instead of letting the browser assume local time.
@@ -224,6 +252,21 @@ function isFutureDate(dateStr, now = Date.now()) {
 function newsTime(it, now = Date.now()) {
   const t = new Date(it.pubDate).getTime();
   return Number.isFinite(t) && t <= now + FUTURE_SLACK_MS ? t : -8.64e15;
+}
+
+// ── Channel posts ───────────────────────────────────────────────────────
+// One post from the channel-feed Worker ({id, ts in Unix seconds, text}) as a
+// headline. Posts have no URL, so `key` (not the link) identifies them when
+// merging; a post without text or a usable time is dropped.
+function channelPostItem(post, feed) {
+  const title = String((post && post.text) || '').trim();
+  const ts = Number(post && post.ts);
+  if (!title || !post.id || !Number.isFinite(ts) || ts <= 0) return null;
+  return {
+    title, link: '', key: `wa:${feed.source}:${post.id}`,
+    pubDate: new Date(ts * 1000).toISOString(),
+    source: feed.source, cat: feed.cat, credit: feed.credit,
+  };
 }
 
 // ── Grouping repeated coverage ──────────────────────────────────────────
@@ -286,7 +329,7 @@ function mergeHeadlines(prev, fresh, now = Date.now()) {
   const kept = new Map(); // source|headline -> times already kept
   const out = [];
   for (const it of all) {
-    const key = it.link || it.title;
+    const key = it.key || it.link || it.title;
     if (!key || seenLinks.has(key)) continue;
     seenLinks.add(key);
     const tk = `${it.source}|${headlineKey(it.title)}`;
@@ -350,13 +393,13 @@ export default function News({ ticker }) {
     const current = () => seq === loadSeq.current;
 
     if (initial) { setLoading(true); setError(null); setItems([]); }
-    const feeds = FEEDS.filter((f) => c === 'ALL' || f.cat === c);
+    const feeds = [...FEEDS, ...CHANNEL_FEEDS].filter((f) => c === 'ALL' || f.cat === c);
     let received = 0;
 
     // Show each feed's headlines as soon as it arrives instead of waiting for
     // the slowest proxy; any success also clears an earlier error.
     await Promise.allSettled(feeds.map(async (feed) => {
-      const fresh = await fetchFeed(feed, ctrl.signal);
+      const fresh = feed.endpoint ? await fetchChannelFeed(feed, ctrl.signal) : await fetchFeed(feed, ctrl.signal);
       if (!current() || fresh.length === 0) return;
       received += fresh.length;
       setItems((prev) => mergeHeadlines(prev, fresh));
@@ -473,39 +516,48 @@ export default function News({ ticker }) {
           </div>
         )}
         {!loading && !error &&
-          groups.map(({ lead: it, dupes }, i) => (
-            <React.Fragment key={it.link || it.title || i}>
-              <a className={`${styles.row} ${matchesTicker(it, ticker) ? styles.rowMatch : ''}`} href={it.link} target="_blank" rel="noreferrer">
-                <time className={styles.rowTime} dateTime={isNaN(new Date(it.pubDate)) ? undefined : new Date(it.pubDate).toISOString()} title={timeTitle(it.pubDate)}>
-                  {timeAgo(it.pubDate)}
-                </time>
-                <span className={`${styles.rowImpactDot} ${styles['imp_' + it.impact]}`} />
-                <span className={styles.rowSrc}>{it.source}</span>
-                <span className={styles.rowTitle}>{it.title}</span>
-                <span className={`${styles.rowImpact} ${styles['imp_' + it.impact]}`}>
-                  {it.tags.map((t) => (<span key={t} className={styles.tag}>{t}</span>))}
-                  <span title="Keyword tone of the headline, not a sentiment model or the market's reaction">
-                    {arrow(it.impact)}
+          groups.map(({ lead: it, dupes }, i) => {
+            // Channel posts have no article page: a plain row, credited on the source.
+            const Row = it.link ? 'a' : 'div';
+            const rowLink = it.link ? { href: it.link, target: '_blank', rel: 'noreferrer' } : {};
+            return (
+              <React.Fragment key={it.key || it.link || it.title || i}>
+                <Row className={`${styles.row} ${matchesTicker(it, ticker) ? styles.rowMatch : ''}`} {...rowLink}>
+                  <time className={styles.rowTime} dateTime={isNaN(new Date(it.pubDate)) ? undefined : new Date(it.pubDate).toISOString()} title={timeTitle(it.pubDate)}>
+                    {timeAgo(it.pubDate)}
+                  </time>
+                  <span className={`${styles.rowImpactDot} ${styles['imp_' + it.impact]}`} />
+                  <span className={styles.rowSrc} title={it.credit}>{it.source}</span>
+                  <span className={styles.rowTitle}>{it.title}</span>
+                  <span className={`${styles.rowImpact} ${styles['imp_' + it.impact]}`}>
+                    {it.tags.map((t) => (<span key={t} className={styles.tag}>{t}</span>))}
+                    <span title="Keyword tone of the headline, not a sentiment model or the market's reaction">
+                      {arrow(it.impact)}
+                    </span>
                   </span>
-                </span>
-              </a>
-              {/* Same story from other outlets: folded, each still linked and attributed. */}
-              {dupes.length > 0 && (
-                <details className={styles.dupes}>
-                  <summary>
-                    +{dupes.length} more source{dupes.length === 1 ? '' : 's'}: {dupes.map((d) => d.source).join(', ')}
-                  </summary>
-                  {dupes.map((d) => (
-                    <a key={d.link || d.title} className={styles.dupeLink} href={d.link} target="_blank" rel="noreferrer">
-                      <span className={styles.rowSrc}>{d.source}</span>
-                      <time title={timeTitle(d.pubDate)}>{timeAgo(d.pubDate)}</time>
-                      <span>{d.title}</span>
-                    </a>
-                  ))}
-                </details>
-              )}
-            </React.Fragment>
-          ))}
+                </Row>
+                {/* Same story from other outlets: folded, each still attributed (and linked when it has a page). */}
+                {dupes.length > 0 && (
+                  <details className={styles.dupes}>
+                    <summary>
+                      +{dupes.length} more source{dupes.length === 1 ? '' : 's'}: {dupes.map((d) => d.source).join(', ')}
+                    </summary>
+                    {dupes.map((d) => {
+                      const Dupe = d.link ? 'a' : 'div';
+                      const dupeLink = d.link ? { href: d.link, target: '_blank', rel: 'noreferrer' } : {};
+                      return (
+                        <Dupe key={d.key || d.link || d.title} className={styles.dupeLink} {...dupeLink}>
+                          <span className={styles.rowSrc} title={d.credit}>{d.source}</span>
+                          <time title={timeTitle(d.pubDate)}>{timeAgo(d.pubDate)}</time>
+                          <span>{d.title}</span>
+                        </Dupe>
+                      );
+                    })}
+                  </details>
+                )}
+              </React.Fragment>
+            );
+          })}
       </div>
     </div>
   );

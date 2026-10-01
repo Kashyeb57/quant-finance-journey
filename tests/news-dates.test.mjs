@@ -1,13 +1,14 @@
-// Terminal news: zone-less feed dates, future-stamped items, same-source repeats.
+// Terminal news: zone-less feed dates, future-stamped items, same-source repeats,
+// and WhatsApp channel posts (no URL) from the channel-feed Worker.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { extract } from './extract.mjs';
 
-const { normalizeFeedDate, isFutureDate, mergeHeadlines } = extract(
+const { normalizeFeedDate, isFutureDate, mergeHeadlines, channelPostItem } = extract(
   'src/components/Terminal/News.jsx',
   '// ── Feed dates',
   '// Map tickers',
-  ['normalizeFeedDate', 'isFutureDate', 'mergeHeadlines'],
+  ['normalizeFeedDate', 'isFutureDate', 'mergeHeadlines', 'channelPostItem'],
 );
 
 const NOW = Date.parse('2026-09-15T01:40:00Z'); // 8:40 pm CT on Sep 14, as in the review
@@ -68,4 +69,33 @@ test('a repeated link keeps the freshly fetched copy', () => {
   const merged = mergeHeadlines([old], [fresh], NOW);
   assert.equal(merged.length, 1);
   assert.equal(merged[0].title, 'Corrected title');
+});
+
+const CHANNEL = { source: 'CAKTUSJXCK', cat: 'MKT', credit: 'From the public WhatsApp channel CaktusJxck' };
+const post = (id, text, iso) => ({ id, text, ts: Date.parse(iso) / 1000, media_type: '' });
+
+test('a channel post becomes a credited, link-less headline at its posting time', () => {
+  const it = channelPostItem(post('3EB0A1', '  Micron expects capex above $50 billion  ', '2026-09-30T21:40:18Z'), CHANNEL);
+  assert.deepEqual(it, {
+    title: 'Micron expects capex above $50 billion', link: '', key: 'wa:CAKTUSJXCK:3EB0A1',
+    pubDate: '2026-09-30T21:40:18.000Z', source: 'CAKTUSJXCK', cat: 'MKT',
+    credit: 'From the public WhatsApp channel CaktusJxck',
+  });
+});
+
+test('a channel post without text, id or a usable time is dropped', () => {
+  assert.equal(channelPostItem(post('1', '   ', '2026-09-30T21:40:18Z'), CHANNEL), null);
+  assert.equal(channelPostItem({ text: 'No id', ts: 1790800000 }, CHANNEL), null);
+  assert.equal(channelPostItem({ id: '2', text: 'No time' }, CHANNEL), null);
+  assert.equal(channelPostItem({ id: '3', text: 'Bad time', ts: 'soon' }, CHANNEL), null);
+  assert.equal(channelPostItem(null, CHANNEL), null);
+});
+
+test('link-less channel posts merge by id: an edited post replaces its old text', () => {
+  const a = channelPostItem(post('A', 'Treasuries post their worst month in four yeras', '2026-10-01T02:06:28Z'), CHANNEL);
+  const edited = channelPostItem(post('A', 'Treasuries post their worst month in four years', '2026-10-01T02:06:28Z'), CHANNEL);
+  const b = channelPostItem(post('B', 'Rocket Lab signs a 20-launch Electron deal', '2026-09-30T23:02:51Z'), CHANNEL);
+  const merged = mergeHeadlines([a, b], [edited, b], NOW + 24 * 3600 * 1000);
+  assert.deepEqual(merged.map((m) => m.key), ['wa:CAKTUSJXCK:A', 'wa:CAKTUSJXCK:B']);
+  assert.equal(merged[0].title, 'Treasuries post their worst month in four years');
 });
