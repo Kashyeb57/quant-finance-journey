@@ -11,6 +11,13 @@ const { normalizeFeedDate, isFutureDate, mergeHeadlines, channelPostItem } = ext
   ['normalizeFeedDate', 'isFutureDate', 'mergeHeadlines', 'channelPostItem'],
 );
 
+const { stampCT } = extract(
+  'src/components/Terminal/News.jsx',
+  '// The stamp on each headline',
+  '// Tooltip:',
+  ['stampCT'],
+);
+
 const NOW = Date.parse('2026-09-15T01:40:00Z'); // 8:40 pm CT on Sep 14, as in the review
 const UTC_FEED = { source: 'INVESTING', tz: 'UTC' };
 const item = (source, title, pubDate, link) => ({ source, title, pubDate, link: link || `${source}-${title}-${pubDate}` });
@@ -98,4 +105,23 @@ test('link-less channel posts merge by id: an edited post replaces its old text'
   const merged = mergeHeadlines([a, b], [edited, b], NOW + 24 * 3600 * 1000);
   assert.deepEqual(merged.map((m) => m.key), ['wa:CAKTUSJXCK:A', 'wa:CAKTUSJXCK:B']);
   assert.equal(merged[0].title, 'Treasuries post their worst month in four years');
+});
+
+const NBSP = '\u00a0';
+const OCT_2 = Date.parse('2026-10-02T15:00:00Z');
+
+test('a headline stamp is the clock time and date in CT, not UTC', () => {
+  assert.deepEqual(stampCT('2026-10-02T14:14:00Z', OCT_2), { time: `9:14${NBSP}AM`, date: 'Oct 2' }); // CDT, UTC-5
+  assert.deepEqual(stampCT('2026-10-02T04:30:00Z', OCT_2), { time: `11:30${NBSP}PM`, date: 'Oct 1' }); // still Oct 1 in Chicago
+  assert.deepEqual(stampCT('Fri, 02 Oct 2026 17:05:09 GMT', OCT_2), { time: `12:05${NBSP}PM`, date: 'Oct 2' });
+});
+
+test('the stamp follows the CST/CDT switch', () => {
+  assert.deepEqual(stampCT('2026-12-01T15:05:00Z', OCT_2), { time: `9:05${NBSP}AM`, date: 'Dec 1' }); // CST, UTC-6
+});
+
+test('a stamp from another year carries the year; an unreadable date has none', () => {
+  assert.deepEqual(stampCT('2025-12-31T18:00:00Z', OCT_2), { time: `12:00${NBSP}PM`, date: "Dec 31 '25" });
+  assert.equal(stampCT('not a date', OCT_2), null);
+  assert.equal(stampCT('', OCT_2), null);
 });

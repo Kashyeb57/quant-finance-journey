@@ -131,11 +131,34 @@ function fullTimeCT(dateStr) {
   }).format(d) + ' CT';
 }
 
+// The stamp on each headline: clock time and date in CT, e.g. "9:14 AM" and
+// "Oct 2" (plus "'25" when it isn't this year). Built from parts so the space
+// before AM/PM is the same non-breaking one in every browser. Null when unreadable.
+const STAMP_FMT = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Chicago', year: 'numeric', month: 'short', day: 'numeric',
+  hour: 'numeric', minute: '2-digit',
+});
+
+function stampCT(dateStr, now = Date.now()) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const pick = (parts, type) => (parts.find((p) => p.type === type) || {}).value || '';
+  const p = STAMP_FMT.formatToParts(d);
+  const year = pick(p, 'year');
+  const thisYear = pick(STAMP_FMT.formatToParts(new Date(now)), 'year');
+  return {
+    time: `${pick(p, 'hour')}:${pick(p, 'minute')}\u00a0${pick(p, 'dayPeriod')}`,
+    date: `${pick(p, 'month')} ${pick(p, 'day')}${year === thisYear ? '' : ` '${year.slice(-2)}`}`,
+  };
+}
+
+// Tooltip: the full CT time and how long ago that was.
 function timeTitle(dateStr) {
   const full = fullTimeCT(dateStr);
+  if (!full) return '';
   return isFutureDate(dateStr)
     ? `Publisher's timestamp (${full}) is ahead of the current time, so this item isn't treated as recent`
-    : full;
+    : `${full} · ${timeAgo(dateStr)} ago`;
 }
 
 function timeAgo(dateStr) {
@@ -371,10 +394,11 @@ export default function News({ ticker }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Re-render every second so the relative timestamps tick up live.
+  // Re-render every 30 seconds so the tooltip ages stay current and an item
+  // whose publisher clock ran ahead gets its stamp once that time arrives.
   const [, setTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    const id = setInterval(() => setTick((t) => t + 1), 30 * 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -503,7 +527,8 @@ export default function News({ ticker }) {
 
       {/* The arrows are a word-list heuristic; say so where people read them. */}
       <p className={styles.newsLegend}>
-        ▲ ▼ = keyword tone of the headline, not a sentiment model or the market&rsquo;s reaction
+        ▲ ▼ = keyword tone of the headline, not a sentiment model or the market&rsquo;s reaction&nbsp;·{' '}
+        <span className={styles.legendNote}>times in CT</span>
       </p>
       <div className={styles.newsList}>
         {loading && <div className={styles.newsMsg}>Loading headlines…</div>}
@@ -520,11 +545,17 @@ export default function News({ ticker }) {
             // Channel posts have no article page: a plain row, credited on the source.
             const Row = it.link ? 'a' : 'div';
             const rowLink = it.link ? { href: it.link, target: '_blank', rel: 'noreferrer' } : {};
+            const stamp = !isFutureDate(it.pubDate) && stampCT(it.pubDate);
             return (
               <React.Fragment key={it.key || it.link || it.title || i}>
                 <Row className={`${styles.row} ${matchesTicker(it, ticker) ? styles.rowMatch : ''}`} {...rowLink}>
                   <time className={styles.rowTime} dateTime={isNaN(new Date(it.pubDate)) ? undefined : new Date(it.pubDate).toISOString()} title={timeTitle(it.pubDate)}>
-                    {timeAgo(it.pubDate)}
+                    {stamp ? (
+                      <>
+                        <span className={styles.stampTime}>{stamp.time}</span>
+                        <span className={styles.stampDate}>{stamp.date}</span>
+                      </>
+                    ) : '—'}
                   </time>
                   <span className={`${styles.rowImpactDot} ${styles['imp_' + it.impact]}`} />
                   <span className={styles.rowSrc} title={it.credit}>{it.source}</span>
@@ -545,10 +576,11 @@ export default function News({ ticker }) {
                     {dupes.map((d) => {
                       const Dupe = d.link ? 'a' : 'div';
                       const dupeLink = d.link ? { href: d.link, target: '_blank', rel: 'noreferrer' } : {};
+                      const dStamp = !isFutureDate(d.pubDate) && stampCT(d.pubDate);
                       return (
                         <Dupe key={d.key || d.link || d.title} className={styles.dupeLink} {...dupeLink}>
                           <span className={styles.rowSrc} title={d.credit}>{d.source}</span>
-                          <time title={timeTitle(d.pubDate)}>{timeAgo(d.pubDate)}</time>
+                          <time title={timeTitle(d.pubDate)}>{dStamp ? `${dStamp.date} ${dStamp.time}` : '—'}</time>
                           <span>{d.title}</span>
                         </Dupe>
                       );

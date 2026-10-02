@@ -255,6 +255,7 @@
 
 /* News feed */
 .news {
+  --news-stamp-w: 62px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -307,6 +308,7 @@
   color: var(--ifm-color-emphasis-600);
   border-bottom: 1px solid var(--ifm-color-emphasis-200);
 }
+.legendNote { white-space: nowrap; }
 .newsMsg {
   padding: 1.5rem 1rem;
   text-align: center;
@@ -391,13 +393,20 @@
   transition: background 0.12s;
 }
 .row:hover { background: var(--ifm-color-emphasis-100); text-decoration: none; }
+/* CT clock time over the date, right-aligned against the impact dot */
 .rowTime {
-  flex: 0 0 34px;
-  text-align: right;
+  flex: 0 0 var(--news-stamp-w);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   font-size: 0.7rem;
+  line-height: 1.3;
   color: var(--ifm-color-emphasis-500);
   margin-top: 2px;
+  white-space: nowrap;
 }
+.stampTime { color: var(--ifm-color-emphasis-700); }
+.stampDate { font-size: 0.64rem; }
 .rowImpactDot {
   flex: 0 0 auto;
   width: 7px; height: 7px;
@@ -1048,7 +1057,8 @@
 /* news: same story from other outlets, folded under the lead headline */
 .dupes {
   margin: -0.15rem 0 0;
-  padding: 0 0.7rem 0.4rem 3.4rem;
+  /* lines up with the impact dot: row padding + stamp column + gap */
+  padding: 0 0.7rem 0.4rem calc(0.7rem + var(--news-stamp-w) + 0.55rem);
   border-bottom: 1px solid var(--ifm-color-emphasis-200);
   font-family: var(--ifm-font-family-monospace);
   font-size: 0.7rem;
@@ -1079,7 +1089,8 @@
     flex: 1 1 100%;
     font-size: 0.9rem;
   }
-  .rowTime { flex: 0 0 auto; text-align: left; margin-top: 0; }
+  .rowTime { flex: 0 0 auto; flex-direction: row; align-items: baseline; gap: 0.35rem; margin-top: 0; }
+  .stampDate { order: -1; font-size: 0.7rem; }
   .rowImpactDot { margin-top: 4px; }
   .rowSrc { flex: 0 1 auto; margin-top: 0; }
   .rowImpact { margin-left: auto; margin-top: 0; }
