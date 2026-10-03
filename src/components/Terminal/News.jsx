@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { rssUrl } from '@site/src/lib/market';
 import styles from './styles.module.css';
 
@@ -280,15 +281,22 @@ function newsTime(it, now = Date.now()) {
 // ── Channel posts ───────────────────────────────────────────────────────
 // One post from the channel-feed Worker ({id, ts in Unix seconds, text}) as a
 // headline. Posts have no URL, so `key` (not the link) identifies them when
-// merging; a post without text or a usable time is dropped.
+// merging; a post without text or a usable time is dropped. A post's photo
+// (or video still) is kept only when it is served by the same Worker.
 function channelPostItem(post, feed) {
   const title = String((post && post.text) || '').trim();
   const ts = Number(post && post.ts);
   if (!title || !post.id || !Number.isFinite(ts) || ts <= 0) return null;
+  const mediaBase = feed.endpoint ? `${new URL(feed.endpoint).origin}/public/media/` : '';
+  const m = post.media;
+  const media = m && (m.kind === 'image' || m.kind === 'video') && mediaBase &&
+    typeof m.url === 'string' && m.url.startsWith(mediaBase)
+    ? { kind: m.kind, url: m.url }
+    : null;
   return {
     title, link: '', key: `wa:${feed.source}:${post.id}`,
     pubDate: new Date(ts * 1000).toISOString(),
-    source: feed.source, cat: feed.cat, credit: feed.credit,
+    source: feed.source, cat: feed.cat, credit: feed.credit, media,
   };
 }
 
@@ -384,6 +392,46 @@ function matchesTicker(item, ticker) {
   return (COMPANY[t] || []).some((name) => title.includes(name));
 }
 
+// Full-size view of a channel post's photo (or a video's still), credited.
+// Esc, the backdrop or the close button dismiss it; focus stays inside while
+// open and returns to the thumbnail afterwards.
+function MediaViewer({ item, onClose }) {
+  const closeRef = useRef(null);
+  useEffect(() => {
+    const opener = document.activeElement;
+    if (closeRef.current) closeRef.current.focus();
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === 'Tab') { e.preventDefault(); if (closeRef.current) closeRef.current.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = overflow;
+      if (opener && opener.focus) opener.focus();
+    };
+  }, [onClose]);
+  const video = item.media.kind === 'video';
+  return createPortal(
+    <div className={styles.viewer} role="dialog" aria-modal="true" aria-label={video ? 'Video still' : 'Photo'} onClick={onClose}>
+      <figure className={styles.viewerFigure} onClick={(e) => e.stopPropagation()}>
+        <button ref={closeRef} type="button" className={styles.viewerClose} onClick={onClose} aria-label="Close">×</button>
+        <img className={video ? styles.viewerStill : styles.viewerImg} src={item.media.url} alt={item.title} />
+        <figcaption className={styles.viewerCaption}>
+          <span className={styles.viewerTitle}>{item.title}</span>
+          <span className={styles.viewerMeta}>
+            {item.credit} · {fullTimeCT(item.pubDate)}
+            {video && ' · the video itself plays in the channel on WhatsApp'}
+          </span>
+        </figcaption>
+      </figure>
+    </div>,
+    document.body,
+  );
+}
+
 export default function News({ ticker }) {
   const [cat, setCat] = useState('ALL');
   const [range, setRange] = useState('24H');
@@ -393,6 +441,8 @@ export default function News({ ticker }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewer, setViewer] = useState(null); // the channel post whose photo is open
+  const closeViewer = useCallback(() => setViewer(null), []);
 
   // Re-render every 30 seconds so the tooltip ages stay current and an item
   // whose publisher clock ran ahead gets its stamp once that time arrives.
@@ -560,6 +610,18 @@ export default function News({ ticker }) {
                   <span className={`${styles.rowImpactDot} ${styles['imp_' + it.impact]}`} />
                   <span className={styles.rowSrc} title={it.credit}>{it.source}</span>
                   <span className={styles.rowTitle}>{it.title}</span>
+                  {it.media && (
+                    <button
+                      type="button"
+                      className={`${styles.rowThumb} ${it.media.kind === 'video' ? styles.rowThumbVideo : ''}`}
+                      onClick={() => setViewer(it)}
+                      aria-label={it.media.kind === 'video' ? 'Show the video still' : 'Enlarge the photo'}
+                      title={it.media.kind === 'video' ? 'Video post: show its still' : 'Enlarge the photo'}
+                    >
+                      <img src={it.media.url} alt="" loading="lazy" decoding="async" />
+                      {it.media.kind === 'video' && <span className={styles.thumbPlay} aria-hidden="true">▶</span>}
+                    </button>
+                  )}
                   <span className={`${styles.rowImpact} ${styles['imp_' + it.impact]}`}>
                     {it.tags.map((t) => (<span key={t} className={styles.tag}>{t}</span>))}
                     <span title="Keyword tone of the headline, not a sentiment model or the market's reaction">
@@ -591,6 +653,7 @@ export default function News({ ticker }) {
             );
           })}
       </div>
+      {viewer && <MediaViewer item={viewer} onClose={closeViewer} />}
     </div>
   );
 }

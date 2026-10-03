@@ -78,7 +78,10 @@ test('a repeated link keeps the freshly fetched copy', () => {
   assert.equal(merged[0].title, 'Corrected title');
 });
 
-const CHANNEL = { source: 'CAKTUSJXCK', cat: 'MKT', credit: 'From the public WhatsApp channel CaktusJxck' };
+const CHANNEL = {
+  source: 'CAKTUSJXCK', cat: 'MKT', credit: 'From the public WhatsApp channel CaktusJxck',
+  endpoint: 'https://feed.joyebkashyeb.com.np/public/posts?limit=60',
+};
 const post = (id, text, iso) => ({ id, text, ts: Date.parse(iso) / 1000, media_type: '' });
 
 test('a channel post becomes a credited, link-less headline at its posting time', () => {
@@ -86,7 +89,7 @@ test('a channel post becomes a credited, link-less headline at its posting time'
   assert.deepEqual(it, {
     title: 'Micron expects capex above $50 billion', link: '', key: 'wa:CAKTUSJXCK:3EB0A1',
     pubDate: '2026-09-30T21:40:18.000Z', source: 'CAKTUSJXCK', cat: 'MKT',
-    credit: 'From the public WhatsApp channel CaktusJxck',
+    credit: 'From the public WhatsApp channel CaktusJxck', media: null,
   });
 });
 
@@ -124,4 +127,25 @@ test('a stamp from another year carries the year; an unreadable date has none', 
   assert.deepEqual(stampCT('2025-12-31T18:00:00Z', OCT_2), { time: `12:00${NBSP}PM`, date: "Dec 31 '25" });
   assert.equal(stampCT('not a date', OCT_2), null);
   assert.equal(stampCT('', OCT_2), null);
+});
+
+const MEDIA = 'https://feed.joyebkashyeb.com.np/public/media/';
+
+test('a channel post keeps its photo or video still from the feed Worker', () => {
+  const photo = channelPostItem({ ...post('P1', 'Chip stocks rally', '2026-10-02T19:00:00Z'), media: { kind: 'image', url: MEDIA + 'P1' } }, CHANNEL);
+  assert.deepEqual(photo.media, { kind: 'image', url: MEDIA + 'P1' });
+  const video = channelPostItem({ ...post('V1', 'Trump on Iran', '2026-10-02T19:00:00Z'), media: { kind: 'video', url: MEDIA + 'V1' } }, CHANNEL);
+  assert.deepEqual(video.media, { kind: 'video', url: MEDIA + 'V1' });
+});
+
+test('a picture from anywhere else, or of an unknown kind, is dropped', () => {
+  const at = (media) => channelPostItem({ ...post('X', 'Headline', '2026-10-02T19:00:00Z'), media }, CHANNEL).media;
+  assert.equal(at({ kind: 'image', url: 'https://evil.example/public/media/X' }), null);
+  assert.equal(at({ kind: 'image', url: 'https://feed.joyebkashyeb.com.np.evil.example/public/media/X' }), null);
+  assert.equal(at({ kind: 'image', url: 'javascript:alert(1)' }), null);
+  assert.equal(at({ kind: 'audio', url: MEDIA + 'X' }), null);
+  assert.equal(at({ kind: 'image', url: 42 }), null);
+  assert.equal(at(null), null);
+  assert.equal(channelPostItem({ ...post('X', 'Headline', '2026-10-02T19:00:00Z'), media: { kind: 'image', url: MEDIA + 'X' } },
+    { ...CHANNEL, endpoint: undefined }).media, null);
 });

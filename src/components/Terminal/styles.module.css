@@ -1076,6 +1076,81 @@
 .dupeLink:hover { text-decoration: underline; }
 .dupeLink time { flex: 0 0 auto; color: var(--ifm-color-emphasis-500); }
 
+/* a channel post's photo: a small crop beside the headline, opening full size */
+.rowThumb {
+  flex: 0 0 auto;
+  position: relative;
+  width: 64px;
+  height: 44px;
+  margin-top: 2px;
+  padding: 0;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ifm-color-emphasis-100);
+  cursor: zoom-in;
+}
+.rowThumbVideo { cursor: pointer; }
+.rowThumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.rowThumb:hover, .rowThumb:focus-visible { border-color: var(--ifm-color-primary); }
+.rowThumb:focus-visible { outline: 2px solid var(--ifm-color-primary); outline-offset: 1px; }
+.thumbPlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(3px);
+}
+.viewerFigure {
+  position: relative;
+  margin: 0;
+  max-width: min(1100px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.viewerImg {
+  display: block;
+  max-width: 100%;
+  max-height: 76vh;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #fff;
+}
+/* a video's still is a 72 px preview: shown small, not blown up */
+.viewerStill { display: block; width: 216px; max-width: 100%; border-radius: 4px; }
+.viewerCaption { display: flex; flex-direction: column; gap: 0.2rem; }
+.viewerTitle { color: #f2f2f2; font-size: 0.9rem; line-height: 1.4; }
+.viewerMeta { color: #a3a3a3; font-size: 0.74rem; font-family: var(--ifm-font-family-monospace); }
+.viewerClose {
+  position: absolute;
+  top: -0.4rem;
+  right: -0.4rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: #1a1a1a;
+  color: #f2f2f2;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.viewerClose:hover, .viewerClose:focus-visible { border-color: var(--ifm-color-primary); }
+
 /* news on phones: full-width headline cards — the title gets the whole width,
    with time, source and tone on a line underneath */
 @media (max-width: 640px) {
