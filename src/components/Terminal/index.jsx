@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import { SECTIONS } from './tickers';
+import { ChartSkeleton, NewsSkeleton, PortfolioSkeletonBody, PriceSkeleton } from './Skeletons';
 import styles from './styles.module.css';
 
 /*
@@ -106,13 +107,13 @@ export default function Terminal() {
             <span className={styles.collapseIcon} aria-hidden="true">{chartOpen ? '−' : '+'}</span>
           </button>
           <div className={styles.deckBody}>
-            <BrowserOnly fallback={<div className={styles.panelBody}><div className={styles.placeholder}>Loading price…</div></div>}>
+            <BrowserOnly fallback={<PriceSkeleton />}>
               {() => {
                 const PriceHeader = require('./PriceHeader').default;
                 return <PriceHeader ticker={ticker} />;
               }}
             </BrowserOnly>
-            <BrowserOnly fallback={<div className={styles.panelBody}><div className={styles.placeholder}>Loading chart…</div></div>}>
+            <BrowserOnly fallback={<div className={styles.chartArea}><ChartSkeleton /></div>}>
               {() => {
                 const Chart = require('./Chart').default;
                 return <Chart ticker={ticker} timeframe={timeframe} setTimeframe={setTimeframe} onStatus={(s) => setSource(s.source)} fsTargetRef={deckRef} />;
@@ -142,7 +143,7 @@ export default function Terminal() {
             <span className={styles.collapseIcon} aria-hidden="true">{newsOpen ? '−' : '+'}</span>
           </button>
           <div className={styles.deckBody}>
-            <BrowserOnly fallback={<div className={styles.panelBody}><div className={styles.placeholder}>Loading news…</div></div>}>
+            <BrowserOnly fallback={<NewsSkeleton />}>
               {() => {
                 const News = require('./News').default;
                 return <News ticker={ticker} />;
@@ -156,7 +157,7 @@ export default function Terminal() {
         </section>
       </div>
 
-      <BrowserOnly fallback={<div className={styles.portfolio}><div className={styles.pfEmpty}>Loading portfolio…</div></div>}>
+      <BrowserOnly fallback={<div className={styles.portfolio}><PortfolioSkeletonBody /></div>}>
         {() => {
           const Portfolio = require('./Portfolio').default;
           return <Portfolio />;

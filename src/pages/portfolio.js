@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import PageHeader from '@site/src/components/PageHeader';
+import {Bone, Skeleton} from '@site/src/components/Skeleton';
 import {fmtPrice, isCrypto, fetchSnapshot} from '@site/src/components/Terminal/marketData';
 import {SECTIONS} from '@site/src/components/Terminal/tickers';
 import {getBars, getLedger, placeOrder, cancelOrder, getNotes, saveNote} from '@site/src/lib/market';
@@ -415,6 +416,55 @@ function PositionNotes({symbols, owner, token}) {
   );
 }
 
+// The dashboard's own grid and cards, drawn in bones while the paper account
+// loads, so the real numbers land in place instead of the page jumping.
+function DashboardSkeleton() {
+  return (
+    <Skeleton label="Reading the paper account" className={styles.dashboard}>
+      <div className={`p-card ${styles.heroArea}`}>
+        <div className={styles.heroHeader}>
+          <div className={styles.heroLeft}>
+            <Bone w="190px" h="0.6rem" />
+            <Bone w="min(290px, 70%)" h="2.6rem" style={{margin: '0.9rem 0 0.7rem'}} />
+            <Bone w="150px" h="0.8rem" />
+          </div>
+          <div className={styles.factsRail}>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className={styles.factItem}>
+                <Bone w="54px" h="0.5rem" />
+                <Bone w="84px" h="0.95rem" style={{marginTop: '0.4rem'}} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <Bone w="100%" h="clamp(180px, 32vw, 264px)" style={{marginTop: '0.6rem', background: 'var(--line)'}} />
+        <Bone w="45%" h="0.6rem" style={{margin: '0.9rem 0 1.1rem'}} />
+      </div>
+      <div className={styles.leftCol}>
+        <div className={`p-card ${styles.tradeCard}`}>
+          <Bone w="120px" h="1.2rem" />
+          <Bone w="130px" h="2rem" style={{marginTop: '1.2rem'}} />
+        </div>
+      </div>
+      <div className={styles.rightCol}>
+        <div className={`p-card ${styles.holdingsCard}`}>
+          <Bone w="150px" h="1.2rem" style={{marginBottom: '1rem'}} />
+          <div className={styles.holdings}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className={styles.holding}>
+                <span><Bone w="56px" h="0.85rem" /><Bone w="110px" h="0.6rem" style={{marginTop: '0.4rem'}} /></span>
+                <Bone w="72px" h="0.85rem" />
+                <Bone w="80%" h="0.4rem" round style={{alignSelf: 'center'}} />
+                <Bone w="86px" h="0.85rem" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Skeleton>
+  );
+}
+
 function Content() {
   const [state, setState] = useState({status: 'loading'});
   const [scrubIdx, setScrubIdx] = useState(null);
@@ -509,12 +559,7 @@ function Content() {
   const owner = !!token;
 
   if (state.status === 'loading') {
-    return (
-      <p className={styles.loading}>
-        <span className="p-pip" aria-hidden="true" />
-        Reading the paper account…
-      </p>
-    );
+    return <DashboardSkeleton />;
   }
   if (state.status === 'idle') {
     return (

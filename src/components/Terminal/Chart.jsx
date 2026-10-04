@@ -7,6 +7,7 @@ import { getGex, getPortfolio } from '../../lib/market';
 import usePolling from '../../lib/usePolling';
 import styles from './styles.module.css';
 import GexProfile from './GexProfile';
+import { ChartSkeleton } from './Skeletons';
 
 /*
  * Live price chart.
@@ -594,12 +595,9 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
           </svg>
         )}
       </button>
-      {status !== 'ok' && (
-        <div className={styles.chartMsg}>
-          {status === 'error'
-            ? 'Could not load price data — retrying on the next tick.'
-            : 'Loading chart…'}
-        </div>
+      {status === 'loading' && <ChartSkeleton />}
+      {status === 'error' && (
+        <div className={styles.chartMsg}>Could not load price data — retrying on the next tick.</div>
       )}
       {status === 'ok' && countdown && (
         <div

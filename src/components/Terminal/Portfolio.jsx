@@ -3,6 +3,7 @@ import { marketStatus } from './marketData';
 import { fmtPrice, fmtSignedMoney, fmtClockCT } from '../../lib/format';
 import { getPortfolio } from '../../lib/market';
 import usePolling from '../../lib/usePolling';
+import { PortfolioSkeletonBody } from './Skeletons';
 import styles from './styles.module.css';
 
 /*
@@ -57,7 +58,7 @@ export default function Portfolio() {
     return (
       <div className={styles.portfolio}>
         {header}
-        <div className={styles.pfEmpty}>Loading portfolio…</div>
+        <PortfolioSkeletonBody />
       </div>
     );
   }

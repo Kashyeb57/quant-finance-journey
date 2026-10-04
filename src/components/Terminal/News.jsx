@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { rssUrl } from '@site/src/lib/market';
+import { NewsSkeleton } from './Skeletons';
 import styles from './styles.module.css';
 
 /*
@@ -581,7 +582,7 @@ export default function News({ ticker }) {
         <span className={styles.legendNote}>times in CT</span>
       </p>
       <div className={styles.newsList}>
-        {loading && <div className={styles.newsMsg}>Loading headlines…</div>}
+        {loading && <NewsSkeleton />}
         {error && !loading && <div className={styles.newsMsg}>{error}</div>}
         {!loading && !error && view.length === 0 && (
           <div className={styles.newsMsg}>
