@@ -539,6 +539,17 @@ blockquote {
   .p-pip { animation: none; }
 }
 
+/* ── Page switches (src/clientModules/pageTransition.js) ──
+   The page being left dims the moment a link is followed; the new page fades
+   in once drawn. Only the content area changes; the navbar stays still. */
+html[data-nav-pending] .main-wrapper {
+  opacity: 0.5;
+  transition: opacity var(--dur-1) var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-nav-pending] .main-wrapper { opacity: 1; transition: none; }
+}
+
 /* ── Interactive-lab chart palette (CVD-validated, one set per color mode) ── */
 :root {
   --viz-s1: #2a78d6; /* blue   — series 1 */

@@ -34,7 +34,7 @@ const config = {
 
   // Owner-only visitor beacon → Cloudflare Worker at /_a/collect.
   // No-ops until the Worker in ./analytics is deployed; never breaks the site.
-  clientModules: ['./src/clientModules/analytics.js'],
+  clientModules: ['./src/clientModules/analytics.js', './src/clientModules/pageTransition.js'],
 
   // SEO: structured data so search engines understand who/what this site is.
   headTags: [
