@@ -30,6 +30,10 @@ docs/Programming/python.md.bak
 # Private working notes & tooling — never commit (backed up in OneDrive)
 CLAUDE.md
 AGENTS.md
+GEMINI.md
+.github/copilot-instructions.md
+.gemini/
+.agent/
 HANDOFF.md
 HANDOFF-*.md
 DESIGN_HANDOFF.md

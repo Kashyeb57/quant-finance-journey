@@ -18,9 +18,12 @@ const buildDir = path.resolve(root, process.argv[2] || 'build');
 const problems = [];
 const fail = (rule, where, detail) => problems.push(`${rule}: ${where}${detail ? ` (${detail})` : ''}`);
 
-const PRIVATE = [/(^|\/)CLAUDE\.md$/i, /(^|\/)AGENTS\.md$/i, /(^|\/)HANDOFF[^/]*\.md$/i, /(^|\/)DESIGN_HANDOFF\.md$/i,
-  /(^|\/)MS444_STATS_GAP_REPORT\.md$/i, /(^|\/)\.handoff\//, /(^|\/)\.dev\.vars$/,
-  /(^|\/)\.env(\.(?!example$)[^/]*)?$/];
+// Private working notes and per-AI state (the multi-AI handoff system). Keep in
+// step with .gitignore and the local privacy lock (.handoff/tools/git-guard.mjs).
+const PRIVATE = [/(^|\/)CLAUDE\.md$/i, /(^|\/)AGENTS\.md$/i, /(^|\/)GEMINI\.md$/i, /(^|\/)HANDOFF[^/]*\.md$/i,
+  /(^|\/)DESIGN_HANDOFF\.md$/i, /(^|\/)MS444_STATS_GAP_REPORT\.md$/i, /^\.github\/copilot-instructions\.md$/i,
+  /(^|\/)\.handoff\//, /^\.claude\//, /^\.openai\//, /^\.gemini\//, /^\.agent\//,
+  /(^|\/)\.keys\.json$/i, /(^|\/)\.dev\.vars$/, /(^|\/)\.env(\.(?!example$)[^/]*)?$/];
 // Alpaca key ids are 20 characters, PK (paper) or AK (live) then 18 capitals/digits.
 const KEY_ID = /(?<![A-Za-z0-9+/])[PA]K[A-Z0-9]{18}(?![A-Za-z0-9+/])/;
 const SERVER_ONLY = /APCA-API-(SECRET-KEY|KEY-ID)/;
