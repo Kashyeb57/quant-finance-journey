@@ -75,6 +75,175 @@ test.beforeEach(context => {
 });
 test.afterEach(() => { db?.close(); });
 
+t('scheduled reports preserve their source without extending the execution heartbeat', async context => {
+  await call('report', {mode: 'observe', runner_kind: 'github-actions',
+    evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false}});
+  let state = await (await call('status')).json();
+  assert.equal(state.report.runner_kind, 'github-actions');
+  assert.equal(state.online, true);
+  context.mock.timers.tick(121000);
+  state = await (await call('status')).json();
+  assert.equal(state.report.runner_kind, 'github-actions');
+  assert.equal(state.online, false);
+  assert.equal((await call('control', {enabled: true})).status, 409);
+  assert.equal(calls.length, 0);
+});
+
+t('legacy and unrecognized runner labels become continuous without accepting arbitrary metadata', async () => {
+  for (const runner_kind of [undefined, {token: 'not-public'}, 'https://example.invalid']) {
+    await call('report', {mode: 'observe', runner_kind,
+      evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false}});
+    const state = await (await call('status')).json();
+    assert.equal(state.report.runner_kind, 'continuous');
+    assert.ok(!JSON.stringify(state.report).includes('not-public'));
+  }
+});
+
+// Synthetic protocol markers, independent of forecast/model quality. Every
+// marker must keep SATS away from the legacy paper transport on its own.
+const SATS_REPORT_MARKERS = [
+  {evaluation: {schema: 3}},
+  {evaluation: {strategy: 'sats-learning'}},
+  {signal: {schema: 3}},
+  {signal: {strategy: 'sats-learning'}},
+  {signal: {pipeline: 'sats-setup-net-bps-v1'}},
+];
+
+t('SATS observation publication preserves the owner switch while allowing a pause', async () => {
+  await ready();
+  const observation = {...signal(0), strategy: 'sats-learning', pipeline: 'sats-setup-net-bps-v1'};
+  const report = {mode: 'observe', runner_kind: 'github-actions',
+    evaluation: {schema: 3, strategy: 'sats-learning', symbol: 'MU', model_id: MODEL, paper_ready: false},
+    signal: observation, event: 'Synthetic observation only'};
+  assert.equal((await call('report', report)).status, 200);
+  const state = await (await call('status')).json();
+  assert.equal(state.enabled, true); // Publishing cannot toggle an owner control.
+  assert.equal(state.report.mode, 'observe');
+  assert.equal(state.report.evaluation.paper_ready, false);
+  assert.deepEqual(state.report.signal, observation);
+  assert.equal((await call('control', {enabled: true})).status, 409);
+  assert.equal((await call('control', {enabled: false})).status, 200);
+  assert.equal((await (await call('status')).json()).enabled, false);
+  assert.equal(calls.length, 0);
+});
+
+t('each SATS identity marker rejects paper publication and a forged research readiness flag', async () => {
+  const original = await ready();
+  for (const marker of SATS_REPORT_MARKERS) {
+    for (const [mode, paper_ready] of [['paper', false], ['paper', true], ['observe', true]]) {
+      const report = {mode, evaluation: {symbol: 'MU', model_id: MODEL, paper_ready, ...marker.evaluation},
+        signal: {...signal(0), ...marker.signal}};
+      const response = await call('report', report);
+      assert.equal(response.status, 400);
+      assert.equal((await response.json()).error, 'sats_research_observe_only');
+      const state = await (await call('status')).json();
+      assert.equal(state.report.mode, 'paper');
+      assert.deepEqual(state.report.signal, original); // Rejection did not replace the current report.
+    }
+  }
+  assert.equal(calls.length, 0);
+});
+
+t('forged stored SATS paper states cannot enable or request an entry or managed exit', async () => {
+  await call('status');
+  seedFilledOrders(['buy']);
+  for (const marker of SATS_REPORT_MARKERS) {
+    for (const target of [0, 1]) {
+      const s = {...signal(target), ...marker.signal};
+      const forged = {mode: 'paper', evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: true, ...marker.evaluation}, signal: s};
+      db.prepare('INSERT OR REPLACE INTO brain_report (id,payload,seen_at) VALUES (1,?,?)')
+        .run(JSON.stringify(forged), new Date().toISOString());
+      db.exec('UPDATE brain_control SET enabled=1 WHERE id=1');
+      const control = await call('control', {enabled: true});
+      assert.equal(control.status, 409);
+      assert.equal((await control.json()).error, 'sats_research_observe_only');
+      const order = await call('order', s);
+      assert.equal(order.status, 409);
+      assert.equal((await order.json()).error, 'sats_research_observe_only');
+      assert.equal(calls.length, 0); // Refuse before reconciliation, clock or any other broker request.
+      assert.equal(broker.qty, 1);
+      assert.equal(db.prepare('SELECT COUNT(*) AS count FROM brain_orders').get().count, 1);
+    }
+  }
+});
+
+t('SATS metadata on an order cannot borrow a ready legacy report', async () => {
+  const exit = await ready(signal(0));
+  seedFilledOrders(['buy']);
+  for (const marker of [{schema: 3}, {strategy: 'sats-learning'}, {pipeline: 'sats-setup-net-bps-v1'}]) {
+    const response = await call('order', {...exit, ...marker});
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, 'sats_research_observe_only');
+    assert.equal(calls.length, 0);
+    assert.equal(broker.qty, 1);
+  }
+});
+
+t('a stored SATS identity appearing during legacy order checks prevents the final claim', async () => {
+  const entry = await ready();
+  const original = helpers.alpaca;
+  helpers.alpaca = async (...args) => {
+    // Simulate another/older writer inserting an otherwise matching paper state.
+    const forged = {mode: 'paper', evaluation: {schema: 3, symbol: 'MU', model_id: MODEL, paper_ready: true}, signal: entry};
+    db.prepare('UPDATE brain_report SET payload=?, seen_at=? WHERE id=1')
+      .run(JSON.stringify(forged), new Date().toISOString());
+    return original(...args);
+  };
+  try {
+    const response = await call('order', entry);
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, 'sats_research_observe_only');
+    assert.equal(calls.filter(c => c.init?.method === 'POST').length, 0);
+    assert.equal(db.prepare('SELECT COUNT(*) AS count FROM brain_orders').get().count, 0);
+  } finally {
+    helpers.alpaca = original;
+  }
+});
+
+t('SATS publication between the final read and atomic claim blocks every research identity marker', async () => {
+  for (const marker of SATS_REPORT_MARKERS) {
+    for (const target of [0, 1]) {
+      await call('status');
+      db.exec('DELETE FROM brain_orders');
+      broker.qty = 0;
+      calls = [];
+      const s = await ready(signal(target));
+      if (target === 0) seedFilledOrders(['buy']);
+      const originalPrepare = env.NOTES_DB.prepare;
+      let replaced = false;
+      env.NOTES_DB.prepare = sql => {
+        const prepared = originalPrepare(sql);
+        if (!sql.startsWith('INSERT OR IGNORE INTO brain_orders')) return prepared;
+        return {bind: (...args) => {
+          const bound = prepared.bind(...args);
+          return {run: async () => {
+            // The final read already saw a valid legacy paper report. Another
+            // writer replaces it immediately before the D1 statement executes.
+            const replacement = {mode: 'observe',
+              evaluation: {symbol: 'MU', model_id: MODEL, paper_ready: false, ...marker.evaluation},
+              signal: {...s, ...marker.signal}};
+            db.prepare('UPDATE brain_report SET payload=?, seen_at=? WHERE id=1')
+              .run(JSON.stringify(replacement), new Date().toISOString());
+            replaced = true;
+            return bound.run();
+          }};
+        }};
+      };
+      try {
+        const response = await call('order', s);
+        assert.equal(replaced, true);
+        assert.equal(response.status, 409);
+        assert.equal((await response.json()).error, 'sats_research_observe_only');
+        assert.equal(calls.filter(c => c.init?.method === 'POST').length, 0);
+        assert.equal(broker.qty, target === 0 ? 1 : 0);
+        assert.equal(db.prepare('SELECT COUNT(*) AS count FROM brain_orders').get().count, target === 0 ? 1 : 0);
+      } finally {
+        env.NOTES_DB.prepare = originalPrepare;
+      }
+    }
+  }
+});
+
 t('brain defaults to paused and rejects unauthenticated writes', async () => {
   assert.equal((await (await call('status')).json()).enabled, false);
   for (const path of ['report', 'control', 'order']) {

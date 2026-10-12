@@ -1,0 +1,50 @@
+name: Run Brain
+
+on:
+  workflow_dispatch:
+  schedule:
+    # UTC, weekdays. Covers US market hours in both daylight and standard time.
+    # A closed 15-minute bar needs another 60 seconds to settle.
+    - cron: '2,17,32,47 13-21 * * 1-5'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: brain-runner
+  cancel-in-progress: false
+
+jobs:
+  evaluate-and-publish:
+    if: >-
+      github.repository == 'Kashyeb57/quant-finance-journey' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || vars.BRAIN_SCHEDULE_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: brain
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: |
+            brain/requirements.txt
+            brain/requirements-github.txt
+      - name: Install the model runtime
+        run: python -m pip install -r requirements-github.txt
+      - name: Evaluate latest bars and publish
+        run: python -m joyeb_brain.github_runner
+        env:
+          BRAIN_MODEL_KEY: ${{ secrets.BRAIN_MODEL_KEY }}
+          BRAIN_OWNER_TOKEN: ${{ secrets.BRAIN_OWNER_TOKEN }}
+          BRAIN_RUN_MODE: ${{ vars.BRAIN_RUN_MODE || 'observe' }}
+          BRAIN_STRATEGY: sats-learning
+          PYTHONUNBUFFERED: '1'
+          OPENBLAS_NUM_THREADS: '1'
+          OMP_NUM_THREADS: '1'

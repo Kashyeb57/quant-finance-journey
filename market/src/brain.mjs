@@ -15,6 +15,12 @@ const CLIENT_ID_RE = new RegExp(`^joyeb-fly-${SYMBOL}-\\d+$`);
 const RESOLVE_AFTER_MS = 300000;
 const lookupPath = clientId => `/orders:by_client_order_id?client_order_id=${encodeURIComponent(clientId)}`;
 
+// Learned SATS observations cannot use the legacy paper-order transport. Check
+// independent identity markers so a forged readiness flag cannot authorize it.
+const isSatsResearchReport = report => report?.evaluation?.schema === 3 ||
+  report?.evaluation?.strategy === 'sats-learning' || report?.signal?.schema === 3 ||
+  report?.signal?.strategy === 'sats-learning' || report?.signal?.pipeline === 'sats-setup-net-bps-v1';
+
 // Once per database per isolate, as the notes table does, instead of on every request.
 const initialized = new WeakSet();
 
@@ -81,6 +87,9 @@ async function reconcile(db, env, h) {
 async function submit(request, env, body, h) {
   const db = env.NOTES_DB;
   const state = await readState(db);
+  if (isSatsResearchReport(state.report) || isSatsResearchReport(body) || isSatsResearchReport({signal: body})) {
+    return h.json(request, { error: 'sats_research_observe_only' }, 409);
+  }
   if (!state.enabled) return h.json(request, { error: 'automation_paused' }, 409);
   if (!state.online || state.report?.mode !== 'paper' ||
       (body.target_position === 1 && state.report?.evaluation?.paper_ready !== true)) {
@@ -141,6 +150,7 @@ async function submit(request, env, body, h) {
   const clientId = `joyeb-fly-${SYMBOL}-${Math.floor(bar/1000)}`;
   const latest = await readState(db);
   const ageBeforeClaim = Date.now()-bar;
+  if (isSatsResearchReport(latest.report)) return h.json(request, { error: 'sats_research_observe_only' }, 409);
   if (!latest.enabled) return h.json(request, { error: 'automation_paused' }, 409);
   if (!latest.online || latest.report?.mode !== 'paper' ||
       latest.report?.signal?.model_id !== body.model_id ||
@@ -155,13 +165,24 @@ async function submit(request, env, body, h) {
   const dayStart = createdAt.slice(0, 10) + 'T00:00:00.000Z';
   // D1 atomically claims this candle BEFORE any external side effect. The
   // unresolved-order guard inside this statement serializes different candles.
+  // Check research identity in the same statement: an observation publisher
+  // can replace the legacy report after the final read above without an order.
   const claim = await db.prepare(
     "INSERT OR IGNORE INTO brain_orders (client_id,bar_time,side,status,created_at) " +
     "SELECT ?,?,?,'submitting',? WHERE (SELECT enabled FROM brain_control WHERE id=1)=1 " +
     "AND (? = 'sell' OR (SELECT COUNT(*) FROM brain_orders WHERE created_at >= ? AND side='buy') < ?) " +
-    "AND NOT EXISTS (SELECT 1 FROM brain_orders WHERE status NOT IN ('filled','canceled','expired','rejected'))")
+    "AND NOT EXISTS (SELECT 1 FROM brain_orders WHERE status NOT IN ('filled','canceled','expired','rejected')) " +
+    "AND NOT EXISTS (SELECT 1 FROM brain_report WHERE id=1 AND (" +
+    "json_extract(payload,'$.evaluation.schema')=3 OR " +
+    "json_extract(payload,'$.evaluation.strategy')='sats-learning' OR " +
+    "json_extract(payload,'$.signal.schema')=3 OR " +
+    "json_extract(payload,'$.signal.strategy')='sats-learning' OR " +
+    "json_extract(payload,'$.signal.pipeline')='sats-setup-net-bps-v1'))")
     .bind(clientId, new Date(bar).toISOString(), side, createdAt, side, dayStart, MAX_DAILY_ENTRIES).run();
-  if (!claim.meta?.changes) return h.json(request, { error: 'duplicate_pending_or_daily_limit' }, 409);
+  if (!claim.meta?.changes) {
+    if (isSatsResearchReport((await readState(db)).report)) return h.json(request, { error: 'sats_research_observe_only' }, 409);
+    return h.json(request, { error: 'duplicate_pending_or_daily_limit' }, 409);
+  }
   try {
     const result = await h.alpacaTrade('/orders', env, { method: 'POST',
       body: { symbol: SYMBOL, qty: '1', side, type: 'market', time_in_force: 'day', client_order_id: clientId } });
@@ -231,12 +252,16 @@ export async function handleBrain(request, env, url, h) {
   try { body = JSON.parse(raw); } catch (_) { return h.json(request, { error: 'bad_json' }, 400); }
   if (!body || Array.isArray(body) || typeof body !== 'object') return h.json(request, { error: 'bad_body' }, 400);
   if (path === '/_m/brain/report') {
+    if (isSatsResearchReport(body) && (body.mode !== 'observe' || body.evaluation?.paper_ready !== false)) {
+      return h.json(request, { error: 'sats_research_observe_only' }, 400);
+    }
     if (!['observe', 'paper'].includes(body.mode) || body.evaluation?.symbol !== SYMBOL ||
         typeof body.evaluation?.paper_ready !== 'boolean' ||
         (body.signal && typeof body.signal.distribution_ok !== 'boolean') ||
         !/^[a-f0-9]{16}$/.test(body.evaluation?.model_id || '')) return h.json(request, { error: 'invalid_report' }, 400);
     // The owner-controlled runner publishes only this explicit public payload.
     const report = { mode: body.mode, evaluation: body.evaluation, signal: body.signal || null,
+      runner_kind: body.runner_kind === 'github-actions' ? 'github-actions' : 'continuous',
       event: String(body.event || '').slice(0, 200), error: body.error ? String(body.error).slice(0, 200) : null };
     await env.NOTES_DB.prepare('INSERT INTO brain_report (id,payload,seen_at) VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload, seen_at=excluded.seen_at')
       .bind(JSON.stringify(report), new Date().toISOString()).run();
@@ -245,6 +270,7 @@ export async function handleBrain(request, env, url, h) {
   if (path === '/_m/brain/control') {
     if (typeof body.enabled !== 'boolean') return h.json(request, { error: 'enabled_must_be_boolean' }, 400);
     const state = await readState(env.NOTES_DB);
+    if (body.enabled && isSatsResearchReport(state.report)) return h.json(request, { error: 'sats_research_observe_only' }, 409);
     if (body.enabled && (!state.online || state.report?.evaluation?.paper_ready !== true || state.report?.mode !== 'paper')) {
       return h.json(request, { error: 'paper_runner_and_evaluation_required' }, 409);
     }

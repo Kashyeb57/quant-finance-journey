@@ -1,12 +1,14 @@
 # Joyeb Brain
 
-An experimental research service for Micron (MU) that feeds a reduced, measured fruit-fly connectome with market features, trains a readout on its activity, and can place Alpaca **paper** orders through this website's Worker, but only after its research gate passes and the owner enables it. It is not a trained financial brain and it has not shown a trading advantage. Phases and current evidence: [ROADMAP.md](ROADMAP.md). Until 2026-09-24 the experiment used SPY; its two runs are kept in the roadmap as history.
+An experimental research service for Micron (MU). The scheduled strategy uses SATS to identify setups and trained simple/fly-informed readouts to assess their later outcomes after costs. It publishes observations only and has not demonstrated a fly advantage. [SATS.md](SATS.md) describes the fixed experiment and actual results; [ROADMAP.md](ROADMAP.md) records its history. The original fly return model and optional paper execution code are retained below; no current model qualifies for paper activation.
 
 The symbol is one constant in two places that must match: `SYMBOL` in `joyeb_brain/data.py` and in `market/src/brain.mjs` (a test checks this). A model trained on another symbol refuses to run. Attribution: [THIRD_PARTY.md](THIRD_PARTY.md).
 
 All commands below run from this `brain/` folder in a Python 3.10+ environment with `python -m pip install -r requirements.txt`. Times shown on the website are Central Time.
 
-## What is being modeled
+**Run with your computer off:** [GitHub Actions setup](GITHUB.md) publishes current observations from frozen SATS model `a4df9760250e34c1`. It needs one-time private secret configuration and activation, then no open local terminal. The Brain page shows the frozen comparison before activation and distinguishes current reports from saved evidence. The commands below describe the original optional local runner, which retains its existing model and behavior.
+
+## Original fly model
 
 The default circuit contains 512 measured FlyWire v630 neurons, selected deterministically from the upstream model's connectivity data. All measured connections among the selected neurons are kept, with their signs. Six causal market features (1- and 4-bar returns, 8-bar volatility, bar range, bar body, volume ratio) drive 12 input channels. Thirty-two pooled spike-count features feed a ridge-regression readout. The wiring is fixed; only the readout is trained.
 
@@ -31,7 +33,7 @@ python -m joyeb_brain train
 Instead of `collect`, a genuine MU 15-minute OHLCV CSV can be imported:
 
 ```
-python -m joyeb_brain import <spy-15min.csv>
+python -m joyeb_brain import <mu-15min.csv>
 ```
 
 Columns `time,open,high,low,close,volume`; `time` is the bar start, either Unix seconds or text **with an explicit UTC offset** (`2026-09-23T13:30:00Z` or `2026-09-23T09:30:00-04:00`). Times without an offset are rejected because they are ambiguous. Only completed, 15-minute-aligned regular-session bars are kept; on NYSE early-close days from late 2022 through 2027 bars from 13:00 New York onward are dropped as after-hours (the importer warns about bars outside that range, where early closes are not filtered). The importer checks OHLC consistency but cannot prove a file's symbol or origin, and synthetic data must never be used for an evaluation.
@@ -66,15 +68,16 @@ A paper order needs all three: a runner in `--paper` mode, a passed research gat
 - A definite broker rejection (4xx other than a timeout) is recorded as rejected and does not block later candles.
 - An uncertain submission (timeout, server error) blocks automation until it is settled. After five minutes, settle it with `python -m joyeb_brain resolve <client_id>` (the id is in the order table on `/brain`). This also applies after a rate-limit rejection (HTTP 429) when the broker could not be asked straight away whether the order exists. It copies what the broker reports, or records that the broker has no such order. Never delete ledger rows to force a retry.
 - Partial fills, manual trades, paper-account resets or drift need investigation; the bot will not sell a whole share against a fractional managed position.
-- The service depends on your computer, the network and timely data. A stopped runner or an outage can prevent the intended exit. This version is not an always-on hosted service.
+- The local service depends on your computer, the network and timely data. The [GitHub runner](GITHUB.md) instead depends on GitHub's scheduled jobs. A stopped, delayed or missed runner can prevent the intended exit; neither mode guarantees execution at a deadline.
 
 Alpaca's paper trading simulates fills and does not reproduce every live-market cost; see [paper trading](https://docs.alpaca.markets/us/docs/paper-trading) and the [orders API](https://docs.alpaca.markets/us/docs/working-with-orders).
 
 ## Files and tests
 
-`runtime/` is ignored and holds the extracted graph, downloaded bars, the model, the evaluation, predictions, status and the runner's local decision log. Never commit datasets, models or credentials.
+`runtime/` is ignored and holds the graph, downloaded bars, fitted parameters, evaluations, predictions, status and local decision log. Never commit plaintext datasets, models or credentials. GitHub uses authenticated encrypted `deployment/sats-model.fernet`; the original `deployment/model.fernet` is preserved. Their shared key stays private. The public frozen research report omits fitted readout parameters and contains no raw dataset.
 
 ```
+python -m pip install -r requirements-github.txt
 python -m unittest discover -s tests -v
 ```
 

@@ -12,7 +12,7 @@ The model is described in: Shiu, P. K. et al. "A Drosophila computational brain 
 
 The neuron and connectivity data come from the FlyWire connectome of the adult *Drosophila* brain (version 630, as used by the upstream model): https://flywire.ai/. The upstream repository points to its data archive at https://doi.org/10.17617/3.CZODIW. That data is covered by FlyWire's and the archive's own terms, which anyone reproducing this work must follow; the MIT licence below covers the upstream code only.
 
-No FlyWire data, extracted graph or trained model is committed to this repository. `prepare` builds the reduced graph locally from a checkout of the upstream project, and `runtime/graph.json` records SHA-256 hashes of the source files used.
+No plaintext FlyWire data, extracted graph or trained model is committed to this repository. `prepare` builds the reduced graph locally from a checkout of the upstream project, and `runtime/graph.json` records SHA-256 hashes of the source files used. The optional GitHub runner uses an authenticated encrypted snapshot in `deployment/model.fernet`; its decryption key is private. Encryption does not change the underlying data's attribution or terms.
 
 The market input mapping, reduced graph selection, pooled features, financial readout and execution integration are experimental engineering additions. They do not reproduce whole-brain behavior or establish a biological basis for predicting prices.
 

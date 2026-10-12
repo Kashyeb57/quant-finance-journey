@@ -38,13 +38,15 @@ def status():
         return {"mode": "unknown", "event": "Status is being updated; try again in a moment"}
 
 
-def window_key(completed):
+def window_key(completed, full_history=False):
     """Latest complete bar plus a hash of the bars its features read.
 
     A revised bar (late prints) changes the key, so the signal is recomputed
     instead of reusing a forecast made from the earlier data.
     """
-    tail = completed.tail(20)[["time", "open", "high", "low", "close", "volume"]]
+    # SATS is recursive: a revision earlier than the legacy feature window can
+    # still change today's trend. Its predictor retains the immutable seed.
+    tail = (completed if full_history else completed.tail(20))[["time", "open", "high", "low", "close", "volume"]]
     digest = hashlib.sha256(tail.to_json(date_format="iso").encode()).hexdigest()[:16]
     return f"{completed.time.iloc[-1].isoformat()}|{digest}"
 
@@ -57,38 +59,57 @@ def thin(curve, limit=MAX_CURVE_POINTS):
 
 
 def publishable(state):
-    """The report as published: long equity curves are thinned, and dropped if still too big."""
+    """Bound public evidence while keeping fitted parameters in the encrypted bundle."""
     report = copy.deepcopy(state)
-    metrics = (report.get("evaluation") or {}).get("metrics") or {}
+    evaluation = report.get("evaluation") or {}
+    learning = evaluation.get("schema") == 3 and evaluation.get("strategy") == "sats-learning"
+    if learning:
+        training = evaluation.get("training")
+        if isinstance(training, dict):
+            training.pop("model", None)
+        for fold in evaluation.get("folds", []):
+            if isinstance(fold, dict):
+                fold.pop("model", None)
+    metrics = evaluation.get("metrics") or {}
     curves = [m for m in metrics.values() if isinstance(m, dict) and isinstance(m.get("curve"), list)]
     if any(len(m["curve"]) > MAX_CURVE_POINTS for m in curves):
         for m in curves:
             m["curve"] = thin(m["curve"])
         report["evaluation"]["curves_thinned"] = True
     if len(json.dumps(report, allow_nan=False)) > MAX_REPORT_CHARS:
+        if learning:
+            # The learning schema requires its evidence curves and decisions.
+            # Fail clearly rather than publishing an invalid partial report.
+            raise ValueError("SATS public report exceeds the website limit")
         for m in curves:
             m.pop("curve", None)
         report["evaluation"]["curves_omitted"] = True
     return report
 
 
-def run_loop(stop, token=None, paper=False, once=False, predictor=None, clock=None):
+def run_loop(stop, token=None, paper=False, once=False, predictor=None, clock=None, runner_kind="continuous"):
     clock = clock or (lambda: datetime.now(timezone.utc))
     if paper and not token:
         raise ValueError("Paper mode needs the existing owner token, entered privately at the prompt")
     predictor = predictor or Predictor()
+    observation_only = getattr(predictor, "observation_only", False)
+    if observation_only and paper:
+        raise ValueError("SATS learning supports observation only; paper execution is unverified")
     db = sqlite3.connect(RUNTIME / "runner.sqlite")
     db.execute("CREATE TABLE IF NOT EXISTS decisions (bar_time TEXT PRIMARY KEY, payload TEXT NOT NULL, created_at TEXT NOT NULL)")
     db.commit()
     cached, cached_key = None, None
+    state = None
     while not stop.is_set():
         state = {"mode": "paper" if paper else "observe", "evaluation": predictor.report,
-                 "signal": cached, "event": "Waiting for completed market data", "error": None}
+                 "signal": cached, "event": "Waiting for completed market data", "error": None,
+                 "runner_kind": runner_kind}
         try:
             # Settling is judged at the moment the data was requested; a slow
             # download must not make a bar look older than its data is.
             fetched_at = clock()
-            bars, _ = fetch_bars(days=7)
+            days = predictor.fetch_days(fetched_at) if callable(getattr(predictor, "fetch_days", None)) else 7
+            bars, _ = fetch_bars(days=days)
             # Both legacy and new historical sources can return an in-progress
             # bar. Predictor filters it before computing any feature.
             from .data import clean_bars
@@ -97,7 +118,7 @@ def run_loop(stop, token=None, paper=False, once=False, predictor=None, clock=No
             completed = clean_bars(pd.DataFrame(bars), now=fetched_at, settle_seconds=SETTLE_SECONDS, strict=False)
             if completed.attrs.get("dropped_invalid"):
                 print(f"Ignored {completed.attrs['dropped_invalid']} invalid bar(s) in the download", flush=True)
-            key = window_key(completed)
+            key = window_key(completed, full_history=observation_only)
             if cached is None or key != cached_key:
                 cached = predictor.signal(bars, now=fetched_at, settle_seconds=SETTLE_SECONDS, strict=False)
                 cached_key = key
@@ -145,6 +166,7 @@ def run_loop(stop, token=None, paper=False, once=False, predictor=None, clock=No
             break
         stop.wait(30)
     db.close()
+    return state
 
 
 class StatusServer(ThreadingHTTPServer):

@@ -2,6 +2,10 @@ import React, {useEffect, useState} from 'react';
 import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 import PageHeader from '@site/src/components/PageHeader';
+import SatsEvidence from '@site/src/components/Brain/SatsEvidence';
+import {isSatsEvaluation} from '@site/src/components/Brain/satsReport.mjs';
+import SatsLearningEvidence from '@site/src/components/Brain/SatsLearningEvidence';
+import {isSatsLearningEvaluation} from '@site/src/components/Brain/satsLearningReport.mjs';
 import {getBrainStatus, getLocalBrainStatus, setBrainEnabled} from '@site/src/lib/brain';
 import styles from './brain.module.css';
 
@@ -20,6 +24,7 @@ const when = value => value && Number.isFinite(Date.parse(value))
 const ERRORS = {
   unauthorized: 'Passphrase rejected.',
   paper_runner_and_evaluation_required: 'Enabling needs the runner online in paper mode with a passed research gate.',
+  sats_research_observe_only: 'SATS learning publishes observations only. Paper execution is unavailable.',
   brain_storage_not_configured: 'The website backend has no storage configured yet.',
   enabled_must_be_boolean: 'The request was malformed.',
 };
@@ -60,9 +65,19 @@ export default function Brain() {
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('');
+  const [publishedResearch, setPublishedResearch] = useState(null);
 
   useEffect(() => {
     if (['localhost', '127.0.0.1'].includes(window.location.hostname)) { setLocal(true); setSource('local'); }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/brain-sats-evaluation.json', {signal: controller.signal})
+      .then(response => response.ok ? response.json() : null)
+      .then(evaluation => { if (isSatsLearningEvaluation(evaluation)) setPublishedResearch(evaluation); })
+      .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -118,24 +133,30 @@ export default function Brain() {
     try {
       if (file.size > 1000000) throw new Error('Choose an evaluation file smaller than 1 MB.');
       const evaluation = JSON.parse(await file.text());
-      if (evaluation.schema !== 1 || evaluation.symbol !== SYMBOL || !evaluation.metrics?.fly || !evaluation.graph) throw new Error('This is not a Joyeb Brain evaluation file.');
-      setSource('file'); setState({report: {evaluation, mode: 'saved evaluation'}, online: false, orders: [], enabled: null}); setStale(false); setError('');
+      const satsFile = isSatsEvaluation(evaluation);
+      const learningFile = isSatsLearningEvaluation(evaluation);
+      if (!satsFile && !learningFile && (evaluation.schema !== 1 || evaluation.symbol !== SYMBOL || !evaluation.metrics?.fly || !evaluation.graph)) throw new Error('Choose a Joyeb Brain fly, SATS or SATS learning evaluation.');
+      setSource('file'); setState({report: {evaluation, mode: learningFile ? 'SATS learning research' : satsFile ? 'SATS research' : 'saved evaluation'}, online: false, orders: [], enabled: null}); setStale(false); setError('');
     } catch (e) { setError(e instanceof SyntaxError ? 'That file is not valid JSON.' : e.message); }
   }
 
-  const report = state?.report;
+  const publishedFallback = source === 'website' && publishedResearch && !isSatsLearningEvaluation(state?.report?.evaluation);
+  const report = publishedFallback ? {evaluation: publishedResearch, mode: 'published research snapshot'} : state?.report;
   const evaluation = report?.evaluation && typeof report.evaluation === 'object' ? report.evaluation : null;
   const graph = evaluation?.graph && typeof evaluation.graph === 'object' ? evaluation.graph : null;
   const metrics = evaluation?.metrics && typeof evaluation.metrics === 'object' ? evaluation.metrics : null;
   const checks = evaluation?.checks && typeof evaluation.checks === 'object' ? Object.entries(evaluation.checks) : [];
   const signal = report?.signal;
+  const sats = isSatsEvaluation(evaluation);
+  const learning = isSatsLearningEvaluation(evaluation);
+  const scheduled = report?.runner_kind === 'github-actions';
   const ready = evaluation?.paper_ready === true;
-  const canEnable = source === 'website' && state?.online && ready && report?.mode === 'paper';
+  const canEnable = !sats && !learning && source === 'website' && state?.online && ready && report?.mode === 'paper';
   const automation = source !== 'website' ? 'Not visible from here' : state?.enabled ? 'Enabled on backend' : state ? 'Paused' : 'Not connected';
 
-  return <Layout title="Brain · Paper Trading" description="An experimental fly-connectome readout for Micron (MU), evaluated on market data and connected to a paper-trading runner that starts paused.">
+  return <Layout title="Brain · Strategy Research" description="Micron strategy research: inspect SATS trend signals and backtests, alongside the original experimental fly-connectome evaluation. Paper execution starts paused.">
     <PageHeader eyebrow="Research experiment · Paper only" title="Brain"
-      subtitle="An experimental readout built on measured fruit-fly wiring, tested on Micron (MU) data. It is not a trained financial brain. The latest signal, the latest evaluation and recent automated paper orders appear here.">
+      subtitle={learning ? 'SATS identifies Micron (MU) setups; trained readouts assess their net outcomes. Compare direct SATS with simple and fly-informed filters, and inspect current forecasts when the scheduled runner reports. Paper execution remains unavailable.' : sats ? 'SATS trend rules on Micron (MU): inspect what changed, why a signal fired, and how it performed in historical testing. This saved research report cannot authorize paper orders.' : 'Micron (MU) strategy research. Load a SATS or SATS learning evaluation to inspect signals, learned filters and backtests.'}>
       <div className={styles.headerLinks}><Link to="/portfolio">Paper account →</Link><Link to="/terminal">Market terminal →</Link></div>
     </PageHeader>
     <main className={`container ${styles.main}`}>
@@ -146,9 +167,14 @@ export default function Brain() {
           {source === 'file' && <option value="file">Saved evaluation</option>}
         </select></label>}
         <label className={styles.file}>Load evaluation JSON<input type="file" accept=".json,application/json" onChange={importReport} /></label>
-        <span className={styles.status}>{state?.online ? 'Runner online' : source === 'file' ? 'Saved results' : 'Runner offline'} · {report?.mode || 'No report yet'}{stale ? ' · not updated' : ''}</span>
+        <span className={styles.status}>{publishedFallback ? 'Published SATS research' : source === 'file' ? 'Saved results' : scheduled ? 'GitHub scheduled reports' : state?.online ? 'Runner online' : 'Runner offline'} · {report?.mode || 'No report yet'}{stale ? ' · not updated' : ''}</span>
       </div>
+      {publishedFallback && <p className={styles.muted}>Showing the frozen SATS comparison through October 2, 2026. A current SATS runner report has not arrived. {state?.report ? `The backend's last report uses model ${state.report.evaluation?.model_id || 'unknown'}, received ${when(state.seen_at)}.` : 'Scheduled observation requires the GitHub setup below.'} This snapshot is saved research, not a current market forecast.</p>}
+      {scheduled && <p className={styles.muted}>Last GitHub report received {when(state?.seen_at)}. Scheduled jobs run independently of your computer, but can be delayed or missed. This timestamp does not confirm that the schedule is still enabled. <a href="https://github.com/Kashyeb57/quant-finance-journey/actions/workflows/run-brain.yml" target="_blank" rel="noopener noreferrer">View runs and schedule →</a></p>}
       {error && <p className={styles.message} role="status">{error}</p>}
+      {learning ? <SatsLearningEvidence key={evaluation.model_id + evaluation.created_at} evaluation={evaluation} styles={styles}
+        signal={signal} observationSource={publishedFallback ? 'saved' : source}
+        event={report?.event} error={report?.error} /> : sats ? <SatsEvidence key={evaluation.model_id + evaluation.created_at} evaluation={evaluation} styles={styles} /> : <>
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>Latest decision</h2><span>{SYMBOL} · completed 15-minute bars</span></div>
         <div className={styles.readouts}>
@@ -176,9 +202,10 @@ export default function Brain() {
           <p className={styles.muted}>Test window: {when(evaluation.split?.test_start)} → {when(evaluation.split?.test_end)}.{typeof evaluation.model_id === 'string' ? ` Model ${evaluation.model_id}.` : ''} Passing the gate does not establish future profitability.</p>
         </> : <div className={styles.empty}><p>No evaluation loaded yet.</p><p>Once a runner publishes, its latest evaluation appears here. A saved <code>evaluation.json</code> can also be loaded above.</p></div>}
       </section>
+      </>}
       <section className={styles.section}>
         <div className={styles.sectionHead}><h2>Paper execution</h2><span>{automation}</span></div>
-        <p>{SYMBOL} only · at most one bot-owned share · buy quote capped at ${(state?.limits?.max_buy_quote ?? DEFAULT_CAP).toLocaleString('en-US')} · six entry attempts per day (the count resets at 7:00 PM CT, 6:00 PM CT in winter). The strategy targets flat on the 2:30 PM CT bar, exiting about 2:45 PM CT. Exits stay available after the entry limit. Positions opened by hand are never adopted or sold.</p>
+        {learning ? <p>This SATS model publishes setup forecasts only. Its research gate fails, TradingView parity is unverified, and its hypothetical protective orders have no verified execution adapter. The runner and backend refuse paper orders for this strategy.</p> : <p>{SYMBOL} only · at most one bot-owned share · buy quote capped at ${(state?.limits?.max_buy_quote ?? DEFAULT_CAP).toLocaleString('en-US')} · six entry attempts per day (the count resets at 7:00 PM CT, 6:00 PM CT in winter). The strategy targets flat on the 2:30 PM CT bar, exiting about 2:45 PM CT. Exits stay available after the entry limit. Positions opened by hand are never adopted or sold.</p>}
         <p className={styles.muted}>Pause blocks every new automated order, including that scheduled exit. It does not cancel submitted orders or close a position; close one yourself on the paper account if needed.</p>
         <div className={styles.controls}>
           <label>Owner passphrase<input type="password" value={token} onChange={e => setToken(e.target.value)} autoComplete="off" placeholder="Kept in this tab's memory only" /></label>
@@ -186,14 +213,17 @@ export default function Brain() {
           <button type="button" disabled={busy || !token || source !== 'website'} onClick={() => control(false)}>Pause new orders</button>
           <button type="button" disabled={!token} onClick={() => setToken('')}>Lock controls</button>
         </div>
-        {!canEnable && <p className={styles.muted}>Enabling needs the website backend, a runner online in paper mode, and a passed research gate.</p>}
+        {!canEnable && <p className={styles.muted}>{learning ? 'SATS observation cannot enable paper execution.' : 'Enabling needs the website backend, a runner online in paper mode, and a passed research gate.'}</p>}
         {notice && <p role="status" className={styles.message}>{notice}</p>}
         {!!state?.orders?.length && <div className={styles.tableWrap}><table><thead><tr><th>Time (CT)</th><th>Side</th><th>Status</th><th>Filled shares</th><th>Order id</th></tr></thead><tbody>{state.orders.map(order => <tr key={order.client_id}><td>{when(order.created_at)}</td><td>{order.side}</td><td>{order.status}</td><td>{plain(order.filled_qty)}</td><td><code>{order.client_id}</code></td></tr>)}</tbody></table></div>}
       </section>
-      <details className={styles.help}><summary>Run the service on your own computer</summary>
+      <details className={styles.help}><summary>Run through GitHub or on your computer</summary>
+        <p>For the learned SATS comparison, run <code>python -m joyeb_brain.sats_learning --csv runtime/sats-learning/data.csv --metadata runtime/sats-learning/data.json</code> from the <code>brain</code> folder, then load <code>runtime/sats-learning/evaluation.json</code>. It uses earlier completed setup outcomes to fit simple and fly-informed readouts, and compares their entry filters on later data. Read <code>brain/SATS.md</code> for the fixed protocol and source-data requirements.</p>
+        <p>For SATS alone, run <code>python -m joyeb_brain.sats_research</code>, then load <code>runtime/sats-research/evaluation.json</code> above. Research commands calculate hypothetical fills and never place orders.</p>
+        <p>The repository's <strong>Run Brain</strong> GitHub Actions workflow uses the frozen SATS learning snapshot to publish current setup forecasts with your computer off. It does not retrain the models. Follow <a href="https://github.com/Kashyeb57/quant-finance-journey/blob/main/brain/GITHUB.md" target="_blank" rel="noopener noreferrer">the GitHub setup guide</a> once to configure its secrets and activate the schedule. No terminal needs to stay open for GitHub runs.</p>
         <p>In a terminal with the project's Python environment, open the repository's <code>brain</code> folder and run:</p>
         <pre><code>python -m joyeb_brain run</code></pre>
-        <p>That starts observation only. Open this page from the local preview and choose "My local runner". Keep the computer awake and the terminal open. The Brain README in the repository covers data collection, training and publishing.</p>
+        <p>That starts the original fly runner in observation mode. Open this page from the local preview and choose "My local runner". Keep the computer awake and the terminal open. The Brain README covers data collection, training and publishing; the GitHub workflow runs the SATS model.</p>
       </details>
     </main>
   </Layout>;

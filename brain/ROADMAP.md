@@ -1,6 +1,6 @@
 # Joyeb Brain — roadmap
 
-Updated 2026-09-24. How it works and how to run it: [README.md](README.md).
+Updated 2026-10-11. How it works and how to run it: [README.md](README.md). Scheduled observation: [GitHub setup](GITHUB.md). Fixed SATS experiment: [SATS.md](SATS.md).
 
 ## Goal and definition of done
 
@@ -22,6 +22,8 @@ The fruit-fly connectome is a research feature generator. It is not a trained fi
 
 ## Current evidence (do not exaggerate)
 
+**SATS outcome learning (October 5 fit; October 11 integration).** Model `a4df9760250e34c1` fitted 53 earlier completed setup outcomes from genuine IEX MU history. Fresh September 25–October 2 testing had only two eligible setups: SATS alone lost $7.46 on two trades, while simple and fly-informed filters each lost $3.13 on one trade. They made the same choices; no incremental fly value is established. Models, costs and acceptance threshold remain frozen. The scheduled runner now supports current SATS observations, with saved evidence separate from current forecasts. Private secret setup and a successful manual run must precede schedule activation. SATS paper execution is explicitly unsupported until its research and execution requirements pass.
+
 **MU run 1 (2026-09-24, current).** Switched from SPY at the owner's request. 2,158 real IEX bars from `/_m/brain/bars` (2026-05-28 to 2026-09-24) gave 747 examples: 446 train, 147 validation, 150 test (2026-09-01 to 2026-09-24). The validation-chosen entry threshold was 0.10% and no test forecast exceeded it, so the fly readout never traded: 0.000% with 0 order sides. The market-only model returned −0.769% with 18 order sides, and always-long +3.809% while MU rose. Two checks passed (test bars; better than market-only, trivially) and two failed (no positive return, 0 of 10 order sides), so the model is not paper-ready (model `3dcc8e860f898314`). A readout that never trades cannot be judged; MU typically moves several times more per day than SPY, and the SPY runs below say nothing about MU.
 
 **SPY run 2 (2026-09-24, history).** 2,158 real IEX bars from the published `/_m/brain/bars` endpoint (2026-05-28 to 2026-09-24) gave 747 usable examples: 446 train, 147 validation, 150 test (2026-09-01 to 2026-09-24). On the 150 test bars the fly readout returned +0.010% after assumed costs with 2 order sides (one round trip, 0.7% of bars in the market), the market-only model 0.000% with no trades, and always-long −2.238% over a falling month. Three checks passed, but the gate failed on order sides (2 of the required 10), so the model is not paper-ready (model `a90b90d9fe90aa71`, pipeline `fly-v630-market-v1`). One round trip says nothing about skill: the readout mostly stayed flat through a decline.
@@ -40,7 +42,7 @@ Next evidence steps: walk-forward periods and cost sensitivity before reading an
 ## Phase 6 — operating rules
 
 - Start with observation, then published observation. Paper orders need a `--paper` runner, a passed gate and the owner's explicit enable.
-- The computer running the runner must stay on and awake; this version is not a hosted service. Moving to always-on hosting is a separate decision (no paid resources without the owner's approval).
+- Local runs require an awake computer. The GitHub Actions runner can instead publish scheduled reports with the computer off, after the workflow, encrypted model and secrets are configured. It is not a continuous service; delayed or dropped jobs cannot guarantee the intended exit. GitHub deployment/activation must be verified separately from local tests.
 - Pause blocks new orders, including the scheduled exit; it never cancels or liquidates.
 - Manual MU positions in the paper account, partial fills and uncertain broker state halt automation. Settle uncertain orders with `python -m joyeb_brain resolve <client_id>`; never erase the ledger.
 - Before a supervised pilot: test timeout and restart reconciliation, confirm the correct paper account, and monitor daily.
