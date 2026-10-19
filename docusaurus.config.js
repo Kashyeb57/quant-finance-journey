@@ -99,7 +99,17 @@ const config = {
 
   // Counts notes and interactive labs at build time for the homepage stat rail,
   // so those numbers can never drift from the content again.
-  plugins: ['./plugins/content-stats.js'],
+  plugins: [
+    './plugins/content-stats.js',
+    // lightweight-charts (Terminal chart) is ESM-only and draws on a canvas, so
+    // it only ever loads in the browser. The server render never needs it; an
+    // empty stand-in there keeps the CommonJS server bundle from tripping on it.
+    () => ({
+      name: 'browser-only-charts',
+      configureWebpack: (_config, isServer) =>
+        isServer ? {resolve: {alias: {'lightweight-charts': false}}} : {},
+    }),
+  ],
 
   // Offline search across every note. Builds a Lucene index at compile time
   // and ships it with the static site — no Algolia account, no external service,

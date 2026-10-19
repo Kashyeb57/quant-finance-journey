@@ -13,28 +13,25 @@ import { ChartSkeleton } from './Skeletons';
  * Live price chart.
  *
  * Rendered in-page with TradingView's open-source lightweight-charts library
- * (loaded from CDN, drawn into our own canvas). Candles refresh on a timer:
- * the newest bar is updated in place as it ticks, and completed bars are
- * appended — so the chart moves with the market instead of sitting still.
+ * (drawn into our own canvas). Candles refresh on a timer: the newest bar is
+ * updated in place as it ticks, and completed bars are appended — so the
+ * chart moves with the market instead of sitting still.
+ *
+ * The library ships with the site (npm: lightweight-charts) as its own chunk,
+ * fetched the first time a chart mounts — no public CDN that could leave the
+ * chart blank if it was slow or down. Its default attribution logo stays on:
+ * that is how the Apache-2.0 licence asks to be credited.
  */
 
-const LIB = 'https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
-
-let _libPromise = null;
+let libPromise = null;
 function loadLib() {
-  if (typeof window !== 'undefined' && window.LightweightCharts) {
-    return Promise.resolve(window.LightweightCharts);
+  if (!libPromise) {
+    libPromise = import('lightweight-charts').catch((e) => {
+      libPromise = null; // let the next mount try again
+      throw e;
+    });
   }
-  if (_libPromise) return _libPromise;
-  _libPromise = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = LIB;
-    s.async = true;
-    s.onload = () => resolve(window.LightweightCharts);
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-  return _libPromise;
+  return libPromise;
 }
 
 // Seconds -> "m:ss" (or "h:mm:ss" for long intervals like 1D).
@@ -244,7 +241,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
           crosshair: { mode: 0 },
         });
 
-        const series = chart.addCandlestickSeries({
+        const series = chart.addSeries(LC.CandlestickSeries, {
           upColor: '#22c55e', downColor: '#ef4444',
           borderUpColor: '#22c55e', borderDownColor: '#ef4444',
           wickUpColor: '#22c55e', wickDownColor: '#ef4444',
