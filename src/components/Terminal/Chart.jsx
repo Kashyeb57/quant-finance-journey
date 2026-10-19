@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useColorMode } from '@docusaurus/theme-common';
-import { fetchBars, tfConfig, isCrypto, cryptoGran, TIMEFRAMES, fmtPrice } from './marketData';
+import { fetchBars, sharedSnapshot, tfConfig, isCrypto, cryptoGran, TIMEFRAMES, fmtPrice } from './marketData';
 import { subscribeCryptoTicker } from './cryptoStream';
 import { subscribeStockTrades } from './stockStream';
 import { getGex, getPortfolio } from '../../lib/market';
@@ -22,6 +22,8 @@ import { ChartSkeleton } from './Skeletons';
  * chart blank if it was slow or down. Its default attribution logo stays on:
  * that is how the Apache-2.0 licence asks to be credited.
  */
+
+const SNAP_MS = 2500; // live-candle refresh when the trade stream is unavailable
 
 let libPromise = null;
 function loadLib() {
@@ -278,6 +280,10 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
   useEffect(() => {
     let cancelled = false;
     let unsub = null;
+    let snapTimer = null;
+    let synced = 0;        // newest polled bar already drawn (official from here back)
+    let lastTradeMs = 0;   // when a trade last moved the live candle
+    let lastStreamMs = 0;  // when the trade stream last delivered one
     lastBarRef.current = null;
 
     async function fullLoad() {
@@ -292,25 +298,53 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
       seriesRef.current.setData(bars);
       chartRef.current.timeScale().fitContent();
       lastBarRef.current = bars[bars.length - 1];
+      synced = lastBarRef.current.time;
       setStatus('ok');
       if (onStatus) onStatus({ source });
     }
 
-    // Incremental tick: only touch the newest bar(s), never redraw everything.
+    // Fold a poll into the chart, touching only the newest bars. Alpaca
+    // publishes a bar once its minute has closed, so a poll is usually a
+    // candle behind the live price: it must never roll back the candle live
+    // trades are forming. Finished candles that were drawn from trades are
+    // swapped for the official bar (v5's historical update).
     async function tick() {
       if (document.visibilityState === 'hidden') return;
       const { bars, source } = await fetchBars(ticker, timeframe);
-      if (cancelled || !seriesRef.current || !bars.length) return;
-      const prev = lastBarRef.current;
-      if (!prev) {
-        seriesRef.current.setData(bars);
+      const s = seriesRef.current;
+      if (cancelled || !s || !bars.length) return;
+      if (!lastBarRef.current) {
+        s.setData(bars);
         lastBarRef.current = bars[bars.length - 1];
       } else {
+        const tradesFresh = Date.now() - lastTradeMs < 15000;
+        let rebuild = false;
         for (const b of bars) {
-          if (b.time >= prev.time) seriesRef.current.update(b);
+          if (b.time < synced) continue;
+          const live = lastBarRef.current;
+          if (b.time < live.time) {
+            try {
+              s.update(b, true);
+            } catch (_) {
+              rebuild = true; // a minute with no candle drawn yet
+            }
+          } else if (b.time === live.time) {
+            const bar = tradesFresh
+              ? { ...b, high: Math.max(b.high, live.high), low: Math.min(b.low, live.low), close: live.close }
+              : b;
+            s.update(bar);
+            lastBarRef.current = bar;
+          } else {
+            s.update(b);
+            lastBarRef.current = b;
+          }
         }
-        lastBarRef.current = bars[bars.length - 1];
+        if (rebuild) {
+          const newest = bars[bars.length - 1].time;
+          s.setData([...bars, ...s.data().filter((x) => x.time > newest)]);
+        }
       }
+      synced = bars[bars.length - 1].time;
       setStatus('ok');
       if (onStatus) onStatus({ source });
     }
@@ -337,6 +371,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
             }
             seriesRef.current.update(bar);
             lastBarRef.current = bar;
+            lastTradeMs = Date.now();
             setStatus('ok');
             const y = seriesRef.current.priceToCoordinate(bar.close);
             if (y != null && !Number.isNaN(y)) setCdTop(y + 11);
@@ -349,7 +384,20 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
             // the stream Worker isn't deployed); the WS adds tick-by-tick when open.
             const { pollMs } = tfConfig(timeframe);
             pollRef.current = setInterval(tick, pollMs);
-            unsub = subscribeStockTrades(ticker, applyTrade);
+            unsub = subscribeStockTrades(ticker, (t) => {
+              lastStreamMs = Date.now();
+              applyTrade(t);
+            });
+            // No ticks from the stream (it allows one connection, so another tab
+            // or visitor may hold it): move the live candle from the latest
+            // trade instead. The price header polls the same snapshot, and the
+            // two share each request.
+            snapTimer = setInterval(async () => {
+              if (document.visibilityState === 'hidden' || Date.now() - lastStreamMs < 5000) return;
+              const s = await sharedSnapshot(ticker);
+              if (cancelled || !s || s.last == null || !s.at) return;
+              applyTrade({ price: +s.last, timeSec: Math.floor(Date.parse(s.at) / 1000) });
+            }, SNAP_MS);
           }
         });
       }
@@ -364,6 +412,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
       cancelled = true;
       clearInterval(startTimer);
       if (pollRef.current) clearInterval(pollRef.current);
+      if (snapTimer) clearInterval(snapTimer);
       if (unsub) unsub();
       document.removeEventListener('visibilitychange', onVisible);
     };

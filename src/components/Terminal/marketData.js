@@ -236,6 +236,22 @@ export async function fetchSnapshot(symbol) {
   }
 }
 
+/**
+ * fetchSnapshot, shared between the Terminal's price header and chart. Both
+ * poll the same symbol every couple of seconds; a call made while another is
+ * in flight, or within SHARE_MS of it, gets that same answer, so the page asks
+ * the Worker (and Alpaca, whose free plan caps requests per minute) once.
+ */
+const SHARE_MS = 2000;
+const sharedSnaps = new Map(); // symbol -> { at, promise }
+export function sharedSnapshot(symbol) {
+  const hit = sharedSnaps.get(symbol);
+  if (hit && Date.now() - hit.at < SHARE_MS) return hit.promise;
+  const promise = fetchSnapshot(symbol);
+  sharedSnaps.set(symbol, { at: Date.now(), promise });
+  return promise;
+}
+
 /* --------------------------------------------------------- market status */
 
 /**

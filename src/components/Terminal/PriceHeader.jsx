@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { fetchSnapshot, marketStatus, fmtPrice, fmtVolume, isCrypto } from './marketData';
+import { sharedSnapshot, marketStatus, fmtPrice, fmtVolume, isCrypto } from './marketData';
 import { subscribeCryptoTicker } from './cryptoStream';
 import { subscribeStockTrades } from './stockStream';
 import styles from './styles.module.css';
@@ -46,7 +46,7 @@ export default function PriceHeader({ ticker }) {
 
     async function pull() {
       if (document.visibilityState === 'hidden') return;
-      const s = await fetchSnapshot(ticker);
+      const s = await sharedSnapshot(ticker);
       if (cancelled || !s) return;
       if (prevPrice.current != null && s.last != null && s.last !== prevPrice.current) {
         setFlash(s.last > prevPrice.current ? 'up' : 'down');
