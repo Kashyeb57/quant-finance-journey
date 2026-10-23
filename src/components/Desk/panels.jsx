@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useColorMode } from '@docusaurus/theme-common';
 import { SECTIONS } from '../Terminal/tickers';
 import { isCrypto } from '../Terminal/marketData';
@@ -30,14 +30,20 @@ const CHECK_LABELS = {
   execution_adapter_verified: 'Execution adapter',
 };
 
-export function Panel({ title, meta, className = '', children, actions }) {
+/**
+ * Panel chrome. `bare` drops the frame and the title for use inside a Terminal
+ * section, which shows its own; the meta line and actions stay.
+ */
+export function Panel({ title, meta, className = '', children, actions, bare = false }) {
   return (
-    <section className={`${styles.panel} ${className}`}>
-      <header className={styles.panelHead}>
-        <span className={styles.panelTitle}>{title}</span>
-        {meta && <span className={styles.panelMeta}>{meta}</span>}
-        {actions && <span className={styles.panelActions}>{actions}</span>}
-      </header>
+    <section className={`${styles.panel} ${bare ? styles.bare : ''} ${className}`}>
+      {(!bare || meta || actions) && (
+        <header className={styles.panelHead}>
+          {!bare && <span className={styles.panelTitle}>{title}</span>}
+          {meta && <span className={styles.panelMeta}>{meta}</span>}
+          {actions && <span className={styles.panelActions}>{actions}</span>}
+        </header>
+      )}
       <div className={styles.panelBody}>{children}</div>
     </section>
   );
@@ -163,27 +169,14 @@ export function PositionsCard({ d }) {
   );
 }
 
-/** All six risk cards, in rail order. */
-export function RiskCards({ d }) {
-  return (
-    <>
-      <EquityCard d={d} />
-      <SharpeCard d={d} />
-      <RegimeCard d={d} />
-      <BreadthCard d={d} />
-      <VolCard d={d} />
-      <PositionsCard d={d} />
-    </>
-  );
-}
-
 /* --------------------------------------------------------- big panels */
 
-export function SurfacePanel({ d, className }) {
+export function SurfacePanel({ d, className, bare }) {
   const { colorMode } = useColorMode();
   const { chain, surface, ticker } = d;
   return (
     <Panel
+      bare={bare}
       className={className}
       title="Implied vol surface"
       meta={chain ? `${tickerLabel(ticker)} · ${chain.source === 'polygon' ? 'real-time' : 'CBOE ~15m delayed'} · drag to rotate` : tickerLabel(ticker)}
@@ -195,7 +188,7 @@ export function SurfacePanel({ d, className }) {
   );
 }
 
-export function SatsPanel({ d, className }) {
+export function SatsPanel({ d, className, bare }) {
   const { sats } = d;
   const curves = sats && sats.metrics
     ? ['sats', 'simple', 'fly'].map((k) => ({ key: k, m: sats.metrics[k] })).filter((x) => x.m && Array.isArray(x.m.curve))
@@ -204,6 +197,7 @@ export function SatsPanel({ d, className }) {
   const passed = checks.filter(([, v]) => v).length;
   return (
     <Panel
+      bare={bare}
       className={className}
       title={`SATS model · ${sats ? sats.symbol : ''}`}
       meta={sats ? `fresh ${sats.evaluation.start.slice(5, 10)} → ${sats.evaluation.end.slice(5, 10)} · ${sats.paper_ready ? 'paper-ready' : 'research only'}` : ''}
@@ -235,30 +229,35 @@ export function SatsPanel({ d, className }) {
   );
 }
 
-/** Open-interest depth around spot, toggleable to the portfolio P&L / VaR profile. */
-export function ExposurePanel({ d, className }) {
-  const [mode, setMode] = useState('depth');
-  const { depth, profile, varDollars, ticker } = d;
+/** Open-interest depth around spot: cumulative put OI below it, call OI above. */
+export function DepthPanel({ d, className, bare }) {
+  const { depth, ticker } = d;
   return (
     <Panel
+      bare={bare}
       className={className}
-      title={mode === 'depth' ? `Open-interest depth · ${tickerLabel(ticker)}` : 'Portfolio P&L profile · ±10% spot'}
-      meta={mode === 'depth'
-        ? (depth ? `puts ${Math.round(depth.putTotal).toLocaleString()} ◂ spot ▸ calls ${Math.round(depth.callTotal).toLocaleString()} · ≤30d expiries` : '')
-        : (profile
-          ? `net delta $${fmtPrice(profile.net)} · every underlying moved together · options repriced with Black-Scholes at their own IV`
-            + (profile.unmodeled && profile.unmodeled.length ? ` · not priced: ${profile.unmodeled.join(', ')}` : '')
-          : '')}
-      actions={(
-        <>
-          <button className={`${styles.chip} ${mode === 'depth' ? styles.chipActive : ''}`} onClick={() => setMode('depth')}>OI depth</button>
-          <button className={`${styles.chip} ${mode === 'pnl' ? styles.chipActive : ''}`} onClick={() => setMode('pnl')}>P&amp;L / VaR</button>
-        </>
-      )}
+      title={`Open-interest depth · ${tickerLabel(ticker)}`}
+      meta={depth ? `puts ${Math.round(depth.putTotal).toLocaleString()} ◂ spot ▸ calls ${Math.round(depth.callTotal).toLocaleString()} · ≤30d expiries` : ''}
     >
-      {mode === 'depth'
-        ? (depth ? <DepthWings depth={depth} /> : <Empty>{isCrypto(ticker) ? 'No listed options for crypto' : 'Loading option chain…'}</Empty>)
-        : (profile ? <PnlProfile profile={profile} varDollars={varDollars} /> : <Empty>No open positions to stress</Empty>)}
+      {depth ? <DepthWings depth={depth} /> : <Empty>{isCrypto(ticker) ? 'No listed options for crypto' : 'Loading option chain…'}</Empty>}
+    </Panel>
+  );
+}
+
+/** Portfolio P&L if every underlying moves the same %, with the 1-day 95% VaR band. */
+export function PnlPanel({ d, className, bare }) {
+  const { profile, varDollars } = d;
+  return (
+    <Panel
+      bare={bare}
+      className={className}
+      title="Portfolio P&L profile · ±10% spot"
+      meta={profile
+        ? `net delta $${fmtPrice(profile.net)} · every underlying moved together · options repriced with Black-Scholes at their own IV`
+          + (profile.unmodeled && profile.unmodeled.length ? ` · not priced: ${profile.unmodeled.join(', ')}` : '')
+        : ''}
+    >
+      {profile ? <PnlProfile profile={profile} varDollars={varDollars} /> : <Empty>No open positions to stress</Empty>}
     </Panel>
   );
 }

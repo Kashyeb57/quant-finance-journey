@@ -6,11 +6,11 @@ import Terminal from '@site/src/components/Terminal';
 
 export default function TerminalPage() {
   return (
-    <Layout title="Terminal" description="A market terminal — live stock charts and news.">
+    <Layout title="Terminal" description="A market terminal: live stock charts, news, option chains with greeks, expected moves, volatility and risk.">
       <PageHeader
         eyebrow="Live · market data"
         title="Market Terminal"
-        subtitle="Stock charts and news, side by side."
+        subtitle="Charts, news, options and risk. Collapse or reorder any section."
       />
       <main>
         <Terminal />

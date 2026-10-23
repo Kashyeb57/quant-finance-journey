@@ -1229,3 +1229,90 @@
 @media (prefers-reduced-motion: reduce) {
   .skCandles { animation: none; }
 }
+
+/* ── Page sections: movable, collapsible blocks (chart & news, options, …) ── */
+.section + .section { margin-top: 1.1rem; }
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+.sectionToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.15rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--tx-secondary);
+  font-family: var(--ff-mono, var(--ifm-font-family-monospace));
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+}
+.sectionToggle:hover { color: var(--ifm-color-primary); }
+.sectionChevron { width: 0.8rem; color: var(--tx-muted); }
+.sectionToggle::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  margin-left: 0.6rem;
+  background: var(--line);
+}
+.sectionTools { display: inline-flex; gap: 0.25rem; flex: none; }
+.sectionTool {
+  width: 1.7rem;
+  height: 1.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--tx-secondary);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.sectionTool:hover:not(:disabled) { color: var(--ifm-color-primary); border-color: var(--ifm-color-primary); }
+.sectionTool:disabled { opacity: 0.3; cursor: default; }
+.sectionClosed .sectionHead { margin-bottom: 0; }
+.sectionBody .portfolio { margin-top: 0; }
+.resetLayout {
+  margin-left: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ifm-color-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Analysis decks (options, volatility, risk, market): same chrome as the
+   chart + news deck, with a fixed working height per row. */
+.rowDeck { height: var(--row-h, 460px); min-height: 0; }
+.leftSection { flex: var(--left-flex, 1.4) 1 0; }
+.rightSection { flex: var(--right-flex, 1) 1 0; border-left: 1px solid var(--line); }
+.resizer + .rightSection { border-left: 0; }
+.deckTicker {
+  font-family: var(--ff-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+  letter-spacing: 0.03em;
+}
+@media (max-width: 860px) {
+  .rowDeck { height: auto; }
+  .leftSection, .rightSection { flex: none; }
+  .rightSection { border-left: 0; border-top: 1px solid var(--line); }
+  .leftSection:not(.collapsed) .deckBody,
+  .rightSection:not(.collapsed) .deckBody { height: calc(var(--row-h, 460px) - 2.8rem); }
+}

@@ -1,6 +1,7 @@
-/* Quant Desk — multi-panel workstation grid */
+/* Analysis panels shown in the Terminal's sections (options, volatility, risk,
+   market). Colours live on .vars, which each section's content sits inside. */
 
-.desk {
+.vars {
   --desk-up: #22c55e;
   --desk-down: #ef4444;
   --desk-put: #38bdf8;
@@ -12,11 +13,12 @@
   --desk-grid-strong: rgba(0, 0, 0, 0.25);
   --desk-text-dim: #64748b;
 
-  max-width: 2200px;
-  margin: 0 auto;
-  padding: 1rem 1.25rem 3rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
-[data-theme='dark'] .desk {
+[data-theme='dark'] .vars {
   --desk-up: #4ade80;
   --desk-down: #f87171;
   --desk-put: #38bdf8;
@@ -30,15 +32,7 @@
 .up { color: var(--desk-up); }
 .down { color: var(--desk-down); }
 
-/* ---------- toolbar ---------- */
-.toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 0.9rem;
-}
-.sections, .tickers { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.chip, .tick {
+.chip {
   white-space: nowrap;
   font-family: var(--ff-mono, monospace);
   font-size: 0.7rem;
@@ -53,69 +47,27 @@
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.chip:hover, .tick:hover { color: var(--ifm-font-color-base); }
-.chipActive, .tickActive {
+.chip:hover { color: var(--ifm-font-color-base); }
+.chipActive {
   color: var(--desk-accent);
   border-color: color-mix(in srgb, var(--desk-accent) 45%, transparent);
   background: color-mix(in srgb, var(--desk-accent) 10%, transparent);
 }
-.tick { display: inline-flex; gap: 0.4rem; border-radius: 6px; text-transform: none; font-size: 0.74rem; }
-.tick span { font-weight: 500; font-size: 0.66rem; }
 
-/* ---------- grid ---------- */
-.grid {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: 250px minmax(0, 1.7fr) minmax(0, 1fr);
-  grid-template-rows: 380px 280px 470px 320px;
-  grid-template-areas:
-    'rail chart surface'
-    'rail chart sats'
-    'rail chain moves'
-    'rail bottom bottom';
-}
-.rail {
-  grid-area: rail;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+/* Small cards laid out inside one section: a responsive grid, or a column. */
+.cardGrid {
+  flex: 1;
   min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  align-content: start;
+  gap: 0.75rem;
+  padding: 0.75rem;
   overflow-y: auto;
   scrollbar-width: thin;
 }
-.rail > .panel { flex: none; }
-.chartPanel { grid-area: chart; display: flex; flex-direction: column; min-height: 0; }
-.chartPanel > :last-child { flex: 1; min-height: 0; }
-.surfacePanel { grid-area: surface; }
-.satsPanel { grid-area: sats; }
-.bottomPanel { grid-area: bottom; }
-.chainPanel { grid-area: chain; }
-.movePanel { grid-area: moves; }
-
-@media (max-width: 1200px) {
-  .grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: 560px 340px 260px 480px 420px 300px auto;
-    grid-template-areas:
-      'chart chart'
-      'surface sats'
-      'surface sats'
-      'chain chain'
-      'moves moves'
-      'bottom bottom'
-      'rail rail';
-  }
-  .rail { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); overflow: visible; }
-}
-@media (max-width: 760px) {
-  .desk { padding: 0.75rem 16px 2rem; }
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 520px 320px auto 480px 420px 300px auto;
-    grid-template-areas: 'chart' 'surface' 'sats' 'chain' 'moves' 'bottom' 'rail';
-  }
-  .rail { grid-template-columns: minmax(0, 1fr); }
-}
+.stack { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.6rem; padding: 0.6rem 0.75rem 0.75rem; }
+.stack > .grow { flex: 1; min-height: 0; }
 
 /* ---------- panel chrome ---------- */
 .panel {
@@ -128,6 +80,9 @@
   border-radius: 10px;
   overflow: hidden;
 }
+/* Inside a Terminal section, which already draws the frame and the title. */
+.panel.bare { flex: 1; background: transparent; border: 0; border-radius: 0; }
+.panel.bare .panelHead { min-height: 30px; padding-top: 0.45rem; }
 .panelHead {
   display: flex;
   align-items: center;

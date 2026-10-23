@@ -15,7 +15,7 @@ import {
  * on failure so a blip never blanks a panel.
  */
 
-const LEDGER_MS = 30000;
+const LEDGER_MS = 60000;  // 5 Alpaca calls per poll; the Paper Portfolio section polls positions faster
 const QUOTES_MS = 30000;
 const GEX_MS = 300000;   // the Worker caches the chain for 5 minutes anyway
 const DAILY_MS = 300000;
@@ -23,7 +23,14 @@ const SATS_MS = 600000;
 
 const ALL_EQUITIES = [...new Set(SECTIONS.flatMap((s) => s.tickers))].filter((t) => !isCrypto(t));
 
-export default function useDeskData(ticker) {
+/**
+ * `need` says which Terminal sections are open, so a closed one costs nothing:
+ *   risk   -> ledger (equity, positions, P&L) and quotes (to price options)
+ *   vol    -> the 30-day chain (IV surface, ATM IV, OI depth) and daily bars
+ *   market -> quotes (regime, breadth) and the SATS evaluation
+ */
+export default function useDeskData(ticker, need = { risk: true, vol: true, market: true }) {
+  const { risk = false, vol = false, market = false } = need;
   const [ledger, setLedger] = useState(null);
   const [quotes, setQuotes] = useState({});
   const [chain, setChain] = useState(null);
@@ -35,7 +42,7 @@ export default function useDeskData(ticker) {
       const d = await getLedger({ signal });
       if (!cancelled() && d && d.account) setLedger(d);
     } catch (_) { /* cards show "not connected" */ }
-  }, LEDGER_MS);
+  }, LEDGER_MS, [], { enabled: risk });
 
   // Underlyings of any option positions, so the P&L profile can price them.
   const optionRoots = useMemo(() => {
@@ -48,7 +55,7 @@ export default function useDeskData(ticker) {
       const q = await getQuotes([...ALL_EQUITIES, ...optionRoots], { signal });
       if (!cancelled()) setQuotes(q);
     } catch (_) { /* keep last */ }
-  }, QUOTES_MS, [optionRoots.join(',')]);
+  }, QUOTES_MS, [optionRoots.join(',')], { enabled: risk || market });
 
   usePolling(async ({ signal, cancelled }) => {
     if (isCrypto(ticker)) { setChain(null); return; }
@@ -56,19 +63,19 @@ export default function useDeskData(ticker) {
       const d = await getGex(ticker, '30d', { signal });
       if (!cancelled()) setChain(d && d.rows ? d : null);
     } catch (_) { if (!cancelled()) setChain(null); }
-  }, GEX_MS, [ticker]);
+  }, GEX_MS, [ticker], { enabled: vol });
 
   usePolling(async ({ cancelled }) => {
     const { bars } = await fetchBars(ticker, '1Day');
     if (!cancelled()) setDaily(bars || []);
-  }, DAILY_MS, [ticker]);
+  }, DAILY_MS, [ticker], { enabled: vol });
 
   usePolling(async ({ signal, cancelled }) => {
     try {
       const r = await fetch('/brain-sats-evaluation.json', { signal });
       if (r.ok && !cancelled()) setSats(await r.json());
     } catch (_) { /* panel shows empty state */ }
-  }, SATS_MS);
+  }, SATS_MS, [], { enabled: market });
 
   const history = useMemo(() => (ledger && ledger.history) || [], [ledger]);
   const equityVals = useMemo(() => history.map((p) => p.value), [history]);

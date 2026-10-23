@@ -71,7 +71,7 @@ function ExpiryStrip({ expiries, exp, onPick }) {
   );
 }
 
-export function OptionChainPanel({ oc, ticker, exp, setExp, className }) {
+export function OptionChainPanel({ oc, ticker, setExp, className, bare }) {
   const [view, setView] = useState('quotes');
   const scrollRef = useRef(null);
   const atmRef = useRef(null);
@@ -143,6 +143,7 @@ export function OptionChainPanel({ oc, ticker, exp, setExp, className }) {
 
   return (
     <Panel
+      bare={bare}
       className={className}
       title={`Option chain · ${tickerLabel(ticker)}`}
       meta={chain && current ? `${shortDate(chain.exp)} · ${current.days}d · CBOE ~15m delayed${asOfLabel(chain.asOf) ? ` · ${asOfLabel(chain.asOf)}` : ''}` : ''}
@@ -164,13 +165,14 @@ export function OptionChainPanel({ oc, ticker, exp, setExp, className }) {
  * (about 0.8 standard deviations under a normal distribution, so ±straddle
  * holds roughly 57% of outcomes). Clicking an expiry opens it in the chain.
  */
-export function ExpectedMovePanel({ oc, ticker, exp, setExp, className }) {
+export function ExpectedMovePanel({ oc, ticker, exp, setExp, className, bare }) {
   const { chain } = oc;
   const rows = chain ? chain.expiries.filter((e) => e.move != null).slice(0, 12) : [];
   const shown = chain ? chain.exp : exp;
   const term = rows.map((e) => e.atmIv).filter((v) => v != null);
   return (
     <Panel
+      bare={bare}
       className={className}
       title={`Expected move · ${tickerLabel(ticker)}`}
       meta={chain ? `from the ATM straddle · spot ${fmtPrice(chain.spot)}` : ''}

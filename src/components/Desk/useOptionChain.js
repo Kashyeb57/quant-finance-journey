@@ -15,7 +15,7 @@ import usePolling from '../../lib/usePolling';
 
 const CHAIN_MS = 120000;
 
-export default function useOptionChain(ticker, exp) {
+export default function useOptionChain(ticker, exp, enabled = true) {
   const [chain, setChain] = useState(null);
   const [error, setError] = useState(false);
 
@@ -32,7 +32,7 @@ export default function useOptionChain(ticker, exp) {
     } catch (_) {
       if (!cancelled()) setError(true);
     }
-  }, CHAIN_MS, [ticker, exp]);
+  }, CHAIN_MS, [ticker, exp], { enabled });
 
   const stale = !!chain && (chain.symbol !== ticker || (exp && chain.exp !== exp));
   return { chain, error, stale };
