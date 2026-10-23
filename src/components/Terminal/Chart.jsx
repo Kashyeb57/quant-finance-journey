@@ -116,11 +116,38 @@ function gexLevels(rows, S) {
   };
 }
 
-export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
+// Exponential moving average over candle closes, seeded with the first close.
+function emaLine(bars, n) {
+  const k = 2 / (n + 1);
+  let e = null;
+  return bars.map((b) => {
+    e = e == null ? b.close : b.close * k + e * (1 - k);
+    return { time: b.time, value: e };
+  });
+}
+
+// Volume-weighted average price that resets at each Central-Time session.
+// Bars without volume (live candles drawn from trades) weigh as one share so
+// the line still reaches the newest candle.
+function sessionVwap(bars) {
+  const dayOf = (t) => new Date(t * 1000).toLocaleDateString('en-US', { timeZone: 'America/Chicago' });
+  let day = null, pv = 0, vol = 0;
+  return bars.map((b) => {
+    const d = dayOf(b.time);
+    if (d !== day) { day = d; pv = 0; vol = 0; }
+    const v = b.volume || 1;
+    pv += ((b.high + b.low + b.close) / 3) * v;
+    vol += v;
+    return { time: b.time, value: pv / vol };
+  });
+}
+
+export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef, overlays = false }) {
   const wrapRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
   const lastBarRef = useRef(null);
+  const overlayRef = useRef(null); // { ema20, ema50, vwap } line series when `overlays` is on
   const pollRef = useRef(null);
   const areaRef = useRef(null);
   const { colorMode } = useColorMode();
@@ -252,6 +279,18 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         chartRef.current = chart;
         seriesRef.current = series;
 
+        if (overlays) {
+          const line = (color, style) => chart.addSeries(LC.LineSeries, {
+            color, lineWidth: 1, lineStyle: style, priceLineVisible: false,
+            lastValueVisible: false, crosshairMarkerVisible: false,
+          });
+          overlayRef.current = {
+            ema20: line('#38bdf8', 0),
+            ema50: line('#a78bfa', 0),
+            vwap: line('#facc15', 2),
+          };
+        }
+
         resizeObs = new ResizeObserver(() => {
           if (chartRef.current && el.clientWidth) {
             chartRef.current.applyOptions({
@@ -271,6 +310,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         chartRef.current.remove();
         chartRef.current = null;
         seriesRef.current = null;
+        overlayRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -418,6 +458,25 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticker, timeframe, colorMode]);
+
+  /* ---- EMA 20/50 + session VWAP, recomputed from the drawn candles ---- */
+  // Reads the candle series rather than hooking every update path above, so
+  // the overlays follow polls, trade ticks and rebuilds alike.
+  useEffect(() => {
+    if (!overlays) return undefined;
+    const redraw = () => {
+      const s = seriesRef.current, o = overlayRef.current;
+      if (!s || !o) return;
+      const bars = s.data();
+      if (!bars.length) return;
+      o.ema20.setData(emaLine(bars, 20));
+      o.ema50.setData(emaLine(bars, 50));
+      o.vwap.setData(timeframe === '1Day' ? [] : sessionVwap(bars));
+    };
+    redraw();
+    const id = setInterval(redraw, 2000);
+    return () => clearInterval(id);
+  }, [overlays, ticker, timeframe, colorMode]);
 
   /* ---- countdown to the current candle's close (updates every second) ---- */
   useEffect(() => {
