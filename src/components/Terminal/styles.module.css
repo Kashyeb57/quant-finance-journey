@@ -1230,61 +1230,128 @@
   .skCandles { animation: none; }
 }
 
-/* ── Page sections: movable, collapsible blocks (chart & news, options, …) ── */
-.section + .section { margin-top: 1.1rem; }
-.sectionHead {
+/* ── The board: every block in one bordered panel, joined by dividers ── */
+.board {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--ifm-background-surface-color);
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.boardRow + .boardRow { border-top: 1px solid var(--line); }
+
+/* Full rows: the chart + news deck and the portfolio, drawn without their own
+   frame so they sit flush inside the board. */
+.fullRow .deck,
+.fullRow .portfolio { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+.rowStrip {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.45rem;
+  padding: 0.2rem 0.6rem 0.2rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--ifm-color-emphasis-100);
 }
-.sectionToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
+.rowStripTitle {
   flex: 1;
-  min-width: 0;
-  padding: 0.15rem 0;
-  border: 0;
-  background: transparent;
-  color: var(--tx-secondary);
   font-family: var(--ff-mono, var(--ifm-font-family-monospace));
-  font-size: 0.7rem;
+  font-size: 0.66rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  cursor: pointer;
-  text-align: left;
+  color: var(--tx-muted);
 }
-.sectionToggle:hover { color: var(--ifm-color-primary); }
-.sectionChevron { width: 0.8rem; color: var(--tx-muted); }
-.sectionToggle::after {
-  content: '';
+
+/* Tile rows: tiles side by side at the row's working height. */
+.tileRow { display: flex; height: var(--row-h, 420px); }
+.tile {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+}
+.tile + .tile { border-left: 1px solid var(--line); }
+.resizer + .tile { border-left: 0; }
+.tileHead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.6rem 0 0;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+.tileTitle {
   flex: 1;
-  height: 1px;
-  margin-left: 0.6rem;
-  background: var(--line);
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0 0.7rem 1rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
 }
-.sectionTools { display: inline-flex; gap: 0.25rem; flex: none; }
-.sectionTool {
-  width: 1.7rem;
-  height: 1.7rem;
+.tileHead:hover { background: var(--ifm-color-emphasis-100); }
+.tileTools { display: inline-flex; align-items: center; gap: 0.15rem; flex: none; }
+.tileTool {
+  width: 1.45rem;
+  height: 1.45rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--line);
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: var(--r-sm);
   background: transparent;
-  color: var(--tx-secondary);
-  font-size: 0.9rem;
+  color: var(--tx-muted);
+  font-size: 0.8rem;
   line-height: 1;
   cursor: pointer;
-  transition: color 0.12s ease, border-color 0.12s ease;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.sectionTool:hover:not(:disabled) { color: var(--ifm-color-primary); border-color: var(--ifm-color-primary); }
-.sectionTool:disabled { opacity: 0.3; cursor: default; }
-.sectionClosed .sectionHead { margin-bottom: 0; }
-.sectionBody .portfolio { margin-top: 0; }
+/* Move arrows show on hover or keyboard focus, so headers stay quiet. */
+.tileHead:hover .tileTool, .tileHead:focus-within .tileTool, .rowStrip .tileTool { opacity: 1; }
+.tileTool:hover:not(:disabled) { color: var(--ifm-color-primary); border-color: var(--line); }
+.tileTool:disabled { opacity: 0 !important; cursor: default; }
+@media (hover: none) { .tileTool { opacity: 1; } }
+.tileHead .collapseIcon {
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.tileHead:hover .collapseIcon { color: var(--ifm-color-primary); }
+.tileBody { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+/* A collapsed tile is a slim rail; its neighbours take the width. The
+   selectors carry two classes on purpose: the CSS minifier merges rules with
+   identical declarations and can move the plain .tile rule after these, so
+   they must win on specificity, not on source order. */
+.tile.tileClosed { flex: 0 0 auto; }
+.tileClosed .tileHead, .tileClosed .tileBody { display: none; }
+.tileClosed .rail { display: flex; }
+/* Every tile in the row collapsed: the row folds to their headers. */
+.rowFolded { height: auto; }
+.rowFolded .tile.tileClosed { flex: 1 1 0; }
+.rowFolded .tileClosed .tileHead { display: flex; border-bottom: 0; }
+.rowFolded .tileClosed .rail { display: none; }
+
+.deckTicker {
+  font-family: var(--ff-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ifm-color-primary);
+  letter-spacing: 0.03em;
+}
 .resetLayout {
   margin-left: 0.35rem;
   padding: 0;
@@ -1296,23 +1363,16 @@
   cursor: pointer;
 }
 
-/* Analysis decks (options, volatility, risk, market): same chrome as the
-   chart + news deck, with a fixed working height per row. */
-.rowDeck { height: var(--row-h, 460px); min-height: 0; }
-.leftSection { flex: var(--left-flex, 1.4) 1 0; }
-.rightSection { flex: var(--right-flex, 1) 1 0; border-left: 1px solid var(--line); }
-.resizer + .rightSection { border-left: 0; }
-.deckTicker {
-  font-family: var(--ff-mono);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--ifm-color-primary);
-  letter-spacing: 0.03em;
-}
+/* Narrow screens: tiles stack; a collapsed tile is just its header. */
 @media (max-width: 860px) {
-  .rowDeck { height: auto; }
-  .leftSection, .rightSection { flex: none; }
-  .rightSection { border-left: 0; border-top: 1px solid var(--line); }
-  .leftSection:not(.collapsed) .deckBody,
-  .rightSection:not(.collapsed) .deckBody { height: calc(var(--row-h, 460px) - 2.8rem); }
+  .tileRow { flex-direction: column; height: auto; }
+  /* Stacked, each tile takes its own height instead of sharing the row's. */
+  .tileRow > .tile { flex: none; }
+  .tile + .tile { border-left: 0; border-top: 1px solid var(--line); }
+  .tileRow .resizer { display: none; }
+  .tile:not(.tileClosed) .tileBody { height: calc(var(--tile-h, 420px) - 2.8rem); flex: none; }
+  .tile.tileClosed, .rowFolded .tile.tileClosed { flex: none; }
+  .tileClosed .tileHead { display: flex; border-bottom: 0; }
+  .tileClosed .rail { display: none; }
+  .tileTool { opacity: 1; }
 }

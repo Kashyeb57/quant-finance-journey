@@ -53,11 +53,11 @@ const Empty = ({ children }) => <div className={styles.empty}>{children}</div>;
 
 /* ------------------------------------------------------------ risk cards */
 
-export function EquityCard({ d }) {
+export function EquityCard({ d, bare }) {
   const { acct, equityVals } = d;
   const falling = equityVals.length > 1 && equityVals[equityVals.length - 1] < equityVals[0];
   return (
-    <Panel title="Net equity" meta="paper">
+    <Panel bare={bare} title="Net equity" meta="paper">
       {acct ? (
         <>
           <div className={styles.bigNum}>${fmtPrice(acct.equity)}</div>
@@ -71,10 +71,10 @@ export function EquityCard({ d }) {
   );
 }
 
-export function SharpeCard({ d }) {
+export function SharpeCard({ d, bare }) {
   const { sharpe, dd } = d;
   return (
-    <Panel title="Sharpe · drawdown" meta="20d rolling">
+    <Panel bare={bare} title="Sharpe · drawdown" meta="20d rolling">
       {sharpe.length ? (
         <>
           <div className={styles.pair}>
@@ -90,10 +90,10 @@ export function SharpeCard({ d }) {
   );
 }
 
-export function RegimeCard({ d }) {
+export function RegimeCard({ d, bare }) {
   const { breadth, quotes } = d;
   return (
-    <Panel title="Market regime" meta="today, by sector">
+    <Panel bare={bare} title="Market regime" meta="today, by sector">
       {breadth.some((b) => b.total) ? (
         <div className={styles.dots}>
           {SECTIONS.map((s) => (
@@ -114,9 +114,9 @@ export function RegimeCard({ d }) {
   );
 }
 
-export function BreadthCard({ d }) {
+export function BreadthCard({ d, bare }) {
   return (
-    <Panel title="Sector breadth" meta="% names up">
+    <Panel bare={bare} title="Sector breadth" meta="% names up">
       <div className={styles.vbars}>
         {d.breadth.map((b) => {
           const f = b.total ? b.up / b.total : 0;
@@ -132,10 +132,10 @@ export function BreadthCard({ d }) {
   );
 }
 
-export function VolCard({ d }) {
+export function VolCard({ d, bare }) {
   const { rv, iv, rvSeries, ticker } = d;
   return (
-    <Panel title="Realized vs implied" meta={tickerLabel(ticker)}>
+    <Panel bare={bare} title="Realized vs implied" meta={tickerLabel(ticker)}>
       <div className={styles.pair}>
         <div><span className={styles.k}>RV 20d</span><span className={styles.v}>{pct(rv)}</span></div>
         <div><span className={styles.k}>ATM IV</span><span className={styles.v}>{pct(iv)}</span></div>
@@ -151,9 +151,9 @@ export function VolCard({ d }) {
   );
 }
 
-export function PositionsCard({ d }) {
+export function PositionsCard({ d, bare }) {
   return (
-    <Panel title="Top positions" meta="% of gross">
+    <Panel bare={bare} title="Top positions" meta="% of gross">
       {d.weights.length ? (
         <ul className={styles.hbars}>
           {d.weights.map((p) => (

@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import { SECTIONS } from './tickers';
 import { ChartSkeleton, NewsSkeleton, PortfolioSkeletonBody, PriceSkeleton } from './Skeletons';
-import Section from './Section';
-import useTerminalLayout from './useTerminalLayout';
-import { OptionsSection, VolatilitySection, RiskSection, MarketSection } from './AnalysisSections';
+import Board from './Board';
+import useBoardLayout from './useBoardLayout';
+import { neededData } from './boardTiles';
 import useDeskData from '../Desk/useDeskData';
 import useOptionChain from '../Desk/useOptionChain';
 import styles from './styles.module.css';
@@ -16,9 +16,10 @@ import styles from './styles.module.css';
  * to a slim rail (the chart stays mounted, so collapsing doesn't reload it) and
  * the other section expands to fill; at least one stays open.
  *
- * Below it sit more decks built the same way: options (chain + expected move),
- * volatility, risk and market, then the paper portfolio. Every block can be
- * collapsed and moved up or down; the layout is remembered in this browser.
+ * The deck is the first row of one connected board (./Board): option chain,
+ * expected move, IV surface, OI depth, P&L, SATS, regime and account tiles sit
+ * side by side below it, then the paper portfolio. Every tile collapses and
+ * moves; the layout is remembered in this browser.
  *
  * Tickers are grouped into sectors (mirrors the Robinhood watchlists +
  * the space / neocloud themes). Pick a sector tab → its symbols appear;
@@ -28,16 +29,6 @@ import styles from './styles.module.css';
 
 const tickerLabel = (t) => (t === 'BTC-USD' ? '₿ BTC' : t);
 const sectionOf = (t) => (SECTIONS.find((s) => s.tickers.includes(t)) || SECTIONS[0]).name;
-
-const BLOCKS = ['chart', 'options', 'volatility', 'risk', 'market', 'portfolio'];
-const BLOCK_TITLES = {
-  chart: 'Chart & news',
-  options: 'Options',
-  volatility: 'Volatility',
-  risk: 'Risk',
-  market: 'Market & model',
-  portfolio: 'Paper portfolio',
-};
 
 export default function Terminal() {
   const [ticker, setTickerState] = useState('AMD');
@@ -55,15 +46,12 @@ export default function Terminal() {
   const [split, setSplit] = useState(0.62); // chart's share of the width (0–1)
   const draggingRef = useRef(false);
 
-  // Section order + collapsed state, and the data behind the analysis
-  // sections; each feed only polls while a section that shows it is open.
-  const layout = useTerminalLayout(BLOCKS);
-  const d = useDeskData(ticker, {
-    risk: layout.isOpen('risk'),
-    vol: layout.isOpen('volatility'),
-    market: layout.isOpen('market'),
-  });
-  const oc = useOptionChain(ticker, exp, layout.isOpen('options'));
+  // Board layout (rows of tiles, collapsed ones) and the data behind the
+  // tiles; each feed only polls while a tile that shows it is open.
+  const layout = useBoardLayout();
+  const need = neededData(layout.isOpen);
+  const d = useDeskData(ticker, { risk: !!need.risk, vol: !!need.vol, market: !!need.market });
+  const oc = useOptionChain(ticker, exp, !!need.options);
 
   // Keep at least one section open — you can't collapse the last one.
   const toggleChart = () => { if (chartOpen && !newsOpen) return; setChartOpen(!chartOpen); };
@@ -134,18 +122,13 @@ export default function Terminal() {
         ))}
       </div>
 
-      {layout.order.map((id, i) => (
-        <Section
-          key={id}
-          id={id}
-          title={BLOCK_TITLES[id]}
-          index={i}
-          count={layout.order.length}
-          open={layout.isOpen(id)}
-          onToggle={() => layout.toggle(id)}
-          onMove={(step) => layout.move(id, step)}
-        >
-          {id === 'chart' && (
+      <Board
+        layout={layout}
+        ctx={{ d, oc, ticker, exp, setExp }}
+        full={{
+          chart: {
+            title: 'Chart & news',
+            render: () => (
               <div className={styles.deck} ref={deckRef} style={chartOpen && newsOpen ? {'--chart-flex': split, '--news-flex': 1 - split} : undefined}>
                 <section className={`${styles.deckSection} ${styles.chartSection} ${chartOpen ? '' : styles.collapsed}`}>
                   <button type="button" className={styles.deckHead} onClick={toggleChart} aria-expanded={chartOpen} title={chartOpen ? 'Collapse chart' : 'Expand chart'}>
@@ -202,21 +185,21 @@ export default function Terminal() {
                   </button>
                 </section>
               </div>
-          )}
-          {id === 'options' && <OptionsSection oc={oc} ticker={ticker} exp={exp} setExp={setExp} />}
-          {id === 'volatility' && <VolatilitySection d={d} />}
-          {id === 'risk' && <RiskSection d={d} />}
-          {id === 'market' && <MarketSection d={d} />}
-          {id === 'portfolio' && (
+            ),
+          },
+          portfolio: {
+            title: 'Paper portfolio',
+            render: () => (
               <BrowserOnly fallback={<div className={styles.portfolio}><PortfolioSkeletonBody /></div>}>
                 {() => {
                   const Portfolio = require('./Portfolio').default;
                   return <Portfolio />;
                 }}
               </BrowserOnly>
-          )}
-        </Section>
-      ))}
+            ),
+          },
+        }}
+      />
 
       <p className={styles.note}>
         Symbols are grouped by sector — pick a sector, then a symbol; every
