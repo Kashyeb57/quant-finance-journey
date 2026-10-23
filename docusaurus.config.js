@@ -184,6 +184,7 @@ const config = {
             label: 'Desk',
             position: 'left',
             items: [
+              {to: '/desk', label: 'Quant Desk'},
               {to: '/terminal', label: 'Terminal'},
               {to: '/portfolio', label: 'Portfolio'},
               {to: '/brain', label: 'Brain'},

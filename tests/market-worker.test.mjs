@@ -202,3 +202,67 @@ test('Brain preflight answers with the owner header allowed', async () => {
   assert.equal(res.headers.get('Access-Control-Allow-Origin'), SITE);
   assert.match(res.headers.get('Access-Control-Allow-Headers'), /X-Trade-Token/);
 });
+
+// ── Option chain for the Quant Desk ──────────────────────────────────────────
+// A fake CBOE chain: spot 100, two expiries (7 and 35 days out), strikes 50-150.
+function cboeChain() {
+  const day = 86400000;
+  const nyToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const start = Date.parse(nyToday + 'T00:00:00Z');
+  const occDate = (ms) => new Date(ms).toISOString().slice(2, 10).replace(/-/g, '');
+  const options = [];
+  for (const days of [7, 35]) {
+    const d = occDate(start + days * day);
+    for (const k of [50, 90, 95, 100, 105, 110, 150]) {
+      const strike = String(k * 1000).padStart(8, '0');
+      // ATM straddle at 100: call 2.5 + put 2.5 (7d), 4 + 4 (35d).
+      const atm = days === 7 ? 2.5 : 4;
+      const callMid = k === 100 ? atm : Math.max(0.05, 100 - k + 1);
+      const putMid = k === 100 ? atm : Math.max(0.05, k - 100 + 1);
+      options.push({ option: `AMD${d}C${strike}`, bid: callMid - 0.05, ask: callMid + 0.05, last_trade_price: callMid, iv: 0.5, delta: 0.5, gamma: 0.02, theta: -0.1, vega: 0.08, volume: 10, open_interest: 100 });
+      options.push({ option: `AMD${d}P${strike}`, bid: putMid - 0.05, ask: putMid + 0.05, last_trade_price: putMid, iv: 0.52, delta: -0.5, gamma: 0.02, theta: -0.1, vega: 0.08, volume: 5, open_interest: 50 });
+    }
+  }
+  return JSON.stringify({ timestamp: '2026-10-22 15:00:00', data: { current_price: 100, iv30: 51.2, iv30_change: -1.3, options } });
+}
+
+test('the option chain returns one expiry, a ±25% strike band and every expiry\'s expected move', async () => {
+  upstream = () => ({ body: cboeChain() });
+  const res = await call('/_m/chain?symbol=AMD');
+  assert.equal(res.status, 200);
+  const j = await res.json();
+  assert.equal(j.spot, 100);
+  assert.equal(j.iv30, 51.2);
+  assert.equal(j.asOf, '2026-10-22T15:00:00Z', 'CBOE\'s zone-less stamp is UTC');
+  assert.equal(j.expiries.length, 2);
+  assert.equal(j.exp, j.expiries[0].date, 'defaults to the front expiry');
+  assert.deepEqual(j.rows.map((r) => r.k), [90, 95, 100, 105, 110], 'strikes 50 and 150 fall outside ±25%');
+  const atm = j.rows.find((r) => r.k === 100);
+  assert.equal(atm.call.mid, 2.5);
+  assert.equal(atm.put.delta, -0.5);
+  assert.deepEqual([j.expiries[0].days, j.expiries[0].move, j.expiries[0].movePct], [7, 5, 5]);
+  assert.deepEqual([j.expiries[1].days, j.expiries[1].move], [35, 8]);
+});
+
+test('the option chain serves a requested expiry and refuses bad input without an upstream call', async () => {
+  upstream = () => ({ body: cboeChain() });
+  const first = await (await call('/_m/chain?symbol=AMD')).json();
+  const later = first.expiries[1].date;
+  const res = await call(`/_m/chain?symbol=AMD&exp=${later}`);
+  assert.equal((await res.json()).exp, later);
+  calls = [];
+  for (const bad of ['/_m/chain?symbol=AMD&exp=next-week', '/_m/chain?symbol=amd%3Cscript%3E']) {
+    assert.equal((await call(bad)).status, 400, bad);
+  }
+  assert.deepEqual(calls, []);
+});
+
+test('the option chain is cached and keeps CORS for the site only', async () => {
+  upstream = () => ({ body: cboeChain() });
+  await call('/_m/chain?symbol=AMD');
+  calls = [];
+  const res = await call('/_m/chain?symbol=AMD', { headers: { Origin: 'https://evil.example.com' } });
+  assert.equal(res.status, 200);
+  assert.deepEqual(calls, [], 'served from cache');
+  assert.equal(res.headers.get('Access-Control-Allow-Origin'), SITE);
+});

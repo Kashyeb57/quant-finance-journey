@@ -772,6 +772,116 @@ async function handleGex(request, env, url) {
   return resp;
 }
 
+// ─── Option chain for the Quant Desk (GET /_m/chain?symbol=AMD&exp=2026-11-20)
+// Same free CBOE feed as GEX (~15-min delayed) but the whole quote per
+// contract: bid/ask/last, IV, CBOE's greeks, volume and OI, for one expiry and
+// strikes within ±25% of spot. Every response also carries the expected move
+// of each expiry from its at-the-money straddle, and the stock's 30-day IV.
+// Separate from /_m/gex on purpose: the GEX panel keeps its own code path.
+const CHAIN_BAND = 0.25;
+const CHAIN_CACHE_SECONDS = 120;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function optionQuote(o) {
+  const bid = numOr(o.bid, 0), ask = numOr(o.ask, 0), last = numOr(o.last_trade_price, 0);
+  return {
+    bid, ask, last,
+    mid: bid > 0 && ask > 0 ? (bid + ask) / 2 : (last || null),
+    iv: numOr(o.iv), delta: numOr(o.delta), gamma: numOr(o.gamma),
+    theta: numOr(o.theta), vega: numOr(o.vega),
+    volume: numOr(o.volume, 0), oi: numOr(o.open_interest, 0),
+  };
+}
+
+// Expected move to an expiry: the at-the-money straddle's mid price, the
+// market's own estimate of the average absolute move by then (about 0.8
+// standard deviations, so ±straddle holds roughly 57% of outcomes).
+function expectedMove(rows, spot) {
+  let atm = null;
+  for (const r of rows) {
+    if (!r.call || !r.put || !(r.call.mid > 0) || !(r.put.mid > 0)) continue;
+    if (!atm || Math.abs(r.k - spot) < Math.abs(atm.k - spot)) atm = r;
+  }
+  if (!atm) return null;
+  const straddle = atm.call.mid + atm.put.mid;
+  const ivs = [atm.call.iv, atm.put.iv].filter((v) => v > 0);
+  return {
+    strike: atm.k,
+    move: Math.round(straddle * 100) / 100,
+    movePct: Math.round((straddle / spot) * 10000) / 100,
+    atmIv: ivs.length ? ivs.reduce((s, v) => s + v, 0) / ivs.length : null,
+  };
+}
+
+async function handleChain(request, env, url) {
+  const symbol = (url.searchParams.get('symbol') || '').toUpperCase();
+  if (!SYMBOL_RE.test(symbol)) return json(request, { error: 'Bad symbol' }, 400);
+  const want = url.searchParams.get('exp') || '';
+  if (want && !DATE_RE.test(want)) return json(request, { error: 'Bad expiry' }, 400);
+
+  const cache = caches.default;
+  const cacheKey = new Request(`https://chain.internal/${symbol}/${want || 'front'}`);
+  const hit = await cache.match(cacheKey);
+  if (hit) {
+    return new Response(await hit.text(), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': `public, max-age=${CHAIN_CACHE_SECONDS}`,
+        ...corsHeaders(request),
+      },
+    });
+  }
+
+  const path = (CBOE_INDEXES.includes(symbol) ? '_' : '') + symbol;
+  const res = await fetch(`${CBOE}/${path}.json`, {
+    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+    cf: { cacheTtl: 120, cacheEverything: true },
+  });
+  if (!res.ok) return json(request, { error: 'No option chain for this symbol' }, 404);
+  const body = await res.json();
+  const data = (body && body.data) || {};
+  const spot = numOr(data.current_price);
+  const opts = Array.isArray(data.options) ? data.options : [];
+  if (!spot || !opts.length) return json(request, { error: 'No option chain for this symbol' }, 404);
+
+  // Count days on the New York calendar: options expire at the New York
+  // close, and in the evening the UTC date has already rolled to tomorrow.
+  const todayNy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const dayStart = Date.parse(todayNy + 'T00:00:00Z');
+  const lo = spot * (1 - CHAIN_BAND), hi = spot * (1 + CHAIN_BAND);
+  const byExp = new Map(); // 'YYYY-MM-DD' -> Map(strike -> { k, call, put })
+  for (const o of opts) {
+    const p = parseOcc(o.option);
+    if (!p || p.expiryMs < dayStart || p.strike < lo || p.strike > hi) continue;
+    const date = new Date(p.expiryMs).toISOString().slice(0, 10);
+    if (!byExp.has(date)) byExp.set(date, new Map());
+    const strikes = byExp.get(date);
+    const row = strikes.get(p.strike) || { k: p.strike, call: null, put: null };
+    row[p.type] = optionQuote(o);
+    strikes.set(p.strike, row);
+  }
+  const dates = [...byExp.keys()].sort();
+  if (!dates.length) return json(request, { error: 'No listed expiries' }, 404);
+
+  const rowsFor = (date) => [...byExp.get(date).values()].sort((a, b) => a.k - b.k);
+  const daysTo = (date) => Math.max(0, Math.round((Date.parse(date + 'T00:00:00Z') - dayStart) / 86400000));
+  const expiries = dates.map((date) => ({ date, days: daysTo(date), ...(expectedMove(rowsFor(date), spot) || {}) }));
+  const exp = want && byExp.has(want) ? want : dates[0];
+
+  // CBOE's snapshot stamp is UTC without a zone ("2026-10-23 00:05:10").
+  const stamp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(body.timestamp || '') ? body.timestamp.replace(' ', 'T') + 'Z' : null;
+  const out = {
+    symbol, spot, source: 'cboe',
+    asOf: stamp || new Date().toISOString(),
+    iv30: numOr(data.iv30), iv30Change: numOr(data.iv30_change),
+    exp, expiries, rows: rowsFor(exp),
+  };
+  const resp = json(request, out, 200, CHAIN_CACHE_SECONDS);
+  await cache.put(cacheKey, resp.clone());
+  return resp;
+}
+
 // GET /_m/quote?symbols=AMD,^KS11,GC=F,JPY=X
 // Quotes for the homepage watchlist, routed per symbol so every row can say
 // where its own number came from:
@@ -995,6 +1105,7 @@ export default {
     if (url.pathname === '/_m/ledger')    return handleLedger(request, env);
     if (url.pathname === '/_m/notes')     return handleNotesGet(request, env);
     if (url.pathname === '/_m/gex')       return handleGex(request, env, url);
+    if (url.pathname === '/_m/chain')     return handleChain(request, env, url);
     if (url.pathname === '/_m/rss')       return handleRss(request, env, url, ctx);
     if (url.pathname === '/_m/health')    return json(request, { ok: true });
 

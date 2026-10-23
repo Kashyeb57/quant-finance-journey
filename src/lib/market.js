@@ -61,6 +61,16 @@ export function getGex(symbol, exp = 'day', opts) {
 }
 
 /**
+ * Option chain for one expiry (`exp` as 'YYYY-MM-DD'; omitted = the front
+ * expiry): bid/ask, IV, greeks, volume and OI per strike, plus every
+ * expiry's expected move and the stock's 30-day IV. CBOE, ~15 min delayed.
+ */
+export function getChain(symbol, exp, opts) {
+  const q = exp ? `&exp=${encodeURIComponent(exp)}` : '';
+  return getJson(`/_m/chain?symbol=${encodeURIComponent(symbol)}${q}`, opts);
+}
+
+/**
  * URL that returns a news feed's raw RSS/Atom XML through the Worker. Only the
  * hosts the Terminal's news panel uses are allowed (RSS_HOSTS in the Worker).
  * A URL rather than a fetch because the panel owns its own timeout and abort.
