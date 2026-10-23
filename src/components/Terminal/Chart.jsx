@@ -142,12 +142,13 @@ function sessionVwap(bars) {
   });
 }
 
-export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef, overlays = false }) {
+export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef, overlays = true }) {
   const wrapRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
   const lastBarRef = useRef(null);
-  const overlayRef = useRef(null); // { ema20, ema50, vwap } line series when `overlays` is on
+  const overlayRef = useRef(null); // { ema20, ema50, vwap } line series (empty while toggled off)
+  const [showOverlays, setShowOverlays] = useState(overlays);
   const pollRef = useRef(null);
   const areaRef = useRef(null);
   const { colorMode } = useColorMode();
@@ -279,7 +280,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         chartRef.current = chart;
         seriesRef.current = series;
 
-        if (overlays) {
+        {
           const line = (color, style) => chart.addSeries(LC.LineSeries, {
             color, lineWidth: 1, lineStyle: style, priceLineVisible: false,
             lastValueVisible: false, crosshairMarkerVisible: false,
@@ -463,7 +464,11 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
   // Reads the candle series rather than hooking every update path above, so
   // the overlays follow polls, trade ticks and rebuilds alike.
   useEffect(() => {
-    if (!overlays) return undefined;
+    const clear = () => {
+      const o = overlayRef.current;
+      if (o) for (const k of ['ema20', 'ema50', 'vwap']) o[k].setData([]);
+    };
+    if (!showOverlays) { clear(); return undefined; }
     const redraw = () => {
       const s = seriesRef.current, o = overlayRef.current;
       if (!s || !o) return;
@@ -476,7 +481,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     redraw();
     const id = setInterval(redraw, 2000);
     return () => clearInterval(id);
-  }, [overlays, ticker, timeframe, colorMode]);
+  }, [showOverlays, ticker, timeframe, colorMode]);
 
   /* ---- countdown to the current candle's close (updates every second) ---- */
   useEffect(() => {
@@ -649,6 +654,14 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
             {tf.label}
           </button>
         ))}
+        <button
+          className={`${styles.tfBtn} ${showOverlays ? styles.tfBtnActive : ''}`}
+          onClick={() => setShowOverlays((v) => !v)}
+          aria-pressed={showOverlays}
+          title="EMA 20 (blue) · EMA 50 (purple) · session VWAP (yellow, dashed)"
+        >
+          EMA·VWAP
+        </button>
         <button
           className={`${styles.tfBtn} ${styles.gexBtn} ${showGex ? styles.tfBtnActive : ''}`}
           onClick={() => setShowGex((v) => !v)}

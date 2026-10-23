@@ -15,6 +15,9 @@ import styles from './styles.module.css';
  * the space / neocloud themes). Pick a sector tab → its symbols appear;
  * pick a symbol → the chart + news follow it. Every symbol supports every
  * timeframe offered by the chart (1m · 3m · 5m · 15m · 1H · 1D).
+ *
+ * Under the deck sits the Quant Desk analytics row (IV surface, options
+ * depth, SATS, risk cards), which follows the selected ticker too.
  */
 
 const tickerLabel = (t) => (t === 'BTC-USD' ? '₿ BTC' : t);
@@ -156,6 +159,13 @@ export default function Terminal() {
           </button>
         </section>
       </div>
+
+      <BrowserOnly fallback={null}>
+        {() => {
+          const TerminalAnalytics = require('../Desk/TerminalAnalytics').default;
+          return <TerminalAnalytics ticker={ticker} />;
+        }}
+      </BrowserOnly>
 
       <BrowserOnly fallback={<div className={styles.portfolio}><PortfolioSkeletonBody /></div>}>
         {() => {
