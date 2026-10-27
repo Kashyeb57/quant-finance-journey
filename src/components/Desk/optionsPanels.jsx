@@ -12,7 +12,8 @@ import styles from './styles.module.css';
  */
 
 const EM = '—';
-const pctOf = (v, d = 1) => (v == null ? EM : `${(v * 100).toFixed(d)}%`);
+// CBOE sends iv 0 when it has none for a contract: show a dash, not "0.0%".
+const pctOf = (v, d = 1) => (v == null || !(v > 0) ? EM : `${(v * 100).toFixed(d)}%`);
 const num = (v, d) => (v == null || Number.isNaN(v) ? EM : v.toFixed(d));
 const signed = (v, d) => (v == null || Number.isNaN(v) ? EM : `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(d)}`);
 

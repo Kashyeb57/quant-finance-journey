@@ -79,6 +79,14 @@ function bsmGammaC(S, K, T, sig) {
   return Math.exp(-0.5 * d1 * d1) / Math.sqrt(2 * Math.PI) / (S * sig * Math.sqrt(T));
 }
 const YEAR_MS = 365 * 86400000;
+const GEX_REFRESH_MS = 5 * 60 * 1000; // the Worker caches each chain for 5 minutes
+
+// CBOE sends iv 0 for a contract it has no implied vol for. Gamma needs a vol,
+// so a chain where no strike has one cannot give a profile, flip or walls.
+function hasImpliedVols(rows) {
+  return Array.isArray(rows) && rows.some((r) => r.civ > 0 || r.piv > 0);
+}
+
 function gexLevels(rows, S) {
   if (!rows || !rows.length || !(S > 0)) return null;
   const now = Date.now();
@@ -505,20 +513,31 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     // only bail when we're following a crypto chart (an index pick still works).
     if (gexFollows && isCrypto(ticker)) return undefined;
     const sym = gexTarget;
-    (async () => {
+    const load = async (first) => {
       try {
         const d = await getGex(sym, gexExp);
         if (cancelled) return;
-        if (!d || !d.spot) { setGexChain(null); setGex(null); setGexErr(true); return; }
+        if (!d || !d.spot) {
+          if (first) { setGexChain(null); setGex(null); setGexErr(true); }
+          return; // a failed refresh keeps the chain already on screen
+        }
         // Tag the chain with its instrument so the live re-compute below never
         // prices a stale chain against a just-switched target (garbage flash).
         setGexChain({ ...d, sym });
+        setGexErr(false);
         // paint the server's (delayed-spot) levels immediately; the live
         // re-compute below refines them at the terminal's real-time price.
-        setGex({ gammaFlip: d.gammaFlip, callWall: d.callWall, putWall: d.putWall, regime: d.regime, netGex: d.netGex });
-      } catch (_) { if (!cancelled) { setGexChain(null); setGex(null); setGexErr(true); } }
-    })();
-    return () => { cancelled = true; };
+        if (first && hasImpliedVols(d.rows)) {
+          setGex({ gammaFlip: d.gammaFlip, callWall: d.callWall, putWall: d.putWall, regime: d.regime, netGex: d.netGex });
+        }
+      } catch (_) { if (!cancelled && first) { setGexChain(null); setGex(null); setGexErr(true); } }
+    };
+    load(true);
+    // Refresh while the panel is open. Implied vols move all day, and just
+    // after the open CBOE's delayed feed can still carry no IVs at all, so a
+    // chain fetched then must not stay empty until the page is reloaded.
+    const id = setInterval(() => load(false), GEX_REFRESH_MS);
+    return () => { cancelled = true; clearInterval(id); };
   }, [gexTarget, gexFollows, ticker, gexExp, showGex]);
 
   /* ---- re-price the gamma flip + walls at the LIVE spot (every ~2s) ---- */
@@ -527,6 +546,9 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     // an instrument switch — its strikes belong to a different symbol/scale.
     if (!showGex || !gexChain || !gexChain.rows || gexChain.sym !== gexTarget) return undefined;
     const recompute = () => {
+      // Without implied vols every strike's gamma is 0: say so rather than
+      // draw an empty profile with no flip (the refresh above fills it in).
+      if (!hasImpliedVols(gexChain.rows)) { setGex(null); return; }
       // When following the chart, re-price at the live candle; for an index the
       // chart's price is a different instrument, so use the chain's own spot.
       const S = (gexFollows && lastBarRef.current) ? lastBarRef.current.close : gexChain.spot;
@@ -681,7 +703,11 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
               {gex.gammaFlip != null && <> · flip {gex.gammaFlip}</>}
               {(gex.putWall != null || gex.callWall != null) && <> · walls {gex.putWall ?? '—'}/{gex.callWall ?? '—'}</>}
             </>
-          ) : (gexFollows && isCrypto(ticker) ? 'γ: n/a for crypto' : (gexErr ? `γ: no options data for ${gexTarget}` : 'γ: loading…'))}
+          ) : (gexFollows && isCrypto(ticker) ? 'γ: n/a for crypto'
+            : gexErr ? `γ: no options data for ${gexTarget}`
+              : gexChain && gexChain.sym === gexTarget && !hasImpliedVols(gexChain.rows)
+                ? `γ: ${gexTarget} implied vols not in CBOE's delayed feed yet (common just after the open), retrying every 5 min`
+                : 'γ: loading…')}
         </div>
       )}
       <div ref={wrapRef} className={styles.chartWrap} />
