@@ -19,7 +19,7 @@ const signed = (v, d) => (v == null || Number.isNaN(v) ? EM : `${v > 0 ? '+' : v
 
 // "2026-11-20" -> "Nov 20" without touching time zones (it is a calendar date).
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const shortDate = (iso) => `${MONTHS[+iso.slice(5, 7) - 1]} ${+iso.slice(8, 10)}`;
+export const shortDate = (iso) => `${MONTHS[+iso.slice(5, 7) - 1]} ${+iso.slice(8, 10)}`;
 
 // The Worker sends CBOE's snapshot time as ISO UTC; show it in CT.
 const asOfLabel = (iso) => (iso ? `data ${fmtDateCT(iso, { withTime: true })}` : '');
@@ -31,7 +31,7 @@ function emptyText(ticker, oc) {
 }
 
 /* Columns per side, written for the call side; the put side mirrors them. */
-const VIEWS = {
+export const VIEWS = {
   quotes: [
     { key: 'oi', label: 'OI', fmt: (q) => fmtVolume(q.oi) },
     { key: 'volume', label: 'Vol', fmt: (q) => fmtVolume(q.volume) },

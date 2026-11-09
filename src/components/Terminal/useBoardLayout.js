@@ -22,7 +22,9 @@ export const DEFAULT_ROWS = [
   ['equity', 'sharpe', 'vol', 'positions'],
   ['portfolio'],
 ];
-const ALL = DEFAULT_ROWS.flat();
+// The owner's live-options tile: on the board only while his PC bridge runs.
+const LIVE = 'live';
+const ALL = [...DEFAULT_ROWS.flat(), LIVE];
 const isFull = (row) => row.length === 1 && FULL_ROWS.includes(row[0]);
 const tidy = (rows) => rows.filter((r) => r.length);
 
@@ -40,7 +42,7 @@ function sanitize(saved) {
     const tiles = ids.filter((x) => !FULL_ROWS.includes(x));
     if (tiles.length) rows.push(tiles);
   }
-  const missing = ALL.filter((id) => !seen.has(id));
+  const missing = ALL.filter((id) => !seen.has(id) && id !== LIVE);
   if (missing.length) rows.push(...missing.map((id) => [id]));
   return rows.length ? rows : null;
 }
@@ -76,7 +78,31 @@ export function moveTile(rows, id, dir) {
   return tidy(next);
 }
 
-export default function useBoardLayout() {
+// The live tile sits right under the chart until it has been moved.
+export function withLive(rows) {
+  if (rows.some((row) => row.includes(LIVE))) return rows;
+  const out = [...rows];
+  out.splice(rows.findIndex((row) => row.includes('chart')) + 1, 0, [LIVE]);
+  return out;
+}
+
+export function withoutLive(rows) {
+  return tidy(rows.map((row) => row.filter((id) => id !== LIVE)));
+}
+
+// A move acts on the rows as shown. While the live tile is hidden it must not
+// take part (an arrow would seem to do nothing), but its place is remembered.
+export function moveShown(rows, id, dir, showLive) {
+  if (showLive) return moveTile(withLive(rows), id, dir);
+  const at = rows.findIndex((row) => row.includes(LIVE));
+  const moved = moveTile(withoutLive(rows), id, dir);
+  if (at < 0) return moved;
+  const out = [...moved];
+  out.splice(Math.min(at, out.length), 0, [LIVE]);
+  return out;
+}
+
+export default function useBoardLayout(showLive = false) {
   const [rows, setRows] = useState(DEFAULT_ROWS);
   const [closed, setClosed] = useState({});
   const [loaded, setLoaded] = useState(false);
@@ -99,12 +125,13 @@ export default function useBoardLayout() {
     } catch (_) { /* not remembered, still works */ }
   }, [rows, closed, loaded]);
 
-  const move = useCallback((id, dir) => setRows((rs) => moveTile(rs, id, dir)), []);
+  const move = useCallback((id, dir) => setRows((rs) => moveShown(rs, id, dir, showLive)), [showLive]);
   const toggle = useCallback((id) => setClosed((c) => ({ ...c, [id]: !c[id] })), []);
   const reset = useCallback(() => {
     setRows(DEFAULT_ROWS);
     setClosed({});
   }, []);
 
-  return { rows, isOpen: (id) => !closed[id], move, toggle, reset };
+  const shown = showLive ? withLive(rows) : withoutLive(rows);
+  return { rows: shown, isOpen: (id) => !closed[id], move, toggle, reset };
 }

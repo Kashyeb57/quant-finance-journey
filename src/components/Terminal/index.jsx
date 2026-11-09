@@ -7,6 +7,7 @@ import useBoardLayout from './useBoardLayout';
 import { neededData } from './boardTiles';
 import useDeskData from '../Desk/useDeskData';
 import useOptionChain from '../Desk/useOptionChain';
+import useLiveOptions from '../Desk/useLiveOptions';
 import styles from './styles.module.css';
 
 /*
@@ -48,7 +49,8 @@ export default function Terminal() {
 
   // Board layout (rows of tiles, collapsed ones) and the data behind the
   // tiles; each feed only polls while a tile that shows it is open.
-  const layout = useBoardLayout();
+  const live = useLiveOptions(); // null unless the owner's PC bridge is running
+  const layout = useBoardLayout(!!live);
   const need = neededData(layout.isOpen);
   const d = useDeskData(ticker, { risk: !!need.risk, vol: !!need.vol, market: !!need.market });
   const oc = useOptionChain(ticker, exp, !!need.options);
@@ -124,7 +126,7 @@ export default function Terminal() {
 
       <Board
         layout={layout}
-        ctx={{ d, oc, ticker, exp, setExp }}
+        ctx={{ d, oc, ticker, exp, setExp, live }}
         full={{
           chart: {
             title: 'Chart & news',

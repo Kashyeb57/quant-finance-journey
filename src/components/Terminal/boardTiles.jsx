@@ -1,5 +1,6 @@
 import React from 'react';
 import { OptionChainPanel, ExpectedMovePanel } from '../Desk/optionsPanels';
+import LiveOptionsPanel from '../Desk/LiveOptionsPanel';
 import {
   SurfacePanel, DepthPanel, PnlPanel, SatsPanel,
   VolCard, EquityCard, SharpeCard, PositionsCard, RegimeCard, BreadthCard, tickerLabel,
@@ -11,13 +12,19 @@ import styles from './styles.module.css';
  * The analysis tiles on the Terminal board. Each entry: its header, the short
  * label on its collapsed rail, the height its row needs (px), its share of the
  * row's width, the data group it reads (so a closed tile stops polling), and
- * what it shows. `ctx` = { d (useDeskData), oc (useOptionChain), ticker, exp, setExp }.
+ * what it shows. `ctx` = { d (useDeskData), oc (useOptionChain), ticker, exp, setExp, live }.
  */
 
 const Tick = ({ t }) => <span className={styles.deckTicker}>{tickerLabel(t)}</span>;
 const inVars = (node) => <div className={desk.vars}>{node}</div>;
 
 export const TILES = {
+  // Owner only, and only while the bridge on his PC runs (see useBoardLayout).
+  live: {
+    title: (c) => <>Live options <Tick t={c.live.symbol} /></>,
+    rail: 'Live options', h: 470, w: 1, need: 'live',
+    render: (c) => inVars(<LiveOptionsPanel bare snap={c.live} />),
+  },
   chain: {
     title: (c) => <>Option chain <Tick t={c.ticker} /></>,
     rail: 'Option chain', h: 500, w: 1.6, need: 'options',
