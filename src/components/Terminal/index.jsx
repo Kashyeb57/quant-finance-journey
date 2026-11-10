@@ -148,7 +148,7 @@ export default function Terminal() {
                     <BrowserOnly fallback={<div className={styles.chartArea}><ChartSkeleton /></div>}>
                       {() => {
                         const Chart = require('./Chart').default;
-                        return <Chart ticker={ticker} timeframe={timeframe} setTimeframe={setTimeframe} onStatus={(s) => setSource(s.source)} fsTargetRef={deckRef} overlayName={live ? live.overlay : null} />;
+                        return <Chart ticker={ticker} timeframe={timeframe} setTimeframe={setTimeframe} onStatus={(s) => setSource(s.source)} fsTargetRef={deckRef} />;
                       }}
                     </BrowserOnly>
                     {live && <div className={styles.fsChain}><LiveChainStrip snap={live} /></div>}

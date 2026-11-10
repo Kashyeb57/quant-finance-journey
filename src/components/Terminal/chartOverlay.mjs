@@ -1,26 +1,22 @@
 /*
- * An optional chart overlay supplied by a helper running on the owner's own PC.
- * The helper does the calculating and returns finished points, so this file
- * only draws what it receives. Nothing is requested unless the helper is
- * already known to be running (see useLiveOptions).
+ * An overlay on the price chart. The server returns finished points and marks
+ * for a symbol and timeframe, and this file draws them.
  */
 
-const ENDPOINT = 'http://127.0.0.1:8765/overlay';
+export const OVERLAY_LABEL = 'SATS';
 const LOWER_COLOR = '#2962FF';
 
-/** Only finished candles: the one still forming is left out. */
-export function closedBars(bars, granSec, nowSec) {
-  return bars.filter((b) => b.time + granSec <= nowSec);
+/** Time of the newest finished candle (the one still forming does not count). */
+export function lastClosedTime(bars, granSec, nowSec) {
+  for (let i = bars.length - 1; i >= 0; i -= 1) {
+    if (bars[i].time + granSec <= nowSec) return bars[i].time;
+  }
+  return 0;
 }
 
-export async function requestOverlay(bars, tfKey, crypto) {
-  const r = await fetch(ENDPOINT, {
-    method: 'POST',
-    cache: 'no-store',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tf: tfKey, crypto, bars }),
-    signal: AbortSignal.timeout(5000),
-  });
+export async function requestOverlay(base, symbol, tfKey, last) {
+  const q = new URLSearchParams({ symbol, tf: tfKey, last: String(last) });
+  const r = await fetch(`${base}/_x/overlay?${q}`, { signal: AbortSignal.timeout(8000) });
   if (!r.ok) throw new Error(String(r.status));
   return r.json();
 }

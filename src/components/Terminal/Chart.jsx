@@ -4,11 +4,12 @@ import { fetchBars, sharedSnapshot, tfConfig, isCrypto, cryptoGran, TIMEFRAMES, 
 import { subscribeCryptoTicker } from './cryptoStream';
 import { subscribeStockTrades } from './stockStream';
 import { getGex, getPortfolio } from '../../lib/market';
+import { apiBase } from '../../lib/api';
 import usePolling from '../../lib/usePolling';
 import styles from './styles.module.css';
 import GexProfile from './GexProfile';
 import { ChartSkeleton } from './Skeletons';
-import { closedBars, requestOverlay, createOverlay } from './localOverlay.mjs';
+import { OVERLAY_LABEL, lastClosedTime, requestOverlay, createOverlay } from './chartOverlay.mjs';
 
 /*
  * Live price chart.
@@ -125,7 +126,7 @@ function gexLevels(rows, S) {
   };
 }
 
-export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef, overlayName }) {
+export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
   const wrapRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
@@ -150,8 +151,8 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
   const gexLinesRef = useRef({});
   const [gexW, setGexW] = useState(210); // GEX panel width (px) — drag to resize
   const gexDragRef = useRef(false);
-  // Optional overlay from the owner's local helper: off until switched on, remembered per browser.
-  const [overlayWanted, setOverlayWanted] = useState(false);
+  // Chart overlay drawn from the server: on by default, the choice is remembered per browser.
+  const [overlayWanted, setOverlayWanted] = useState(true);
   const [overlayStatus, setOverlayStatus] = useState(null); // { text, tone } while drawn
   const [barsKey, setBarsKey] = useState('');      // changes when the newest closed bar changes
   const barsRef = useRef(null);
@@ -446,15 +447,15 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticker, timeframe, colorMode]);
 
-  /* ---- local overlay: redrawn when a bar closes ---- */
+  /* ---- chart overlay: redrawn when a bar closes ---- */
   useEffect(() => {
-    try { setOverlayWanted(window.localStorage.getItem('terminal.overlay') === '1'); } catch (_) { /* stays off */ }
+    try { setOverlayWanted(window.localStorage.getItem('terminal.overlay') !== '0'); } catch (_) { /* stays on */ }
   }, []);
   const toggleOverlay = () => setOverlayWanted((v) => {
     try { window.localStorage.setItem('terminal.overlay', v ? '0' : '1'); } catch (_) { /* not remembered */ }
     return !v;
   });
-  const overlayOn = overlayWanted && !!overlayName;
+  const overlayOn = overlayWanted && !isCrypto(ticker);
   useEffect(() => {
     const chart = chartRef.current;
     const mine = barsKey.startsWith(`${ticker}|${timeframe}|`); // not the previous symbol's bars
@@ -466,32 +467,23 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
       if (!overlayOn) setOverlayStatus(null);
       return undefined;
     }
-    let alive = true;
-    const closed = closedBars(barsRef.current, cryptoGran(timeframe), Date.now() / 1000);
-    requestOverlay(closed, timeframe, isCrypto(ticker))
+    let alive = true, timer = null;
+    const want = lastClosedTime(barsRef.current, cryptoGran(timeframe), Date.now() / 1000);
+    const load = (tries) => requestOverlay(apiBase(), ticker, timeframe, want)
       .then((r) => {
         if (!alive || chartRef.current !== chart || !seriesRef.current) return;
         if (overlayRef.current && overlayRef.current.chart !== chart) overlayRef.current = null;
         if (!overlayRef.current) overlayRef.current = createOverlay(libRef.current, chart, seriesRef.current);
         overlayRef.current.set(r);
         setOverlayStatus(r.status);
+        // The server's copy of the candles can be a few seconds behind the chart's.
+        if (r.last < want && tries > 0) timer = setTimeout(() => load(tries - 1), 8000);
       })
-      .catch(() => { /* the helper is busy or stopping: the next bar tries again */ });
-    return () => { alive = false; };
+      .catch(() => { /* the next closed bar tries again */ });
+    load(3);
+    return () => { alive = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlayOn, barsKey, colorMode]);
-  // Crypto candles come from the trade stream only, so fetch closed bars for the overlay.
-  useEffect(() => {
-    if (!overlayOn || !isCrypto(ticker)) return undefined;
-    let alive = true;
-    const id = setInterval(async () => {
-      if (document.visibilityState === 'hidden') return;
-      const { bars } = await fetchBars(ticker, timeframe);
-      if (alive && bars.length) noteBars(bars);
-    }, 30000);
-    return () => { alive = false; clearInterval(id); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overlayOn, ticker, timeframe]);
 
   /* ---- countdown to the current candle's close (updates every second) ---- */
   useEffect(() => {
@@ -688,14 +680,14 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         >
           Γ GEX
         </button>
-        {overlayName && (
+        {!isCrypto(ticker) && (
           <button
             className={`${styles.tfBtn} ${styles.gexBtn} ${overlayOn ? styles.tfBtnActive : ''}`}
             onClick={toggleOverlay}
             aria-pressed={overlayOn}
-            title="Overlay from the helper running on this PC"
+            title="Trend overlay: closed bars only. An indicator, not advice."
           >
-            {overlayName}
+            {OVERLAY_LABEL}
           </button>
         )}
         {showGex && (
@@ -768,7 +760,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
       )}
       {status === 'ok' && overlayOn && overlayStatus && (
         <div className={`${styles.gexBadge} ${styles.overlayBadge} ${showGex ? styles.overlayBadgeLow : ''}`}>
-          <span className={styles.gexBadgeSym}>{overlayName}</span>
+          <span className={styles.gexBadgeSym}>{OVERLAY_LABEL}</span>
           {' '}
           <span className={overlayStatus.tone === 'up' ? styles.up : overlayStatus.tone === 'down' ? styles.down : ''}>{overlayStatus.text}</span>
         </div>
