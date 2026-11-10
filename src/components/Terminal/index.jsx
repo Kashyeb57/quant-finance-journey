@@ -8,6 +8,7 @@ import { neededData } from './boardTiles';
 import useDeskData from '../Desk/useDeskData';
 import useOptionChain from '../Desk/useOptionChain';
 import useLiveOptions from '../Desk/useLiveOptions';
+import LiveChainStrip from '../Desk/LiveChainStrip';
 import styles from './styles.module.css';
 
 /*
@@ -150,6 +151,7 @@ export default function Terminal() {
                         return <Chart ticker={ticker} timeframe={timeframe} setTimeframe={setTimeframe} onStatus={(s) => setSource(s.source)} fsTargetRef={deckRef} />;
                       }}
                     </BrowserOnly>
+                    {live && <div className={styles.fsChain}><LiveChainStrip snap={live} /></div>}
                   </div>
                   <button type="button" className={styles.rail} onClick={toggleChart} aria-label="Expand chart">
                     <span className={styles.railChevron} aria-hidden="true">›</span>

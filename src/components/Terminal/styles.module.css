@@ -1376,3 +1376,17 @@
   .tileClosed .rail { display: none; }
   .tileTool { opacity: 1; }
 }
+
+/* The owner's live option chain under the candles: only while the deck is full screen. */
+.fsChain { display: none; }
+.deck:fullscreen .fsChain {
+  display: block;
+  flex: 0 0 auto;
+  max-height: 40vh;
+  overflow: auto;
+  scrollbar-width: thin;
+  border-top: 1px solid var(--line);
+  background: var(--ifm-background-color);
+}
+.deck:fullscreen .chartRow,
+.deck:fullscreen .chartArea { min-height: 240px; }

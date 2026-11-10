@@ -292,3 +292,34 @@
 .emTable tbody tr:hover td { background: color-mix(in srgb, var(--desk-accent) 6%, transparent); }
 .emActive td { color: var(--desk-accent); font-weight: 700; }
 .emRange { color: var(--desk-text-dim); }
+
+/* Live chain strip (owner only, under the candles in full screen). */
+.strip { font-family: var(--ff-mono, monospace); font-size: 0.72rem; }
+.stripHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 1.1rem;
+  padding: 0.3rem 0.7rem;
+  color: var(--desk-text-dim);
+  border-bottom: 1px solid var(--desk-border);
+}
+.stripHead b, .stripTitle { color: var(--ifm-font-color-base); }
+.stripHold { margin-left: auto; display: inline-flex; align-items: center; gap: 0.3rem; }
+.stripHold .chip { padding: 0.1rem 0.45rem; font-size: 0.62rem; }
+.stripTable { font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+.stripTable td { padding: 0.12rem 0.5rem; }
+.stripTable th { padding: 0.2rem 0.5rem; text-align: right; }
+.stripTable th.strikeCol { text-align: center; }
+.stripTable td.tagCheap, .stripLegend .tagCheap { color: var(--desk-up); font-weight: 700; }
+.stripTable td.tagTight, .stripLegend .tagTight { text-decoration: underline; text-decoration-color: var(--desk-accent); text-underline-offset: 3px; text-decoration-thickness: 2px; }
+.stripTable td.tagActive, .stripLegend .tagActive { color: #f59e0b; font-weight: 700; }
+.tagFresh { color: var(--desk-put); margin-right: 0.3rem; font-size: 0.6rem; }
+.stripLegend {
+  margin: 0;
+  padding: 0.25rem 0.7rem 0.35rem;
+  font-family: var(--ifm-font-family-base);
+  font-size: 0.66rem;
+  line-height: 1.4;
+  color: var(--desk-text-dim);
+}
