@@ -1390,3 +1390,7 @@
 }
 .deck:fullscreen .chartRow,
 .deck:fullscreen .chartArea { min-height: 240px; }
+
+/* Overlay state badge: under the toolbar, one line lower when the GEX badge is showing. */
+.gexBadge.overlayBadge { top: 40px; }
+.gexBadge.overlayBadgeLow { top: 66px; }
