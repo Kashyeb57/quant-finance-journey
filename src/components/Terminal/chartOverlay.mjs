@@ -45,71 +45,104 @@ export function robustRange(values, tail = 0.04) {
   return { priceRange: { minValue: lo, maxValue: hi } };
 }
 
-/** Marks with two colors ({ split: [left, right], price }) are drawn by splitMarks; the rest by the library. */
+/**
+ * Signal marks that carry a bar price are drawn as solid triangles (two-color when
+ * { split: [left, right] }); the rest (dots, FLAT) stay with the library.
+ */
 export function partitionMarks(markers) {
   const plain = [];
-  const split = [];
-  for (const m of markers || []) (Array.isArray(m.split) && Number.isFinite(m.price) ? split : plain).push(m);
-  return { plain, split };
+  const triangles = [];
+  for (const m of markers || []) (Number.isFinite(m.price) ? triangles : plain).push(m);
+  return { plain, triangles };
 }
 
-/*
- * A triangle colored half and half (left | right) under a buy bar or over a sell
- * bar, with its label, drawn on the candle series.
- */
-function splitMarks() {
-  let marks = [];
+/** Left and right colors of a triangle: both halves the mark's color unless it is split. */
+export function triangleColors(m) {
+  return Array.isArray(m.split) && m.split.length === 2 ? m.split : [m.color, m.color];
+}
+
+/* A series primitive that runs draw(context, series, timeScale) in media pixels. */
+function canvasLayer(draw, zOrder) {
   let ctx = null;
-  const SIZE = 13;
-  const GAP = 7;
   const renderer = {
     draw(target) {
-      if (!ctx || !marks.length) return;
-      const ts = ctx.chart.timeScale();
-      target.useMediaCoordinateSpace(({ context: c }) => {
-        c.save();
-        c.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-        c.textAlign = 'center';
-        for (const m of marks) {
-          const x = ts.timeToCoordinate(m.time);
-          const yPrice = ctx.series.priceToCoordinate(m.price);
-          if (x == null || yPrice == null) continue;
-          const up = m.position === 'belowBar';
-          const tip = up ? yPrice + GAP : yPrice - GAP;
-          const base = up ? tip + SIZE : tip - SIZE;
-          const half = SIZE * 0.55;
-          const side = (color, dx) => {
-            c.beginPath();
-            c.moveTo(x, tip);
-            c.lineTo(x + dx, base);
-            c.lineTo(x, base);
-            c.closePath();
-            c.fillStyle = color;
-            c.fill();
-          };
-          side(m.split[0], -half);
-          side(m.split[1], half);
-          if (m.text) {
-            c.fillStyle = m.split[0];
-            c.textBaseline = up ? 'top' : 'bottom';
-            c.fillText(m.text, x, up ? base + 3 : base - 3);
-          }
-        }
-        c.restore();
+      if (!ctx) return;
+      target.useMediaCoordinateSpace(({ context }) => {
+        context.save();
+        draw(context, ctx.series, ctx.chart.timeScale());
+        context.restore();
       });
     },
   };
-  const view = { zOrder: () => 'top', renderer: () => renderer };
+  const view = { zOrder: () => zOrder, renderer: () => renderer };
   return {
     attached(param) { ctx = param; },
     detached() { ctx = null; },
     updateAllViews() {},
     paneViews: () => [view],
-    set(list) { marks = list; if (ctx) ctx.requestUpdate(); },
+    refresh() { if (ctx) ctx.requestUpdate(); },
   };
 }
 
-/** Line on the price pane; in the pane below a line, bars from zero at its marks, and a zero line. */
+/** Solid triangle under a buy bar or over a sell bar, with its label. */
+function triangleLayer() {
+  let marks = [];
+  const SIZE = 13;
+  const GAP = 7;
+  const layer = canvasLayer((c, series, ts) => {
+    c.font = '600 11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    c.textAlign = 'center';
+    for (const m of marks) {
+      const x = ts.timeToCoordinate(m.time);
+      const yPrice = series.priceToCoordinate(m.price);
+      if (x == null || yPrice == null) continue;
+      const up = m.position === 'belowBar';
+      const tip = up ? yPrice + GAP : yPrice - GAP;
+      const base = up ? tip + SIZE : tip - SIZE;
+      const half = SIZE * 0.55;
+      const [left, right] = triangleColors(m);
+      for (const [color, dx] of [[left, -half], [right, half]]) {
+        c.beginPath();
+        c.moveTo(x, tip);
+        c.lineTo(x + dx, base);
+        c.lineTo(x, base);
+        c.closePath();
+        c.fillStyle = color;
+        c.fill();
+      }
+      if (m.text) {
+        c.fillStyle = left;
+        c.textBaseline = up ? 'top' : 'bottom';
+        c.fillText(m.text, x, up ? base + 3 : base - 3);
+      }
+    }
+  }, 'top');
+  return { layer, set(list) { marks = list; layer.refresh(); } };
+}
+
+/** One-pixel lines from zero to the value, under the lower line (like TradingView's thin histogram). */
+function stemLayer() {
+  let stems = [];
+  const layer = canvasLayer((c, series, ts) => {
+    const y0 = series.priceToCoordinate(0);
+    if (y0 == null) return;
+    c.lineWidth = 1;
+    for (const s of stems) {
+      const x = ts.timeToCoordinate(s.time);
+      const y = series.priceToCoordinate(s.value);
+      if (x == null || y == null) continue;
+      const px = Math.round(x) + 0.5;
+      c.strokeStyle = s.color;
+      c.beginPath();
+      c.moveTo(px, y0);
+      c.lineTo(px, y);
+      c.stroke();
+    }
+  }, 'bottom');
+  return { layer, set(list) { stems = list; layer.refresh(); } };
+}
+
+/** Line on the price pane; in the pane below a line, thin lines from zero at its marks, and a zero line. */
 export function createOverlay(LC, chart, candles) {
   const quiet = { priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false };
   const line = chart.addSeries(LC.LineSeries, { ...quiet, lineWidth: 2 });
@@ -119,12 +152,13 @@ export function createOverlay(LC, chart, candles) {
     return lowerData.filter((p) => !r || (p.time >= r.from && p.time <= r.to)).map((p) => p.value);
   };
   const zeroScale = { autoscaleInfoProvider: (original) => robustRange(visibleLower()) || withZero(original()) };
-  const lowerMarks = chart.addSeries(LC.HistogramSeries, { ...quiet, ...zeroScale, base: 0 }, 1);
   const lower = chart.addSeries(LC.LineSeries, { ...quiet, ...zeroScale, color: LOWER_COLOR, lineWidth: 2 }, 1);
   lower.createPriceLine({ price: 0, color: 'rgba(120,123,134,0.75)', lineStyle: 2, lineWidth: 1, axisLabelVisible: false });
+  const stems = stemLayer();
+  lower.attachPrimitive(stems.layer);
   const marks = LC.createSeriesMarkers(candles, []);
-  const twoTone = splitMarks();
-  candles.attachPrimitive(twoTone);
+  const triangles = triangleLayer();
+  candles.attachPrimitive(triangles.layer);
   const panes = chart.panes();
   if (panes.length > 1) {
     panes[0].setStretchFactor(0.78);
@@ -136,18 +170,18 @@ export function createOverlay(LC, chart, candles) {
       line.setData(result.line);
       lowerData = result.lower;
       lower.setData(result.lower);
-      lowerMarks.setData(result.lowerMarks || []);
-      const { plain, split } = partitionMarks(result.markers);
-      marks.setMarkers(plain);
-      twoTone.set(split);
+      stems.set(result.lowerMarks || []);
+      const parts = partitionMarks(result.markers);
+      marks.setMarkers(parts.plain);
+      triangles.set(parts.triangles);
     },
     remove() {
       try {
         marks.detach();
-        candles.detachPrimitive(twoTone);
+        candles.detachPrimitive(triangles.layer);
+        lower.detachPrimitive(stems.layer);
         chart.removeSeries(line);
         chart.removeSeries(lower);
-        chart.removeSeries(lowerMarks);
       } catch (_) { /* the chart was already disposed */ }
     },
   };

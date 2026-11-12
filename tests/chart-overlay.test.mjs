@@ -1,16 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { lastClosedTime, withZero, robustRange, partitionMarks } from '../src/components/Terminal/chartOverlay.mjs';
+import { lastClosedTime, withZero, robustRange, partitionMarks, triangleColors } from '../src/components/Terminal/chartOverlay.mjs';
 
-test('two-color marks are drawn separately; every other mark stays with the library', () => {
-  const a = { time: 1, shape: 'arrowUp', color: '#0f0', text: 'BUY 20' };
-  const b = { time: 2, shape: 'arrowUp', color: '#0f0', text: 'BUY 30', split: ['#0f0', '#b8f'], price: 10 };
-  const c = { time: 3, shape: 'circle', color: '#777', split: ['#0f0', '#b8f'] }; // no price: left as is
-  const { plain, split } = partitionMarks([a, b, c]);
-  assert.deepEqual(plain, [a, c]);
-  assert.deepEqual(split, [b]);
-  assert.deepEqual(partitionMarks(undefined), { plain: [], split: [] });
+test('signal marks with a bar price become triangles; dots stay with the library', () => {
+  const a = { time: 1, shape: 'arrowUp', color: '#0f0', text: '20', price: 9 };
+  const b = { time: 2, shape: 'arrowUp', color: '#0f0', text: '30', split: ['#0f0', '#b8f'], price: 10 };
+  const c = { time: 3, shape: 'circle', color: '#777', text: 'FLAT' };
+  const { plain, triangles } = partitionMarks([a, b, c]);
+  assert.deepEqual(plain, [c]);
+  assert.deepEqual(triangles, [a, b]);
+  assert.deepEqual(triangleColors(a), ['#0f0', '#0f0']);
+  assert.deepEqual(triangleColors(b), ['#0f0', '#b8f']);
+  assert.deepEqual(partitionMarks(undefined), { plain: [], triangles: [] });
 });
 
 test('one spike at the open does not flatten the lower line', () => {
