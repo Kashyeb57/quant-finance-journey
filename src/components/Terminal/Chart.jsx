@@ -26,6 +26,8 @@ import { OVERLAY_LABEL, lastClosedTime, requestOverlay, createOverlay } from './
  */
 
 const SNAP_MS = 2500; // live-candle refresh when the trade stream is unavailable
+const FIRST_VIEW_BARS = 150; // candles shown on the first load (like TradingView, not the whole history)
+const RIGHT_PAD_BARS = 3;    // empty space right of the live candle
 
 let libPromise = null;
 function loadLib() {
@@ -126,17 +128,31 @@ function gexLevels(rows, S) {
   };
 }
 
-export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
+function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
   const wrapRef = useRef(null);
   const chartRef = useRef(null);
   const seriesRef = useRef(null);
   const lastBarRef = useRef(null);
   const pollRef = useRef(null);
   const areaRef = useRef(null);
+  const viewBarsRef = useRef(FIRST_VIEW_BARS); // how many candles the viewer has zoomed to; kept across switches
+  const viewSetAtRef = useRef(0); // when the chart (not the viewer) last moved the view
   const { colorMode } = useColorMode();
   const [status, setStatus] = useState('loading');
-  const [countdown, setCountdown] = useState('');
-  const [cdTop, setCdTop] = useState(8);
+  // The countdown badge is written straight to the page (not React state), so the
+  // once-a-second tick and every live trade don't re-render the whole chart.
+  const cdRef = useRef(null);
+  const cdTextRef = useRef(null);
+  const cdTopRef = useRef(8);
+  const placeCountdown = () => {
+    const s = seriesRef.current;
+    const lp = lastBarRef.current ? lastBarRef.current.close : null;
+    if (s && lp != null) {
+      const y = s.priceToCoordinate(lp);
+      if (y != null && !Number.isNaN(y)) cdTopRef.current = y + 11;
+    }
+    if (cdRef.current) cdRef.current.style.top = `${cdTopRef.current}px`;
+  };
   const [isFs, setIsFs] = useState(false);
   const [pos, setPos] = useState(null);   // open position in this ticker (or null)
   const [pl, setPl] = useState(null);      // live { value, pct } for that position
@@ -278,6 +294,14 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         seriesRef.current = series;
         libRef.current = LC;
 
+        // Remember the zoom (number of candles across the chart) so a new symbol
+        // or timeframe opens at the same zoom instead of jumping to the whole history.
+        chart.timeScale().subscribeVisibleLogicalRangeChange((r) => {
+          if (r && seriesRef.current === series && series.data().length > 1 && Date.now() > viewSetAtRef.current + 400) {
+            viewBarsRef.current = Math.max(20, Math.round(r.to - r.from - RIGHT_PAD_BARS));
+          }
+        });
+
         resizeObs = new ResizeObserver(() => {
           if (chartRef.current && el.clientWidth) {
             chartRef.current.applyOptions({
@@ -321,8 +345,11 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         if (onStatus) onStatus({ source: 'none' });
         return;
       }
+      const show = viewBarsRef.current; // read before setData, which can move the range
+      viewSetAtRef.current = Date.now();
       seriesRef.current.setData(bars);
-      chartRef.current.timeScale().fitContent();
+      const n = bars.length;
+      chartRef.current.timeScale().setVisibleLogicalRange({ from: Math.max(0, n - show) - 0.5, to: n - 1 + RIGHT_PAD_BARS });
       noteBars(bars);
       lastBarRef.current = bars[bars.length - 1];
       synced = lastBarRef.current.time;
@@ -401,8 +428,7 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
             lastBarRef.current = bar;
             lastTradeMs = Date.now();
             setStatus('ok');
-            const y = seriesRef.current.priceToCoordinate(bar.close);
-            if (y != null && !Number.isNaN(y)) setCdTop(y + 11);
+            placeCountdown();
           };
 
           if (isCrypto(ticker)) {
@@ -477,10 +503,10 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
         overlayRef.current.set(r);
         setOverlayStatus(r.status);
         // The server's copy of the candles can be a few seconds behind the chart's.
-        if (r.last < want && tries > 0) timer = setTimeout(() => load(tries - 1), 8000);
+        if (r.last < want && tries > 0) timer = setTimeout(() => load(tries - 1), 4000);
       })
       .catch(() => { /* the next closed bar tries again */ });
-    load(3);
+    load(5);
     return () => { alive = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlayOn, barsKey, colorMode]);
@@ -490,19 +516,15 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     const gran = cryptoGran(timeframe);
     const update = () => {
       const now = Math.floor(Date.now() / 1000);
-      setCountdown(fmtCountdown(gran - (now % gran)));
-      // pin the badge just under the live price label on the right axis
-      const s = seriesRef.current;
-      const lp = lastBarRef.current ? lastBarRef.current.close : null;
-      if (s && lp != null) {
-        const y = s.priceToCoordinate(lp);
-        if (y != null && !Number.isNaN(y)) setCdTop(y + 11);
-      }
+      if (cdTextRef.current) cdTextRef.current.textContent = fmtCountdown(gran - (now % gran));
+      placeCountdown(); // pinned just under the live price label on the right axis
     };
     update();
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
-  }, [timeframe]);
+    // status: the badge only exists once the chart has data, so fill it in right away
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeframe, status]);
 
   /* ---- open-position overlay: is there a position in THIS ticker? ---- */
   // Clear the previous symbol's overlay the moment the chart changes symbol.
@@ -551,7 +573,10 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
       const last = lastBarRef.current ? lastBarRef.current.close : null;
       if (last != null) {
         const value = (last - pos.avgEntry) * signedQty;
-        setPl({ value, pct: cost ? (value / cost) * 100 : null });
+        const pct = cost ? (value / cost) * 100 : null;
+        // Same cents and same 0.01% as on screen: keep the old object, so no re-render.
+        setPl((p) => (p && Math.round(p.value * 100) === Math.round(value * 100)
+          && Math.round((p.pct ?? 0) * 100) === Math.round((pct ?? 0) * 100) ? p : { value, pct }));
       }
       const y = s.priceToCoordinate(pos.avgEntry);
       setPlY(y != null && !Number.isNaN(y) && y >= 0 ? y : null);
@@ -611,7 +636,8 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
       // chart's price is a different instrument, so use the chain's own spot.
       const S = (gexFollows && lastBarRef.current) ? lastBarRef.current.close : gexChain.spot;
       const lv = gexLevels(gexChain.rows, S);
-      if (lv) setGex(lv);
+      // Unchanged levels: keep the old object so the chart and GEX panel don't redraw.
+      if (lv) setGex((g) => (g && JSON.stringify(g) === JSON.stringify(lv) ? g : lv));
     };
     recompute();
     const id = setInterval(recompute, 2000);
@@ -735,14 +761,15 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
       {status === 'error' && (
         <div className={styles.chartMsg}>Could not load price data — retrying on the next tick.</div>
       )}
-      {status === 'ok' && countdown && (
+      {status === 'ok' && (
         <div
+          ref={cdRef}
           className={styles.candleCountdown}
-          style={{ top: cdTop }}
+          style={{ top: cdTopRef.current }}
           title="Time until the current candle closes"
         >
           <span className={styles.cdDot} />
-          {countdown}
+          <span ref={cdTextRef} />
         </div>
       )}
       {status === 'ok' && pos && pl && plY != null && (
@@ -790,3 +817,6 @@ export default function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTar
     </div>
   );
 }
+
+// Re-render only when the chart's own inputs change, not whenever the Terminal page updates.
+export default React.memo(Chart);

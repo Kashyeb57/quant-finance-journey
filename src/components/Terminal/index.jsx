@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 import { SECTIONS } from './tickers';
 import { ChartSkeleton, NewsSkeleton, PortfolioSkeletonBody, PriceSkeleton } from './Skeletons';
@@ -42,6 +42,7 @@ export default function Terminal() {
   const [section, setSection] = useState(() => sectionOf('AMD'));
   const [timeframe, setTimeframe] = useState('5Min');
   const [source, setSource] = useState(null);
+  const onChartStatus = useCallback((s) => setSource(s.source), []); // stable, so the memoized chart is not re-rendered
   const [chartOpen, setChartOpen] = useState(true);
   const [newsOpen, setNewsOpen] = useState(true);
   const deckRef = useRef(null); // fullscreen target — the whole deck (chart + news)
@@ -148,7 +149,7 @@ export default function Terminal() {
                     <BrowserOnly fallback={<div className={styles.chartArea}><ChartSkeleton /></div>}>
                       {() => {
                         const Chart = require('./Chart').default;
-                        return <Chart ticker={ticker} timeframe={timeframe} setTimeframe={setTimeframe} onStatus={(s) => setSource(s.source)} fsTargetRef={deckRef} />;
+                        return <Chart ticker={ticker} timeframe={timeframe} setTimeframe={setTimeframe} onStatus={onChartStatus} fsTargetRef={deckRef} />;
                       }}
                     </BrowserOnly>
                     {live && <div className={styles.fsChain}><LiveChainStrip snap={live} /></div>}

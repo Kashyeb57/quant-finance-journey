@@ -16,7 +16,9 @@ export function lastClosedTime(bars, granSec, nowSec) {
 
 export async function requestOverlay(base, symbol, tfKey, last) {
   const q = new URLSearchParams({ symbol, tf: tfKey, last: String(last) });
-  const r = await fetch(`${base}/_x/overlay?${q}`, { signal: AbortSignal.timeout(8000) });
+  // no-cache: always check with the server (it answers from its own cache), so a
+  // browser never draws an old copy it kept from earlier.
+  const r = await fetch(`${base}/_x/overlay?${q}`, { cache: 'no-cache', signal: AbortSignal.timeout(8000) });
   if (!r.ok) throw new Error(String(r.status));
   return r.json();
 }
