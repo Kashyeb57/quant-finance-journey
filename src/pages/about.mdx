@@ -27,6 +27,17 @@ I learn by building. Reading a formula tells me almost nothing; implementing it,
 
 Beyond the notes themselves: a browser-based [Python notebook](/notebook) with numpy, pandas and matplotlib, a set of interactive pricing and probability labs, a [live market terminal](/terminal), and finance-focused coding projects like a FIFO stock ledger. The full list lives on the [Projects](/projects) page.
 
+## For AI agents (WebMCP)
+
+This site registers a few **read-only** tools through [WebMCP](https://developer.chrome.com/docs/ai/webmcp), a proposed web standard that lets an AI agent in your browser ask a page for structured answers instead of clicking around:
+
+- `search_notes` and `list_notes_by_topic`: find notes by keyword or section
+- `list_projects` and `list_big_events`: the Projects and Big Events lists
+- `get_current_page`: title, headings and links of the page you are on
+- `get_market_snapshot`: latest quotes from the site's market feed, with a disclaimer (delayed or single-exchange data, not investment advice)
+
+None of them change anything, sign in, or send data anywhere. To try them, open `chrome://flags/#enable-webmcp-testing` in Chrome, set it to **Enabled**, relaunch, and use an agent extension that supports WebMCP. In browsers without WebMCP the site loads none of this.
+
 ## Where to find me
 
 <SocialLinks />

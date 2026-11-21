@@ -34,7 +34,7 @@ const config = {
 
   // Owner-only visitor beacon → Cloudflare Worker at /_a/collect.
   // No-ops until the Worker in ./analytics is deployed; never breaks the site.
-  clientModules: ['./src/clientModules/analytics.js', './src/clientModules/pageTransition.js'],
+  clientModules: ['./src/clientModules/analytics.js', './src/clientModules/pageTransition.js', './src/clientModules/webmcp.js'],
 
   // SEO: structured data so search engines understand who/what this site is.
   headTags: [
@@ -101,6 +101,8 @@ const config = {
   // so those numbers can never drift from the content again.
   plugins: [
     './plugins/content-stats.js',
+    // Public metadata catalog (/webmcp/index.json) for the read-only WebMCP tools.
+    './plugins/webmcp-catalog.js',
     // lightweight-charts (Terminal chart) is ESM-only and draws on a canvas, so
     // it only ever loads in the browser. The server render never needs it; an
     // empty stand-in there keeps the CommonJS server bundle from tripping on it.
