@@ -3,6 +3,7 @@ import OriginalFooter from '@theme-original/DocItem/Footer';
 import { useLocation } from '@docusaurus/router';
 import useGlobalData from '@docusaurus/useGlobalData';
 import { QUIZ_KEY, QUIZ_EVENT } from '@site/src/components/Interactive/Quiz';
+import CourseVideo from '@site/src/components/CourseVideo';
 import styles from './styles.module.css';
 
 const KEY = 'qf-progress';
@@ -57,6 +58,7 @@ export default function Footer(props) {
   if (isOutline) {
     return (
       <>
+        <CourseVideo />
         <div className={styles.tracker}>
           <span className={styles.count}>
             This topic is still an outline, so there&rsquo;s nothing to mark as read yet.
@@ -69,6 +71,7 @@ export default function Footer(props) {
 
   return (
     <>
+      <CourseVideo />
       <div className={styles.tracker}>
         <button
           className={`${styles.btn} ${read ? styles.btnDone : ''}`}
