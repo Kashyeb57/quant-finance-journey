@@ -1,0 +1,34 @@
+# Deploys the Checker Worker (/checker, owner-only job dashboard) through GitHub
+# Actions, the same way the analytics Worker ships: push to main -> deploy.
+# Uses the existing CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID repo secrets.
+# Runtime secrets (CHECKER_PASSWORD, SESSION_SECRET, INGEST_TOKEN) live on
+# Cloudflare via `wrangler secret put` and persist across deploys.
+
+name: Deploy checker worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'checker/src/**'
+      - 'checker/wrangler.toml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-checker
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy with Wrangler
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: checker

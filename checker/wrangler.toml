@@ -1,0 +1,26 @@
+# Cloudflare Worker: Checker, the owner-only job dashboard at
+# joyebkashyeb.com.np/checker. Setup steps are in README.md.
+#
+# No job data lives in this repo. Jobs, statuses and notes live only in the
+# private D1 database below; the page and API refuse everyone without the
+# password (or, for the hunter's ingest route, the ingest token).
+
+name = "checker"
+main = "src/worker.js"
+compatibility_date = "2024-11-01"
+
+# "/checker*" also catches "/checker?x"; the Worker itself 404s any path that
+# is not exactly /checker or under /checker/.
+routes = [
+  { pattern = "joyebkashyeb.com.np/checker*", zone_name = "joyebkashyeb.com.np" }
+]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "checker"
+database_id = "aa23ccfb-ed8b-4ffe-a36d-7cfe2fa50431"
+
+# Secrets (set with `npx wrangler secret put NAME`, never stored in git):
+#   CHECKER_PASSWORD  - the login password for the page
+#   SESSION_SECRET    - long random string that signs the login cookie
+#   INGEST_TOKEN      - long random string the job hunter uses to send jobs
