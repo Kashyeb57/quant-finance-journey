@@ -14,6 +14,54 @@ import styles from './styles.module.css';
 
 const PROJECTS = [
   {
+    title: 'QuantProof — Structured-Note Risk Analysis from SEC Filings',
+    status: 'Completed',
+    overview: [
+      'Banks sell autocallables, barrier notes and buffered notes to ordinary investors, each with a long SEC pricing supplement (a 424B2 filing) that few buyers can read. QuantProof reads that filing and shows, under stated assumptions, an independently computed estimated-value range next to the bank’s own estimated value and the issue price, plus how and when the note can lose money.',
+      'Meta models extract the note’s terms with a filing quote for every field, and a second extraction cross-checks them. My own engine does all the maths: no payoff is priced until its code passes a proof battery of closed-form, limiting-case and monotonicity checks, and every number in a report comes from an engine output or a cited filing value, never from a model.',
+      'Built solo during the Meta Global AI Developer Hackathon (Oct 27 – Nov 4, 2026). It did not win, but it was worth building. Risk analysis under stated assumptions, not investment advice.',
+    ],
+    sections: [
+      {
+        heading: 'How it works',
+        items: [
+          'Ingest an EDGAR 424B2 filing; Muse Spark 1.3 extracts a term sheet where every field carries the exact filing quote it came from',
+          'Code (not a model) verifies each quote appears verbatim in the filing; an independent second extraction (Muse Spark Open) is diffed field by field',
+          'The user confirms the terms, which compile into a payoff (worst-of autocallable or buffered/barrier template) that must pass the proof battery before any price is shown',
+          'Risk-neutral Monte Carlo gives a fair-value range over an assumption grid; a separate, labelled real-world simulation gives loss odds and a stress heatmap',
+          'Offline only: Muse Wonder writes payoff code for unsupported features, run in a sandbox and registered only after passing the synthesized-payoff battery',
+        ],
+      },
+      {
+        heading: 'Results on a real JPMorgan note (JPM 38582, worst-of autocallable)',
+        items: [
+          'Issue price $1,000.00; bank’s estimated value $954.00; QuantProof range $774.88 – $974.06 (100,000 paths), with the bank’s value inside the range',
+          'Base estimated value $904.66 ± $1.46; volatility is the assumption that moves it most ($951.33 to $859.93 across its stated range)',
+          'Real-world loss odds (separate measure): P(loss) 10.17%, P(called early) 81.72%; issuer default is not simulated',
+          'The live app uses fewer paths (20,000) to stay fast: range $776.19 – $972.92, the figures in the demo video',
+        ],
+      },
+      {
+        heading: 'Market audit and synthesis benchmark',
+        items: [
+          '44 notes read across 11 issuers; 42 extracted; quote verification 95.2%',
+          'Bank’s estimated value inside QuantProof’s range on 11 of 13 priced-or-held notes (84.6%); median cost to investor 1.9% of issue price',
+          'AI-written payoffs: 24 of 31 attempted notes passed (19 first try, 5 after repair), lifting coverage from 11 to 26 of 42 extracted notes',
+          'Proof battery on four JPMorgan filings: all maths checks pass (13/13, 14/14, 12/12, 6/6)',
+          '1,668 automated tests passing in CI on Python 3.11 and 3.13',
+        ],
+      },
+    ],
+    video: { youtubeId: '2x6z8SFrNXs', title: 'QuantProof demo (2:41)' },
+    tags: ['Python', 'Monte Carlo', 'Derivatives pricing', 'SEC EDGAR', 'Streamlit', 'Meta Muse models', 'Structured notes'],
+    links: [
+      { label: 'Live app', url: 'https://kashyeb57-quantproof-app-snew9v.streamlit.app/' },
+      { label: 'Source on GitHub', url: 'https://github.com/Kashyeb57/quantproof' },
+      { label: 'Demo video (2:41)', url: 'https://youtu.be/2x6z8SFrNXs' },
+      { label: 'Hackathon submission', url: 'https://github.com/Kashyeb57/quantproof/tree/hackathon-submission' },
+    ],
+  },
+  {
     title: 'This Site — Interactive Quantitative Finance Platform',
     status: 'In Progress',
     overview: [
@@ -177,6 +225,19 @@ export default function Projects() {
               toParagraphs(p.overview).map((para, pi) => (
                 <p key={pi} className={styles.desc}>{para}</p>
               ))}
+
+            {p.video && (
+              <div className={styles.video}>
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${p.video.youtubeId}`}
+                  title={p.video.title}
+                  loading="lazy"
+                  allow="encrypted-media; picture-in-picture; fullscreen"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
+            )}
 
             {p.sections &&
               p.sections.map((sec) => (
