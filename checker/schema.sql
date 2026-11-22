@@ -37,3 +37,18 @@ CREATE TABLE IF NOT EXISTS login_fail (
   at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS login_fail_ip ON login_fail(ip, at);
+
+-- Private documents: tailored resumes, evaluator scorecards, the 5 base resumes.
+-- Served only to a signed-in session. job_id is NULL for base resumes.
+CREATE TABLE IF NOT EXISTS docs (
+  id         TEXT PRIMARY KEY,           -- random 16 hex
+  job_id     TEXT,                       -- jobs.id, or NULL for a base resume
+  kind       TEXT NOT NULL,              -- resume / scorecard / base / other
+  name       TEXT NOT NULL,              -- file name shown and downloaded
+  mime       TEXT NOT NULL,
+  size       INTEGER NOT NULL,
+  body       BLOB NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS docs_job ON docs(job_id);
+CREATE UNIQUE INDEX IF NOT EXISTS docs_unique ON docs(COALESCE(job_id, ''), kind, name);

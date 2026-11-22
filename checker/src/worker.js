@@ -227,6 +227,88 @@ async function handleIngest(request, env) {
   return json({ ok: true, upserted: stmts.length, skipped });
 }
 
+// ---------- private documents (resumes, scorecards, base resumes) ----------
+
+const DOC_KINDS = ['resume', 'scorecard', 'base', 'other'];
+const BASES = ['DataAnalytics', 'DataScience', 'Software', 'Risk', 'Quant'];
+const MAX_DOC = 1024 * 1024; // 1 MB; a one-page resume PDF is ~60-150 KB
+const DOC_TYPES = { pdf: 'application/pdf', md: 'text/plain; charset=utf-8', txt: 'text/plain; charset=utf-8', tex: 'text/plain; charset=utf-8' };
+
+function randomId() {
+  const b = new Uint8Array(8); crypto.getRandomValues(b);
+  return [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+function docName(raw) {
+  const name = String(raw || '').split(/[\\/]/).pop().replace(/[^A-Za-z0-9._ -]/g, '_').slice(0, 120);
+  const ext = (/\.([a-z0-9]+)$/i.exec(name) || [])[1]?.toLowerCase();
+  return DOC_TYPES[ext] ? { name, mime: DOC_TYPES[ext] } : null;
+}
+
+// Upload: multipart form with file, kind, and job (16-hex id) or url (posting URL) or base (one of BASES).
+// Used by the page (session) and by the PC uploader script (ingest token).
+async function apiDocUpload(request, env) {
+  let form; try { form = await request.formData(); } catch { return json({ error: 'send multipart form data' }, 400); }
+  const file = form.get('file');
+  if (!file || typeof file === 'string') return json({ error: 'no file' }, 400);
+  const meta = docName(file.name);
+  if (!meta) return json({ error: 'only .pdf, .md, .txt, .tex files' }, 400);
+  if (file.size > MAX_DOC) return json({ error: 'file is over 1 MB' }, 400);
+  const kind = String(form.get('kind') || '');
+  if (!DOC_KINDS.includes(kind)) return json({ error: 'kind must be ' + DOC_KINDS.join(', ') }, 400);
+  let jobId = null;
+  if (kind === 'base') {
+    const base = String(form.get('base') || '');
+    if (!BASES.includes(base)) return json({ error: 'base must be ' + BASES.join(', ') }, 400);
+    meta.name = base + (meta.mime === 'application/pdf' ? '.pdf' : '.' + meta.name.split('.').pop());
+  } else {
+    jobId = String(form.get('job') || '');
+    if (!/^[0-9a-f]{16}$/.test(jobId)) {
+      const url = cleanUrl(form.get('url'));
+      if (!url) return json({ error: 'give job (id) or url' }, 400);
+      jobId = (await sha256hex(url)).slice(0, 16);
+    }
+    if (!(await env.DB.prepare('SELECT 1 FROM jobs WHERE id = ?').bind(jobId).first())) return json({ error: 'no such job in Checker' }, 404);
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (meta.mime === 'application/pdf' && !(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) {
+    return json({ error: 'not a real PDF' }, 400);
+  }
+  const id = randomId();
+  // Same job + kind + name replaces the old copy (re-uploading a fixed resume).
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM docs WHERE COALESCE(job_id, '') = ? AND kind = ? AND name = ?").bind(jobId || '', kind, meta.name),
+    env.DB.prepare('INSERT INTO docs (id, job_id, kind, name, mime, size, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, jobId, kind, meta.name, meta.mime, bytes.length, bytes, new Date().toISOString()),
+  ]);
+  return json({ ok: true, id, job: jobId, kind, name: meta.name, size: bytes.length });
+}
+
+async function apiDocList(env, url) {
+  const job = url.searchParams.get('job');
+  const q = job && /^[0-9a-f]{16}$/.test(job)
+    ? env.DB.prepare('SELECT id, job_id, kind, name, size, created_at FROM docs WHERE job_id = ? ORDER BY kind, name').bind(job)
+    : env.DB.prepare("SELECT id, job_id, kind, name, size, created_at FROM docs WHERE kind = 'base' ORDER BY name");
+  return json({ docs: (await q.all()).results });
+}
+
+async function apiDocGet(env, id) {
+  const row = await env.DB.prepare('SELECT name, mime, body FROM docs WHERE id = ?').bind(id).first();
+  if (!row) return text('Not found', 404);
+  const body = row.body instanceof ArrayBuffer ? row.body : new Uint8Array(row.body);
+  const headers = { ...BASE_HEADERS, 'Content-Type': row.mime, 'Content-Disposition': `inline; filename="${row.name}"` };
+  // Text files open sandboxed (no scripts, no access to the Checker page). PDFs skip the
+  // sandbox because Chrome's PDF viewer refuses sandboxed documents; uploads are checked
+  // to start with %PDF and are served with nosniff.
+  if (row.mime !== 'application/pdf') headers['Content-Security-Policy'] = "sandbox; default-src 'none'";
+  return new Response(body, { headers });
+}
+
+async function apiDocDelete(env, id) {
+  const res = await env.DB.prepare('DELETE FROM docs WHERE id = ?').bind(id).run();
+  return res.meta.changes ? json({ ok: true }) : json({ error: 'not found' }, 404);
+}
+
 // ---------- owner API ----------
 
 const ACTIVE_EXCLUDE = ['rejected', 'skipped', 'closed'];
@@ -279,7 +361,9 @@ async function apiJobs(env, url) {
   const offset = Math.max(Number(p.get('offset')) || 0, 0);
   const [rows, total, counts, week] = await env.DB.batch([
     env.DB.prepare(`SELECT id, url, company, title, location, category, deadline, pay, intl, score, source, found_at,
-                           cpt, opt, auth_quote, status, applied_on, resume, my_deadline, notes, updated_at
+                           cpt, opt, auth_quote, status, applied_on, resume, my_deadline, notes, updated_at,
+                           (SELECT json_group_array(json_object('id', d.id, 'kind', d.kind, 'name', d.name))
+                              FROM docs d WHERE d.job_id = jobs.id) AS docs
                     FROM jobs ${sql} ORDER BY ${order} LIMIT ? OFFSET ?`).bind(...args, limit, offset),
     env.DB.prepare(`SELECT COUNT(*) AS n FROM jobs ${sql}`).bind(...args),
     env.DB.prepare('SELECT status, COUNT(*) AS n FROM jobs GROUP BY status'),
@@ -403,6 +487,13 @@ export default {
 
     try {
       if (path === BASE + '/api/ingest') return await handleIngest(request, env);
+      if (path === BASE + '/api/ingest/docs') {
+        if (request.method !== 'POST') return text('Method not allowed', 405);
+        const auth = request.headers.get('Authorization') || '';
+        const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+        if (!token || !(await safeEqual(token, env.INGEST_TOKEN))) return text('Forbidden', 403);
+        return await apiDocUpload(request, env);
+      }
       if (path === BASE + '/login') return await handleLogin(request, env, url);
       if (path === BASE + '/logout') return handleLogout(request, url);
 
@@ -415,11 +506,17 @@ export default {
         if (request.method === 'GET') {
           if (route === 'jobs') return await apiJobs(env, url);
           if (route === 'export.csv') return await apiExport(env);
+          if (route === 'docs') return await apiDocList(env, url);
+          const d = /^docs\/([0-9a-f]{16})$/.exec(route);
+          if (d) return await apiDocGet(env, d[1]);
         } else {
           if (!sameOrigin(request, url) || request.headers.get('X-Checker') !== '1') return text('Forbidden', 403);
           const m = /^jobs\/([0-9a-f]{16})$/.exec(route);
           if (m && request.method === 'PATCH') return await apiPatch(request, env, m[1]);
           if (route === 'bulk' && request.method === 'POST') return await apiBulk(request, env);
+          if (route === 'docs' && request.method === 'POST') return await apiDocUpload(request, env);
+          const d = /^docs\/([0-9a-f]{16})$/.exec(route);
+          if (d && request.method === 'DELETE') return await apiDocDelete(env, d[1]);
         }
       }
       return text('Not found', 404);
@@ -460,10 +557,11 @@ a{color:#8ab4ff}td select{padding:3px}
 #detail .box{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;width:min(560px,94vw)}
 #detail label{display:block;margin-top:10px;color:var(--mut);font-size:12px}#detail input,#detail textarea,#detail select{width:100%}
 
-.w96{width:96px}.mt6{margin-top:6px}.mt8{margin-top:8px}.dh{margin:0;font-size:16px}.drow{display:flex;gap:8px;margin-top:12px}
+.w96{width:96px}.docs a{margin-right:8px;font-size:12px}#ddocs a{margin-right:6px}#ddocs button{padding:1px 6px;margin-right:12px;font-size:12px}.mt6{margin-top:6px}.mt8{margin-top:8px}.dh{margin:0;font-size:16px}.drow{display:flex;gap:8px;margin-top:12px}
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111;border:1px solid var(--line);padding:8px 14px;border-radius:8px;display:none}
 </style></head><body>
 <header><h1>Checker</h1><div class="stats" id="stats"></div><div class="grow"></div>
+<span class="mut" id="bases"></span>
 <a href="/checker/api/export.csv">Export CSV</a>
 <form method="post" action="/checker/logout"><button type="submit">Sign out</button></form></header>
 <div class="bar">
@@ -495,6 +593,9 @@ a{color:#8ab4ff}td select{padding:3px}
 <label>Status<select id="dstatus"></select></label><label>Date applied<input id="dapplied" type="date"></label>
 <label>Resume sent (file or version)<input id="dresume" maxlength="160"></label><label>My deadline<input id="ddeadline" type="date"></label>
 <label>Notes<textarea id="dnotes" rows="4" maxlength="2000"></textarea></label>
+<label>Files for this job (tailored resume, scorecard)</label><div id="ddocs" class="mut"></div>
+<div class="drow"><select id="dkind"><option value="resume">Resume</option><option value="scorecard">Scorecard</option><option value="other">Other</option></select>
+<input type="file" id="dfile" accept=".pdf,.md,.txt,.tex"><button id="dupload">Upload</button></div>
 <div class="drow"><button class="primary" id="dsave">Save</button><button id="dcancel">Cancel</button></div></div></div>
 <div id="toast"></div>
 
@@ -503,7 +604,27 @@ a{color:#8ab4ff}td select{padding:3px}
 const STATUSES = ${JSON.stringify(STATUSES)};
 const PAGE = 100;
 const $ = id => document.getElementById(id);
-const state = { rows: [], total: 0, offset: 0, selected: new Map(), queue: [], qi: 0, editing: null };
+const state = { rows: [], total: 0, offset: 0, selected: new Map(), queue: [], qi: 0, editing: null, bases: {} };
+const docUrl = id => '/checker/api/docs/' + id;
+function docsOf(r) { try { return JSON.parse(r.docs || '[]'); } catch { return []; } }
+const KIND_LABEL = { resume: 'Resume', scorecard: 'Scorecard', other: 'File' };
+function docLinks(r) {
+  const box = el('div', { class: 'docs' });
+  for (const d of docsOf(r)) box.append(el('a', { href: docUrl(d.id), target: '_blank', rel: 'noopener', text: KIND_LABEL[d.kind] || d.kind, title: d.name }));
+  const b = state.bases[baseResume(r)];
+  if (b) box.append(el('a', { href: docUrl(b), target: '_blank', rel: 'noopener', text: 'Base PDF', title: baseResume(r) + ' base resume' }));
+  return box;
+}
+async function loadBases() {
+  try {
+    const d = await api('docs', { method: 'GET', headers: {} });
+    state.bases = {}; const box = $('bases'); box.replaceChildren(d.docs.length ? 'Bases: ' : '');
+    for (const doc of d.docs) {
+      const name = doc.name.replace(/\\.[a-z]+$/, ''); state.bases[name] = doc.id;
+      box.append(el('a', { href: docUrl(doc.id), target: '_blank', rel: 'noopener', text: name }), ' ');
+    }
+  } catch { /* bases optional */ }
+}
 
 function el(tag, props = {}, ...kids) {
   const e = document.createElement(tag);
@@ -592,7 +713,7 @@ function renderRows() {
       el('td', {}, cb),
       el('td', { text: r.score === null ? '-' : String(r.score) }),
       el('td', {}, el('div', { class: 'co', text: r.company }), el('div', { text: r.title }),
-        el('div', { class: 'mut', text: [r.location, r.pay, r.source].filter(Boolean).join(' | ') })),
+        el('div', { class: 'mut', text: [r.location, r.pay, r.source].filter(Boolean).join(' | ') }), docLinks(r)),
       el('td', { class: 'mut', text: r.category + ' / ' + baseResume(r) }),
       el('td', { class: 'mut', text: (r.found_at || '').slice(0, 10) }),
       el('td', {}, deadlineCell(r)),
@@ -627,7 +748,28 @@ function openDetail(r) {
   $('dquote').textContent = r.auth_quote ? 'Posting says: "' + r.auth_quote + '"' : '';
   $('dstatus').value = r.status; $('dapplied').value = r.applied_on || ''; $('dresume').value = r.resume || baseResume(r);
   $('ddeadline').value = r.my_deadline || ''; $('dnotes').value = r.notes || '';
+  renderDocs(r); $('dfile').value = '';
   $('detail').style.display = 'flex';
+}
+function renderDocs(r) {
+  const box = $('ddocs'); box.replaceChildren();
+  const list = docsOf(r);
+  if (!list.length) box.append('No files yet.');
+  for (const d of list) box.append(el('a', { href: docUrl(d.id), target: '_blank', rel: 'noopener', text: (KIND_LABEL[d.kind] || d.kind) + ': ' + d.name }),
+    el('button', { text: 'x', title: 'Delete this file', onclick: async () => {
+      if (!confirm('Delete ' + d.name + ' from Checker?')) return;
+      try { await api('docs/' + d.id, { method: 'DELETE' }); r.docs = JSON.stringify(docsOf(r).filter(x => x.id !== d.id)); renderDocs(r); renderRows(); }
+      catch (e) { toast('Delete failed: ' + e.message); } } }));
+}
+async function uploadDoc() {
+  const r = state.editing, f = $('dfile').files[0];
+  if (!f) return toast('Choose a file first');
+  const fd = new FormData(); fd.append('file', f); fd.append('kind', $('dkind').value); fd.append('job', r.id);
+  const res = await fetch('/checker/api/docs', { method: 'POST', body: fd, credentials: 'same-origin', headers: { 'X-Checker': '1' } });
+  const d = await res.json().catch(() => ({}));
+  if (!res.ok) return toast('Upload failed: ' + (d.error || res.status));
+  r.docs = JSON.stringify([...docsOf(r).filter(x => !(x.kind === d.kind && x.name === d.name)), { id: d.id, kind: d.kind, name: d.name }]);
+  $('dfile').value = ''; renderDocs(r); renderRows(); toast('Uploaded ' + d.name);
 }
 
 function startQueue() {
@@ -684,12 +826,13 @@ $('qprev').onclick = () => { state.qi--; showQueue(); };
 $('qnext').onclick = () => { state.qi++; showQueue(); };
 $('qclose').onclick = () => { $('queue').style.display = 'none'; };
 $('dcancel').onclick = () => { $('detail').style.display = 'none'; };
+$('dupload').onclick = uploadDoc;
 $('dsave').onclick = async () => {
   const r = state.editing;
   const ok = await patch(r, { status: $('dstatus').value, applied_on: $('dapplied').value || null, resume: $('dresume').value,
     my_deadline: $('ddeadline').value || null, notes: $('dnotes').value });
   if (ok) $('detail').style.display = 'none';
 };
-load();
+loadBases().then(load);
 })();
 </script></body></html>`;
