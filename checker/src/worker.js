@@ -213,18 +213,31 @@ async function handleIngest(request, env) {
          category = excluded.category, deadline = COALESCE(excluded.deadline, jobs.deadline),
          pay = COALESCE(excluded.pay, jobs.pay), intl = excluded.intl, score = excluded.score,
          source = excluded.source, last_seen = excluded.last_seen,
-         found_at = COALESCE(jobs.found_at, excluded.found_at),
          cpt = CASE WHEN excluded.cpt <> 'unknown' THEN excluded.cpt ELSE jobs.cpt END,
          opt = CASE WHEN excluded.opt <> 'unknown' THEN excluded.opt ELSE jobs.opt END,
-         auth_quote = COALESCE(excluded.auth_quote, jobs.auth_quote)`
+         auth_quote = COALESCE(excluded.auth_quote, jobs.auth_quote)
+       -- Write only when a posting fact actually changed. Rewriting every unchanged row on
+       -- every hunter run used most of D1's free 100,000 rows-written per day.
+       WHERE jobs.company IS NOT excluded.company OR jobs.title IS NOT excluded.title
+          OR jobs.location IS NOT excluded.location OR jobs.category IS NOT excluded.category
+          OR (excluded.deadline IS NOT NULL AND jobs.deadline IS NOT excluded.deadline)
+          OR (excluded.pay IS NOT NULL AND jobs.pay IS NOT excluded.pay)
+          OR jobs.intl IS NOT excluded.intl OR jobs.score IS NOT excluded.score
+          OR jobs.source IS NOT excluded.source
+          OR (excluded.cpt <> 'unknown' AND jobs.cpt IS NOT excluded.cpt)
+          OR (excluded.opt <> 'unknown' AND jobs.opt IS NOT excluded.opt)
+          OR (excluded.auth_quote IS NOT NULL AND jobs.auth_quote IS NOT excluded.auth_quote)`
     ).bind(
       (await sha256hex(url)).slice(0, 16), url, company, title, str(j.location, 200), normCategory(j.type || j.category),
       normDeadline(j.deadline), str(j.pay, 100), str(j.intl, 60), score, str(j.source, 80),
       isoOrNow(j.found, now), now, cpt, opt, str(j.auth_quote, 600),
     ));
   }
-  if (stmts.length) await env.DB.batch(stmts);
-  return json({ ok: true, upserted: stmts.length, skipped });
+  let changed = 0, rowsWritten = 0;
+  if (stmts.length) {
+    for (const r of await env.DB.batch(stmts)) { changed += r.meta.changes || 0; rowsWritten += r.meta.rows_written || 0; }
+  }
+  return json({ ok: true, upserted: stmts.length, changed, rows_written: rowsWritten, skipped });
 }
 
 // ---------- private documents (resumes, scorecards, base resumes) ----------
