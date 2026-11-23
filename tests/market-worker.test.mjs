@@ -266,3 +266,63 @@ test('the option chain is cached and keeps CORS for the site only', async () => 
   assert.deepEqual(calls, [], 'served from cache');
   assert.equal(res.headers.get('Access-Control-Allow-Origin'), SITE);
 });
+
+// ── GEX from Alpaca (free) when Cboe refuses ────────────────────────────────
+// Alpaca: OI from the paper contracts list, IV + gamma from the indicative
+// snapshots, spot from the IEX stock snapshot. A contract with no greeks (for
+// example one expiring today) takes its expiry's median IV, so it still counts.
+function occ(sym, ymd, side, strike) {
+  return `${sym}${ymd}${side}${String(Math.round(strike * 1000)).padStart(8, '0')}`;
+}
+test('GEX uses Alpaca when Cboe refuses, and fills missing vols from the same expiry', async () => {
+  const exp = new Date(Date.now() + 3 * 86400000);
+  const ymd = exp.toISOString().slice(2, 10).replace(/-/g, '');
+  const ymdIso = exp.toISOString().slice(0, 10);
+  const c100 = occ('MU', ymd, 'C', 100), p95 = occ('MU', ymd, 'P', 95), c105 = occ('MU', ymd, 'C', 105);
+  const JSONH = { 'Content-Type': 'application/json' };
+  const routes = (href) => {
+    const u = new URL(href);
+    if (u.hostname === 'cdn.cboe.com') return { status: 403, body: 'blocked' };
+    if (u.pathname === '/v2/stocks/snapshots') return { body: JSON.stringify({ MU: { latestTrade: { p: 100 } } }) };
+    if (u.pathname === '/v2/options/contracts') {
+      assert.equal(u.hostname, 'paper-api.alpaca.markets', 'contracts come from the paper base');
+      assert.equal(u.searchParams.get('underlying_symbols'), 'MU');
+      return { body: JSON.stringify({ option_contracts: [
+        { symbol: c100, expiration_date: ymdIso, open_interest: '1000' },
+        { symbol: p95, expiration_date: ymdIso, open_interest: '800' },
+        { symbol: c105, expiration_date: ymdIso, open_interest: '500' },
+        { symbol: occ('MU', ymd, 'C', 110), expiration_date: ymdIso, open_interest: '0' },
+      ] }) };
+    }
+    if (u.pathname === '/v1beta1/options/snapshots/MU') {
+      assert.equal(u.searchParams.get('feed'), 'indicative');
+      return { body: JSON.stringify({ snapshots: {
+        [c100]: { impliedVolatility: 0.5, greeks: { gamma: 0.04 } },
+        [p95]: { impliedVolatility: 0.6, greeks: { gamma: 0.03 } },
+        // c105 has no greeks at all
+      } }) };
+    }
+    throw new Error(`unexpected ${href}`);
+  };
+  upstream = (href) => ({ headers: JSONH, ...routes(href) });
+  const res = await call('/_m/gex?symbol=MU&exp=week');
+  const body = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(body));
+  assert.equal(body.source, 'alpaca');
+  assert.equal(body.spot, 100);
+  const byK = Object.fromEntries(body.rows.map((r) => [r.k, r]));
+  assert.deepEqual(Object.keys(byK).map(Number).sort((a, b) => a - b), [95, 100, 105], 'zero-OI contract dropped');
+  assert.equal(byK[105].civ, 0.55, 'missing IV filled with the expiry median');
+  assert.equal(byK[100].coi, 1000);
+  assert.equal(byK[95].poi, 800);
+  assert.ok(calls.every((h) => !h.includes('/v2/orders')), 'no trading route touched');
+});
+
+test('GEX for an index explains that index options are not in the free feed', async () => {
+  upstream = () => ({ status: 403, body: 'blocked' });
+  const res = await call('/_m/gex?symbol=SPX&exp=day');
+  const body = await res.json();
+  assert.equal(res.status, 404);
+  assert.match(body.error, /index options are not in the free feed/);
+  assert.ok(calls.every((h) => !h.includes('alpaca')), 'no Alpaca call for an index');
+});

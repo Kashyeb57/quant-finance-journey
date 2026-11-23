@@ -626,6 +626,101 @@ async function chainFromCboe(symbol, dayStart) {
   return { spot, contracts, source: 'cboe' };
 }
 
+// Near-money option chain from Alpaca, free with the Worker's existing keys:
+//   open interest  — paper Trading API /v2/options/contracts (previous close)
+//   IV and gamma   — Market Data /v1beta1/options/snapshots, free "indicative"
+//                    feed (a 15-min-delayed derivative of OPRA)
+//   spot           — the stock's latest IEX trade
+// Alpaca has no greeks for contracts expiring today or without a two-sided
+// quote; those take the median IV of their own expiry (or of the whole chain),
+// and gamma is recomputed from Black-Scholes so they still count.
+// US equity and ETF options only: index options (SPX, NDX...) are not covered.
+const ALPACA_OPTIONS = 'https://data.alpaca.markets/v1beta1/options';
+
+async function alpacaOptionsData(path, env) {
+  const res = await fetch(`${ALPACA_OPTIONS}${path}`, {
+    headers: {
+      'APCA-API-KEY-ID': env.ALPACA_KEY_ID,
+      'APCA-API-SECRET-KEY': env.ALPACA_SECRET_KEY,
+      'Accept': 'application/json',
+    },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+function median(xs) {
+  if (!xs.length) return 0;
+  const s = [...xs].sort((a, b) => a - b), m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+async function chainFromAlpaca(symbol, env, winDays, dayStart) {
+  if (!env.ALPACA_KEY_ID || !env.ALPACA_SECRET_KEY || CBOE_INDEXES.includes(symbol)) return null;
+  const snap = await alpaca(`/snapshots?symbols=${encodeURIComponent(symbol)}&feed=iex`, env);
+  const s = snap.ok && snap.data ? snap.data[symbol] : null;
+  const spot = s ? numOr((s.latestTrade && s.latestTrade.p) || (s.dailyBar && s.dailyBar.c) || (s.prevDailyBar && s.prevDailyBar.c)) : null;
+  if (!spot) return null;
+
+  const day = (ms) => new Date(ms).toISOString().slice(0, 10);
+  // At least 8 days so the 'day' view still finds the next expiry over a weekend.
+  const from = day(dayStart), to = day(Date.now() + Math.max(winDays, 8) * 86400000);
+  const lo = Math.floor(spot * 0.85), hi = Math.ceil(spot * 1.15);
+  const range = `strike_price_gte=${lo}&strike_price_lte=${hi}`;
+
+  const oiBySym = new Map();
+  let token = '';
+  for (let pages = 0; pages < 4; pages++) {
+    const q = `/options/contracts?underlying_symbols=${encodeURIComponent(symbol)}&status=active`
+      + `&expiration_date_gte=${from}&expiration_date_lte=${to}&${range}&limit=10000`
+      + (token ? `&page_token=${encodeURIComponent(token)}` : '');
+    const r = await alpacaTrade(q, env);
+    if (!r.ok || !r.data) break;
+    for (const c of r.data.option_contracts || []) {
+      const oi = numOr(c.open_interest, 0);
+      if (oi > 0 && c.symbol) oiBySym.set(c.symbol, oi);
+    }
+    token = r.data.next_page_token || r.data.page_token || '';
+    if (!token || !(r.data.option_contracts || []).length) break;
+  }
+  if (!oiBySym.size) return null;
+
+  const greeks = new Map();
+  token = '';
+  for (let pages = 0; pages < 6; pages++) {
+    const j = await alpacaOptionsData(`/snapshots/${encodeURIComponent(symbol)}?feed=indicative&limit=1000`
+      + `&expiration_date_lte=${to}&${range}` + (token ? `&page_token=${encodeURIComponent(token)}` : ''), env);
+    if (!j) break;
+    for (const [occ, v] of Object.entries(j.snapshots || {})) {
+      greeks.set(occ, { iv: numOr(v.impliedVolatility, 0), gamma: numOr(v.greeks && v.greeks.gamma, 0) });
+    }
+    token = j.next_page_token || '';
+    if (!token) break;
+  }
+
+  const contracts = [];
+  for (const [occ, oi] of oiBySym) {
+    const p = parseOcc(occ);
+    if (!p || p.expiryMs < dayStart) continue;
+    const g = greeks.get(occ) || { iv: 0, gamma: 0 };
+    contracts.push({ k: p.strike, type: p.type, oi, iv: g.iv, gamma: g.gamma, expMs: p.expiryMs });
+  }
+  const allIv = contracts.filter((c) => c.iv > 0).map((c) => c.iv);
+  if (!allIv.length) return null; // no vols at all: nothing honest to show
+  const ivByExp = new Map();
+  for (const c of contracts) if (c.iv > 0) (ivByExp.get(c.expMs) || ivByExp.set(c.expMs, []).get(c.expMs)).push(c.iv);
+  const chainIv = median(allIv);
+  const now = Date.now();
+  for (const c of contracts) {
+    if (!(c.iv > 0)) c.iv = median(ivByExp.get(c.expMs) || []) || chainIv;
+    if (!(c.gamma > 0)) {
+      const T = Math.max((c.expMs - now) / 86400000, 0.25) / 365;
+      c.gamma = bsmGamma(spot, c.k, T, c.iv, 0.045);
+    }
+  }
+  return { spot, contracts, source: 'alpaca' };
+}
+
 // Near-money option chain from Polygon.io (paid; real-time OI + greeks + IV).
 // Active only when POLYGON_KEY is set; on any failure the caller falls back to
 // CBOE, so a missing/bad key never breaks the endpoint.
@@ -700,8 +795,14 @@ async function handleGex(request, env, url) {
   if (env.POLYGON_KEY) {
     try { chain = await chainFromPolygon(symbol, env.POLYGON_KEY, winDays, dayStart); } catch (_) {}
   }
-  if (!chain) chain = await chainFromCboe(symbol, dayStart);
-  if (!chain || !chain.contracts.length) return json(request, { error: `no options data for ${symbol}` }, 404);
+  // Free sources: Alpaca first (Cboe's feed has refused requests since Nov 2026),
+  // then Cboe in case it comes back.
+  if (!chain) { try { chain = await chainFromAlpaca(symbol, env, winDays, dayStart); } catch (_) {} }
+  if (!chain) { try { chain = await chainFromCboe(symbol, dayStart); } catch (_) {} }
+  if (!chain || !chain.contracts.length) {
+    const hint = CBOE_INDEXES.includes(symbol) ? ' (index options are not in the free feed; try SPY or QQQ)' : '';
+    return json(request, { error: `no options data for ${symbol}${hint}` }, 404);
+  }
 
   const spot = chain.spot;
   const source = chain.source;
