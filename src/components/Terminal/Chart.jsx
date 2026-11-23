@@ -162,7 +162,7 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
   const [gexChain, setGexChain] = useState(null); // per-strike chain from the worker
   const [gexExp, setGexExp] = useState('day');    // expiry bucket: day | week | 15d | 30d
   const [showGex, setShowGex] = useState(false);
-  const [gexSym, setGexSym] = useState('SPX');    // GEX instrument: '' = follow chart, else an index
+  const [gexSym, setGexSym] = useState('SPY');    // GEX instrument: '' = follow chart, else an index ETF
   const [gexErr, setGexErr] = useState(false);    // fetch failed / no options — distinct from "loading"
   const gexLinesRef = useRef({});
   const [gexW, setGexW] = useState(210); // GEX panel width (px) — drag to resize
@@ -186,7 +186,9 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
   // GEX instrument options. Index options (cash-settled, European) are the
   // canonical dealer-gamma view — SPX and its 1/10-size cousin XSP, plus NDX/
   // RUT/DJX. '' means "follow the charted stock" (equities/ETFs only).
-  const GEX_INSTRUMENTS = [['', 'Chart'], ['SPX', 'SPX'], ['XSP', 'XSP'], ['NDX', 'NDX'], ['RUT', 'RUT'], ['DJX', 'DJX']];
+  // Index ETFs, not index options: the free Alpaca feed covers US equity and ETF
+  // options only (no SPX/NDX/RUT/DJX).
+  const GEX_INSTRUMENTS = [['', 'Chart'], ['SPY', 'SPY'], ['QQQ', 'QQQ'], ['IWM', 'IWM'], ['DIA', 'DIA']];
   const gexTarget = gexSym || (ticker || '').toUpperCase();
   const gexFollows = gexSym === '';   // GEX tracks the charted symbol (draws on-chart lines)
 
@@ -721,7 +723,7 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
             className={`${styles.tfBtn} ${styles.gexSymSel}`}
             value={gexSym}
             onChange={(e) => setGexSym(e.target.value)}
-            title="GEX instrument — index options (SPX/XSP/NDX/RUT/DJX) or follow the chart"
+            title="GEX instrument — index ETFs (SPY/QQQ/IWM/DIA) or follow the chart"
             aria-label="GEX instrument"
           >
             {GEX_INSTRUMENTS.map(([v, l]) => (
@@ -808,7 +810,7 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
           ) : (gexFollows && isCrypto(ticker) ? 'γ: n/a for crypto'
             : gexErr ? `γ: no options data for ${gexTarget}`
               : gexChain && gexChain.sym === gexTarget && !hasImpliedVols(gexChain.rows)
-                ? `γ: ${gexTarget} implied vols not in CBOE's delayed feed yet (common just after the open), retrying every 5 min`
+                ? `γ: ${gexTarget} implied vols not in the delayed options feed yet (common just after the open), retrying every 5 min`
                 : 'γ: loading…')}
         </div>
       )}
