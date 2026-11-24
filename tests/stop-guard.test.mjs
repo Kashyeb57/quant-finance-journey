@@ -2,7 +2,7 @@
 // owner's MU option trades. Alerts only; these functions never place orders.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stopLevel, completedBefore, isHit, firstHitBar, trapState, ctTimeToday, signalStops } from '../src/components/Terminal/stopRules.mjs';
+import { stopLevel, completedBefore, isHit, firstHitBar, trapState, ctTimeToday, signalStops, tradeStatus } from '../src/components/Terminal/stopRules.mjs';
 
 // Tue Nov 24 2026, 8:30 CT = 14:30 UTC.
 const OPEN = Date.UTC(2026, 10, 24, 14, 30) / 1000;
@@ -100,4 +100,20 @@ test('on a bigger chart a triangle stop is never inside the triangle candle (the
   // On a 1-minute chart the rule is unchanged (the triangle candle is one of the last two).
   const [s1] = signalStops(bars, [{ time: T + 2 * 60, side: 'put', tfSec: 60 }], 0.5, T + 10 * 60);
   assert.equal(s1.level, 635.18);
+});
+
+test('trade status: our 1-min stop for the indicator trade, TPs counted only before that stop', () => {
+  const now = OPEN + 10 * 60;
+  // Buy triangle on the 8:31 candle (1-min chart): our SL = min low of 8:30-8:31 (648) - 0.50.
+  const trade = { time: OPEN + 60, side: 'buy', entry: 654, tp: [655.2, 656, 660] };
+  const st = tradeStatus(BARS, trade, 60, 0.5, now);
+  assert.equal(st.sl, 647.5);
+  assert.equal(st.slHit, false);
+  assert.deepEqual(st.hit, [true, true, false], '8:32 high 656 reaches TP1 and TP2, never 660');
+  // A stop of 0.0 buffer on a later buy triangle is hit at 8:34 before any TP.
+  const t2 = { time: OPEN + 2 * 60, side: 'buy', entry: 655, tp: [656.5, 658, 660] };
+  const s2 = tradeStatus(BARS, t2, 60, 0, now);
+  assert.equal(s2.slHit, true);
+  assert.equal(s2.hitSec, OPEN + 4 * 60, 'the 8:34 candle hit it');
+  assert.deepEqual(s2.hit, [false, false, false]);
 });

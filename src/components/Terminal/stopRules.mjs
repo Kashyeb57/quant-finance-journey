@@ -106,3 +106,19 @@ export function ctTimeToday(text, nowMs = Date.now()) {
   }
   return null;
 }
+
+/**
+ * The newest SATS trade with OUR stop: ENTRY and TP1-3 come from the indicator
+ * (`trade` from the overlay server), SL is signalStops' rule for that triangle.
+ * A TP counts as reached only on 1-minute candles before our SL is touched.
+ * -> { sl, slHit, hitSec, hit: [3] } or null while no 1-minute candle has closed.
+ */
+export function tradeStatus(bars, trade, tfSec, buffer = DEFAULT_BUFFER, nowSec = Date.now() / 1000) {
+  const side = trade.side === 'buy' ? 'call' : 'put';
+  const [s] = signalStops(bars, [{ time: trade.time, side, tfSec }], buffer, nowSec);
+  if (!s) return null;
+  const until = s.hitSec != null ? s.hitSec : Infinity;
+  const after = (bars || []).filter((b) => b.time >= s.startSec && b.time < until && b.time + MIN <= nowSec);
+  const hit = trade.tp.map((t) => after.some((b) => (side === 'call' ? b.high >= t : b.low <= t)));
+  return { sl: s.level, slHit: s.hitSec != null, hitSec: s.hitSec, hit };
+}
