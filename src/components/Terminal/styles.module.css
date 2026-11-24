@@ -1394,3 +1394,17 @@
 /* Overlay state badge: under the toolbar, one line lower when the GEX badge is showing. */
 .gexBadge.overlayBadge { top: 40px; }
 .gexBadge.overlayBadgeLow { top: 66px; }
+
+/* Full screen: the price header becomes one thin line so the chart gets the height. */
+.deck:fullscreen .priceHeader {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  padding: 0.2rem 0.75rem;
+}
+.deck:fullscreen .priceMain { gap: 0.4rem; }
+.deck:fullscreen .priceSymbol { font-size: 0.85rem; }
+.deck:fullscreen .priceLast { font-size: 1rem; }
+.deck:fullscreen .priceChange { font-size: 0.75rem; }
+.deck:fullscreen .priceStats { flex: 1; gap: 0.6rem; font-size: 0.68rem; }
