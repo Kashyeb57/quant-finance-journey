@@ -8,6 +8,7 @@ import { apiBase } from '../../lib/api';
 import usePolling from '../../lib/usePolling';
 import styles from './styles.module.css';
 import GexProfile from './GexProfile';
+import StopGuard from './StopGuard';
 import { ChartSkeleton } from './Skeletons';
 import { OVERLAY_LABEL, lastClosedTime, requestOverlay, createOverlay } from './chartOverlay.mjs';
 
@@ -162,6 +163,8 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
   const [gexChain, setGexChain] = useState(null); // per-strike chain from the worker
   const [gexExp, setGexExp] = useState('day');    // expiry bucket: day | week | 15d | 30d
   const [showGex, setShowGex] = useState(false);
+  const [showStop, setShowStop] = useState(false); // Stop Guard setup panel (an armed stop stays on regardless)
+  const [signals, setSignals] = useState([]);       // the overlay's entry triangles, for the Stop Guard's stop lines
   const [gexSym, setGexSym] = useState('SPY');    // GEX instrument: '' = follow chart, else an index ETF
   const [gexErr, setGexErr] = useState(false);    // fetch failed / no options — distinct from "loading"
   const gexLinesRef = useRef({});
@@ -492,7 +495,7 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
         overlayRef.current.remove();
         overlayRef.current = null;
       }
-      if (!overlayOn) setOverlayStatus(null);
+      if (!overlayOn) { setOverlayStatus(null); setSignals([]); }
       return undefined;
     }
     let alive = true, timer = null;
@@ -504,6 +507,9 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
         if (!overlayRef.current) overlayRef.current = createOverlay(libRef.current, chart, seriesRef.current);
         overlayRef.current.set(r);
         setOverlayStatus(r.status);
+        // Entry triangles (marks with a bar price): below the bar = buy, above = sell.
+        setSignals((r.markers || []).filter((m) => Number.isFinite(m.price) && Number.isFinite(m.time))
+          .map((m) => ({ time: m.time, side: m.position === 'belowBar' ? 'call' : 'put', ticker, tfSec: cryptoGran(timeframe) })));
         // The server's copy of the candles can be a few seconds behind the chart's.
         if (r.last < want && tries > 0) timer = setTimeout(() => load(tries - 1), 4000);
       })
@@ -708,6 +714,14 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
         >
           Γ GEX
         </button>
+        <button
+          className={`${styles.tfBtn} ${styles.gexBtn} ${showStop ? styles.tfBtnActive : ''}`}
+          onClick={() => setShowStop((v) => !v)}
+          aria-pressed={showStop}
+          title="Stop Guard: a loud stop-loss alarm for your trade (alarm only, never places orders)"
+        >
+          ⛔ STOP
+        </button>
         {!isCrypto(ticker) && (
           <button
             className={`${styles.tfBtn} ${styles.gexBtn} ${overlayOn ? styles.tfBtnActive : ''}`}
@@ -814,6 +828,7 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
                 : 'γ: loading…')}
         </div>
       )}
+      <StopGuard ticker={ticker} seriesRef={seriesRef} lastBarRef={lastBarRef} signals={signals} open={showStop} onClose={() => setShowStop(false)} />
       <div ref={wrapRef} className={styles.chartWrap} />
       </div>
     </div>
