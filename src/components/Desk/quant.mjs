@@ -184,9 +184,12 @@ export function realizedVolSeries(bars, n = 20) {
 }
 
 // The out-of-the-money side quotes the cleaner IV: puts below spot, calls above.
+// cf / pf mark an IV the Worker filled in (no quoted IV for that contract):
+// fine for gamma, but drawing it would paint a flat, invented smile.
 function otmIv(row, spot) {
-  const primary = row.k >= spot ? row.civ : row.piv;
-  const other = row.k >= spot ? row.piv : row.civ;
+  const civ = row.cf ? 0 : row.civ, piv = row.pf ? 0 : row.piv;
+  const primary = row.k >= spot ? civ : piv;
+  const other = row.k >= spot ? piv : civ;
   const iv = primary > 0 ? primary : other;
   return iv > 0.01 && iv < 3 ? iv : null;
 }

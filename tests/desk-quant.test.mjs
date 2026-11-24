@@ -141,3 +141,9 @@ test('pnlProfile reprices a long call with curvature and sets aside options it c
   assert.deepEqual(blind.unmodeled, ['AMD261119C00100000']);
   assert.equal(blind.net, 1000, 'the stock still counts');
 });
+
+test('ivSurface ignores IVs the Worker filled in (cf / pf), drawing no invented smile', () => {
+  const filled = { ...chain(), rows: chain().rows.map((r) => ({ ...r, cf: 1, pf: 1 })) };
+  assert.equal(ivSurface(filled, { cols: 9, now: NOW }), null);
+  assert.equal(ivSurface(chain(), { cols: 9, now: NOW }).rows.length, 3, 'real IVs still draw');
+});
