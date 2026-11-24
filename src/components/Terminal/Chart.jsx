@@ -10,7 +10,7 @@ import styles from './styles.module.css';
 import GexProfile from './GexProfile';
 import TradeLevels from './TradeLevels';
 import { ChartSkeleton } from './Skeletons';
-import { OVERLAY_LABEL, lastClosedTime, requestOverlay, createOverlay } from './chartOverlay.mjs';
+import { OVERLAY_LABEL, lastClosedTime, requestOverlay, createOverlay, ema } from './chartOverlay.mjs';
 
 /*
  * Live price chart.
@@ -176,9 +176,11 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
   const [barsKey, setBarsKey] = useState('');      // changes when the newest closed bar changes
   const barsRef = useRef(null);
   const libRef = useRef(null);
+  const emaRef = useRef(null); // 200 EMA line
   const overlayRef = useRef(null);
   const noteBars = (bars) => {
     barsRef.current = bars;
+    if (emaRef.current) emaRef.current.setData(ema(bars, 200));
     const gran = cryptoGran(timeframe), now = Date.now() / 1000;
     let i = bars.length - 1;
     while (i >= 0 && bars[i].time + gran > now) i -= 1;
@@ -295,6 +297,11 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
           wickUpColor: '#22c55e', wickDownColor: '#ef4444',
         });
 
+        emaRef.current = chart.addSeries(LC.LineSeries, {
+          color: '#f59e0b', lineWidth: 2, priceLineVisible: false, lastValueVisible: true,
+          crosshairMarkerVisible: false, title: 'EMA 200',
+        });
+
         chartRef.current = chart;
         seriesRef.current = series;
         libRef.current = LC;
@@ -326,6 +333,7 @@ function Chart({ ticker, timeframe, setTimeframe, onStatus, fsTargetRef }) {
         chartRef.current.remove();
         chartRef.current = null;
         seriesRef.current = null;
+        emaRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

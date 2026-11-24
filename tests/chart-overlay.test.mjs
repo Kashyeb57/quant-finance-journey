@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { lastClosedTime, withZero, robustRange, partitionMarks, triangleColors } from '../src/components/Terminal/chartOverlay.mjs';
+import { lastClosedTime, withZero, robustRange, partitionMarks, triangleColors, ema } from '../src/components/Terminal/chartOverlay.mjs';
 
 test('signal marks with a bar price become triangles; dots stay with the library', () => {
   const a = { time: 1, shape: 'arrowUp', color: '#0f0', text: '20', price: 9 };
@@ -39,4 +39,14 @@ test('the newest finished candle', () => {
   assert.equal(lastClosedTime(bars, 180, 400), 180);
   assert.equal(lastClosedTime(bars, 180, 540), 360);
   assert.equal(lastClosedTime([], 180, 400), 0);
+});
+
+test('ema: SMA seed over the first n closes, then the standard 2/(n+1) smoothing', () => {
+  const bars = [1, 2, 3, 4, 5].map((c, i) => ({ time: i, close: c }));
+  assert.deepEqual(ema(bars, 6), [], 'not enough bars');
+  const e = ema(bars, 3);
+  assert.deepEqual(e.map((p) => p.time), [2, 3, 4]);
+  assert.equal(e[0].value, 2);            // (1+2+3)/3
+  assert.equal(e[1].value, 4 * 0.5 + 2 * 0.5);
+  assert.equal(e[2].value, 5 * 0.5 + 3 * 0.5);
 });

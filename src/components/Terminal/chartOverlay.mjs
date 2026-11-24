@@ -6,6 +6,16 @@
 export const OVERLAY_LABEL = 'SATS';
 const LOWER_COLOR = '#2962FF';
 
+/** Exponential moving average of closes, seeded with the simple average of the first `n` (as TradingView's ema). */
+export function ema(bars, n = 200) {
+  if (!bars || bars.length < n) return [];
+  const k = 2 / (n + 1);
+  let v = bars.slice(0, n).reduce((s, b) => s + b.close, 0) / n;
+  const out = [{ time: bars[n - 1].time, value: v }];
+  for (let i = n; i < bars.length; i++) { v = bars[i].close * k + v * (1 - k); out.push({ time: bars[i].time, value: v }); }
+  return out;
+}
+
 /** Time of the newest finished candle (the one still forming does not count). */
 export function lastClosedTime(bars, granSec, nowSec) {
   for (let i = bars.length - 1; i >= 0; i -= 1) {
