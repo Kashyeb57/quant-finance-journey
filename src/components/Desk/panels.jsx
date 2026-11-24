@@ -179,7 +179,7 @@ export function SurfacePanel({ d, className, bare }) {
       bare={bare}
       className={className}
       title="Implied vol surface"
-      meta={chain ? `${tickerLabel(ticker)} · ${chain.source === 'polygon' ? 'real-time' : 'CBOE ~15m delayed'} · drag to rotate` : tickerLabel(ticker)}
+      meta={chain ? `${tickerLabel(ticker)} · ${chain.source === 'polygon' ? 'real-time' : chain.source === 'alpaca' ? 'Alpaca indicative, delayed' : 'CBOE ~15m delayed'} · drag to rotate` : tickerLabel(ticker)}
     >
       {surface ? <IvSurface surface={surface} dark={colorMode === 'dark'} /> : (
         <Empty>{isCrypto(ticker) ? 'No listed options for crypto' : chain ? 'Not enough expiries to draw a surface' : 'Loading option chain…'}</Empty>

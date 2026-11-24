@@ -326,3 +326,142 @@ test('GEX for an index explains that index options are not in the free feed', as
   assert.match(body.error, /index options are not in the free feed/);
   assert.ok(calls.every((h) => !h.includes('alpaca')), 'no Alpaca call for an index');
 });
+
+// ── Desk option chain from Alpaca (free) ────────────────────────────────────
+function nyDayPlus(days) {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  return new Date(Date.parse(today + 'T00:00:00Z') + days * 86400000).toISOString().slice(0, 10);
+}
+function alpacaChainRoutes({ d1, d2, snaps, seen }) {
+  const y = (d) => d.slice(2).replace(/-/g, '');
+  return (href) => {
+    const u = new URL(href);
+    seen.push(u);
+    if (u.hostname === 'cdn.cboe.com') return { status: 403, body: 'blocked' };
+    if (u.pathname === '/v2/stocks/snapshots') return { body: JSON.stringify({ AMD: { latestTrade: { p: 100 } } }) };
+    if (u.pathname === '/v2/options/contracts') {
+      return { body: JSON.stringify({ option_contracts: [100, 105, 120].flatMap((k) => [d1, d2].flatMap((d) => ['C', 'P'].map((s) => ({
+        symbol: occ('AMD', y(d), s, k), open_interest: String(k * 10),
+      })))) }) };
+    }
+    if (u.pathname === '/v1beta1/options/snapshots/AMD') return { body: JSON.stringify({ snapshots: snaps(u, y) }) };
+    throw new Error(`unexpected ${href}`);
+  };
+}
+test('the option chain comes from Alpaca with quotes, greeks, OI, expected moves and a 30-day IV', async () => {
+  const d1 = nyDayPlus(10), d2 = nyDayPlus(45), seen = [];
+  const quote = (bp, ap, iv) => ({ latestQuote: { bp, ap, t: '2026-11-23T15:00:00Z' }, latestTrade: { p: (bp + ap) / 2 },
+    impliedVolatility: iv, greeks: { delta: 0.5, gamma: 0.02, theta: -0.1, vega: 0.2 }, dailyBar: { v: 42 } });
+  const snaps = (u, y) => {
+    const out = {};
+    const exps = u.searchParams.get('expiration_date') ? [u.searchParams.get('expiration_date')] : [d1, d2];
+    for (const d of exps) {
+      const iv = d === d1 ? 0.4 : 0.5;
+      out[occ('AMD', y(d), 'C', 100)] = quote(4, 4.2, iv);
+      out[occ('AMD', y(d), 'P', 100)] = quote(3.8, 4, iv);
+      if (u.searchParams.get('expiration_date')) out[occ('AMD', y(d), 'C', 120)] = quote(0.5, 0.6, iv + 0.1);
+    }
+    return out;
+  };
+  const JSONH = { 'Content-Type': 'application/json' };
+  const routes = alpacaChainRoutes({ d1, d2, snaps, seen });
+  upstream = (href) => ({ headers: JSONH, ...routes(href) });
+  const res = await call('/_m/chain?symbol=AMD');
+  const body = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(body));
+  assert.equal(body.source, 'alpaca');
+  assert.equal(body.exp, d1, 'front expiry by default');
+  assert.deepEqual(body.expiries.map((e) => e.date), [d1, d2]);
+  const atm = body.rows.find((r) => r.k === 100);
+  assert.deepEqual(atm.call, { bid: 4, ask: 4.2, last: 4.1, mid: 4.1, iv: 0.4, delta: 0.5, gamma: 0.02, theta: -0.1, vega: 0.2, volume: 42, oi: 1000 });
+  assert.equal(body.rows.find((r) => r.k === 120).call.oi, 1200);
+  assert.equal(body.expiries[0].move, 8, 'ATM straddle 4.1 + 3.9');
+  assert.equal(body.expiries[0].movePct, 8);
+  // 30-day IV: variance interpolation between 10d @ 40% and 45d @ 50%.
+  const v = (0.16 * 10 + (0.25 * 45 - 0.16 * 10) * (20 / 35)) / 30;
+  assert.equal(body.iv30, Math.round(Math.sqrt(v) * 1000) / 10);
+  assert.equal(body.iv30Change, null);
+  assert.equal(body.asOf, '2026-11-23T15:00:00.000Z');
+  assert.ok(seen.every((u) => !u.pathname.includes('/orders')), 'no trading route touched');
+  assert.ok(seen.filter((u) => u.hostname === 'paper-api.alpaca.markets').every((u) => u.pathname === '/v2/options/contracts'));
+});
+
+test('the option chain falls back to Cboe when Alpaca has nothing', async () => {
+  upstream = (href) => {
+    const u = new URL(href);
+    if (u.hostname.endsWith('alpaca.markets')) return { status: 403, headers: { 'Content-Type': 'application/json' }, body: '{}' };
+    return { status: 403, body: 'blocked' };
+  };
+  const res = await call('/_m/chain?symbol=AMD');
+  assert.equal(res.status, 404);
+});
+
+test('the option chain skips a same-day expiry by default, serves a chosen one, and pages through results', async () => {
+  const d0 = nyDayPlus(0), d1 = nyDayPlus(7), seen = [];
+  const y = (d) => d.slice(2).replace(/-/g, '');
+  const q = (iv) => ({ latestQuote: { bp: 2, ap: 2.2, t: '2026-11-24T15:00:00Z' }, impliedVolatility: iv, greeks: { delta: 0.5 } });
+  const JSONH = { 'Content-Type': 'application/json' };
+  upstream = (href) => {
+    const u = new URL(href);
+    seen.push(u);
+    if (u.pathname === '/v2/stocks/snapshots') return { headers: JSONH, body: JSON.stringify({ AMD: { latestTrade: { p: 100 } } }) };
+    if (u.pathname === '/v2/options/contracts') {
+      // Two pages: page 1 has today's expiry, page 2 next week's.
+      const page2 = u.searchParams.get('page_token') === 'p2';
+      const d = page2 ? d1 : d0;
+      return { headers: JSONH, body: JSON.stringify({ option_contracts: ['C', 'P'].map((s) => ({ symbol: occ('AMD', y(d), s, 100), open_interest: '10' })), next_page_token: page2 ? null : 'p2' }) };
+    }
+    if (u.pathname === '/v1beta1/options/snapshots/AMD') {
+      const e = u.searchParams.get('expiration_date');
+      const ds = e ? [e] : [d0, d1];
+      const snaps = {};
+      for (const d of ds) for (const s of ['C', 'P']) snaps[occ('AMD', y(d), s, 100)] = d === d0 ? { latestQuote: { bp: 1, ap: 1.1 } } : q(0.45);
+      return { headers: JSONH, body: JSON.stringify({ snapshots: snaps }) };
+    }
+    throw new Error(`unexpected ${href}`);
+  };
+  let res = await call('/_m/chain?symbol=AMD');
+  let body = await res.json();
+  assert.equal(res.status, 200, JSON.stringify(body));
+  assert.deepEqual(body.expiries.map((e) => e.date), [d0, d1], 'both pages read');
+  assert.equal(body.exp, d1, 'same-day expiry (no greeks on Alpaca) is not the default');
+  cache.clear();
+  res = await call(`/_m/chain?symbol=AMD&exp=${d0}`);
+  body = await res.json();
+  assert.equal(body.exp, d0, 'an explicitly chosen expiry is served');
+  assert.equal(body.rows[0].call.iv, null, 'no invented IV for a same-day contract');
+});
+
+test('a rate-limited Alpaca page makes the chain partial and keeps it out of the cache', async () => {
+  const d1 = nyDayPlus(7), d2 = nyDayPlus(30);
+  const y = (d) => d.slice(2).replace(/-/g, '');
+  const JSONH = { 'Content-Type': 'application/json' };
+  upstream = (href) => {
+    const u = new URL(href);
+    if (u.pathname === '/v2/stocks/snapshots') return { headers: JSONH, body: JSON.stringify({ AMD: { latestTrade: { p: 100 } } }) };
+    if (u.pathname === '/v2/options/contracts') {
+      return { headers: JSONH, body: JSON.stringify({ option_contracts: [d1, d2].flatMap((d) => ['C', 'P'].map((s) => ({ symbol: occ('AMD', y(d), s, 100), open_interest: '10' }))) }) };
+    }
+    if (u.pathname === '/v1beta1/options/snapshots/AMD') {
+      if (!u.searchParams.get('expiration_date')) return { status: 429, headers: JSONH, body: '{"message":"too many requests"}' };
+      const snaps = {};
+      for (const s of ['C', 'P']) snaps[occ('AMD', y(d1), s, 100)] = { latestQuote: { bp: 2, ap: 2.2 }, impliedVolatility: 0.4, greeks: {} };
+      return { headers: JSONH, body: JSON.stringify({ snapshots: snaps }) };
+    }
+    throw new Error(`unexpected ${href}`);
+  };
+  const res = await call('/_m/chain?symbol=AMD');
+  const body = await res.json();
+  assert.equal(res.status, 200);
+  assert.equal(body.partial, true);
+  assert.equal(res.headers.get('Cache-Control'), 'no-store');
+  assert.equal(cache.size, 0, 'partial chain not cached');
+});
+
+test('the option chain refuses an expiry in the past or years ahead without an upstream call', async () => {
+  for (const exp of ['2020-01-17', '2099-12-31']) {
+    const res = await call(`/_m/chain?symbol=AMD&exp=${exp}`);
+    assert.equal(res.status, 400, exp);
+  }
+  assert.deepEqual(calls, []);
+});

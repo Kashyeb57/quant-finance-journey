@@ -211,7 +211,7 @@ export default function Terminal() {
         symbol supports all timeframes. Live candles refresh automatically while
         this tab is open; the news feed merges fresh headlines from ~22 RSS
         sources. Chart times are shown in Central Time (CT). Options data is
-        Alpaca&apos;s free feed, about 15 minutes delayed. Collapse any section or move
+        Alpaca&apos;s free indicative feed (delayed, not official exchange quotes). Collapse any section or move
         it with the arrows; this browser remembers your layout
         (<button type="button" className={styles.resetLayout} onClick={layout.reset}>reset layout</button>).
         {source === 'fallback' && ' Prices are currently coming from the public fallback source.'}

@@ -49,7 +49,7 @@ export const VIEWS = {
 };
 const VIEW_HELP = {
   quotes: 'Bid/ask and IV per contract; Vol is today’s contracts traded, OI the contracts open as of last night.',
-  greeks: 'Per share, from CBOE: delta (price move per $1), gamma (delta change per $1), theta ($ per day), vega ($ per 1 vol point).',
+  greeks: 'Per share, from the delayed options feed: delta (price move per $1), gamma (delta change per $1), theta ($ per day), vega ($ per 1 vol point).',
 };
 
 /** Expiry chips, nearest first. */
@@ -147,7 +147,7 @@ export function OptionChainPanel({ oc, ticker, setExp, className, bare }) {
       bare={bare}
       className={className}
       title={`Option chain · ${tickerLabel(ticker)}`}
-      meta={chain && current ? `${shortDate(chain.exp)} · ${current.days}d · CBOE ~15m delayed${asOfLabel(chain.asOf) ? ` · ${asOfLabel(chain.asOf)}` : ''}` : ''}
+      meta={chain && current ? `${shortDate(chain.exp)} · ${current.days}d · ${chain.source === 'alpaca' ? 'Alpaca indicative, delayed' : 'CBOE ~15m delayed'}${asOfLabel(chain.asOf) ? ` · ${asOfLabel(chain.asOf)}` : ''}` : ''}
       actions={(
         <>
           <button className={`${styles.chip} ${view === 'quotes' ? styles.chipActive : ''}`} onClick={() => setView('quotes')}>Quotes</button>

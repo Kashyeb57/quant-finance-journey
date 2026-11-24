@@ -591,16 +591,34 @@ function bsmGamma(S, K, T, sigma, r) {
   const d1 = (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T));
   return normPdf(d1) / (S * sigma * Math.sqrt(T));
 }
-// OCC symbol: ROOT + YYMMDD + [C|P] + strike×1000 (8 digits)
+// Options stop trading at the 16:00 New York close: 20:00 UTC in daylight time,
+// 21:00 UTC in standard time. Timing an expiry at 00:00 UTC of its date (as
+// before) cut about 20 hours from every time-to-expiry. One Intl lookup per date.
+const NY_CLOSE = new Map();
+function nyCloseMs(y, mo, d) {
+  const key = y * 10000 + mo * 100 + d;
+  let v = NY_CLOSE.get(key);
+  if (v === undefined) {
+    const t20 = Date.UTC(y, mo - 1, d, 20);
+    const nyHour = +new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' }).format(new Date(t20));
+    v = nyHour === 16 ? t20 : Date.UTC(y, mo - 1, d, 21);
+    NY_CLOSE.set(key, v);
+  }
+  return v;
+}
+// OCC symbol: ROOT + YYMMDD + [C|P] + strike×1000 (8 digits). expiryMs is the
+// New York close on the expiry date; its UTC calendar date is still that date.
 function parseOcc(s) {
   const m = /^[A-Z]+(\d{2})(\d{2})(\d{2})([CP])(\d{8})$/.exec(s || '');
   if (!m) return null;
   return {
     type: m[4] === 'C' ? 'call' : 'put',
     strike: parseInt(m[5], 10) / 1000,
-    expiryMs: Date.UTC(2000 + +m[1], +m[2] - 1, +m[3]),
+    expiryMs: nyCloseMs(2000 + +m[1], +m[2], +m[3]),
   };
 }
+// Time to expiry in years, floored at one hour (the browser uses the same floor).
+const yearsTo = (expMs, now) => Math.max((expMs - now) / 86400000, 1 / 24) / 365;
 
 // Near-money option chain from CBOE's free delayed feed (~15-min delayed).
 async function chainFromCboe(symbol, dayStart) {
@@ -645,8 +663,8 @@ async function alpacaOptionsData(path, env) {
       'Accept': 'application/json',
     },
   });
-  if (!res.ok) return null;
-  return res.json();
+  if (!res.ok) return { ok: false, status: res.status };
+  try { return { ok: true, data: await res.json() }; } catch (_) { return { ok: false, status: 502 }; }
 }
 
 function median(xs) {
@@ -668,33 +686,38 @@ async function chainFromAlpaca(symbol, env, winDays, dayStart) {
   const lo = Math.floor(spot * 0.85), hi = Math.ceil(spot * 1.15);
   const range = `strike_price_gte=${lo}&strike_price_lte=${hi}`;
 
+  // partial: a page failed (429, 5xx) or the page cap cut the list short.
+  // A partial answer is still served, but flagged and never edge-cached.
+  let partial = false;
   const oiBySym = new Map();
   let token = '';
-  for (let pages = 0; pages < 4; pages++) {
+  for (let pages = 0; ; pages++) {
+    if (pages >= 4) { partial = true; break; }
     const q = `/options/contracts?underlying_symbols=${encodeURIComponent(symbol)}&status=active`
       + `&expiration_date_gte=${from}&expiration_date_lte=${to}&${range}&limit=10000`
       + (token ? `&page_token=${encodeURIComponent(token)}` : '');
     const r = await alpacaTrade(q, env);
-    if (!r.ok || !r.data) break;
+    if (!r.ok || !r.data) { partial = pages > 0; break; }
     for (const c of r.data.option_contracts || []) {
       const oi = numOr(c.open_interest, 0);
       if (oi > 0 && c.symbol) oiBySym.set(c.symbol, oi);
     }
-    token = r.data.next_page_token || r.data.page_token || '';
+    token = r.data.next_page_token || '';
     if (!token || !(r.data.option_contracts || []).length) break;
   }
   if (!oiBySym.size) return null;
 
   const greeks = new Map();
   token = '';
-  for (let pages = 0; pages < 6; pages++) {
+  for (let pages = 0; ; pages++) {
+    if (pages >= 10) { partial = true; break; }
     const j = await alpacaOptionsData(`/snapshots/${encodeURIComponent(symbol)}?feed=indicative&limit=1000`
       + `&expiration_date_lte=${to}&${range}` + (token ? `&page_token=${encodeURIComponent(token)}` : ''), env);
-    if (!j) break;
-    for (const [occ, v] of Object.entries(j.snapshots || {})) {
+    if (!j.ok) { partial = true; break; }
+    for (const [occ, v] of Object.entries(j.data.snapshots || {})) {
       greeks.set(occ, { iv: numOr(v.impliedVolatility, 0), gamma: numOr(v.greeks && v.greeks.gamma, 0) });
     }
-    token = j.next_page_token || '';
+    token = j.data.next_page_token || '';
     if (!token) break;
   }
 
@@ -712,13 +735,12 @@ async function chainFromAlpaca(symbol, env, winDays, dayStart) {
   const chainIv = median(allIv);
   const now = Date.now();
   for (const c of contracts) {
-    if (!(c.iv > 0)) c.iv = median(ivByExp.get(c.expMs) || []) || chainIv;
-    if (!(c.gamma > 0)) {
-      const T = Math.max((c.expMs - now) / 86400000, 0.25) / 365;
-      c.gamma = bsmGamma(spot, c.k, T, c.iv, 0.045);
-    }
+    // filled: an estimate, not a quoted IV. GEX needs some vol for every
+    // contract; the IV surface must not draw these as a real smile.
+    if (!(c.iv > 0)) { c.iv = median(ivByExp.get(c.expMs) || []) || chainIv; c.filled = true; }
+    if (!(c.gamma > 0)) c.gamma = bsmGamma(spot, c.k, yearsTo(c.expMs, now), c.iv, 0.045);
   }
-  return { spot, contracts, source: 'alpaca' };
+  return { spot, contracts, source: 'alpaca', partial };
 }
 
 // Near-money option chain from Polygon.io (paid; real-time OI + greeks + IV).
@@ -806,7 +828,9 @@ async function handleGex(request, env, url) {
 
   const spot = chain.spot;
   const source = chain.source;
-  const all = chain.contracts;
+  // Contracts that already expired today (after the New York close) are gone.
+  const all = chain.contracts.filter((c) => c.expMs > now);
+  if (!all.length) return json(request, { error: `no options data for ${symbol}` }, 404);
   let frontExp = Infinity;
   for (const c of all) if (c.expMs < frontExp) frontExp = c.expMs;
   // 'day' = the nearest expiry only (0DTE focus); else everything ≤ window
@@ -822,8 +846,9 @@ async function handleGex(request, env, url) {
     const key = c.k + '|' + c.expMs;
     let row = rowMap.get(key);
     if (!row) { row = { k: c.k, e: c.expMs, coi: 0, poi: 0, civ: 0, piv: 0 }; rowMap.set(key, row); }
-    if (c.type === 'call') { row.coi += c.oi; if (c.iv) row.civ = c.iv; }
-    else { row.poi += c.oi; if (c.iv) row.piv = c.iv; }
+    // cf / pf: that side's IV is an estimate (the Alpaca fill), not a quote.
+    if (c.type === 'call') { row.coi += c.oi; if (c.iv) { row.civ = c.iv; if (c.filled) row.cf = 1; } }
+    else { row.poi += c.oi; if (c.iv) { row.piv = c.iv; if (c.filled) row.pf = 1; } }
   }
   let rows = [...rowMap.values()];
   if (rows.length > 600) rows = rows.sort((a, b) => (b.coi + b.poi) - (a.coi + a.poi)).slice(0, 600);
@@ -847,8 +872,7 @@ async function handleGex(request, env, url) {
   const gexAt = (S) => {
     let sum = 0;
     for (const c of keep) {
-      const T = Math.max((c.expMs - now) / 86400000, 0.25) / 365;
-      sum += (c.type === 'call' ? 1 : -1) * bsmGamma(S, c.k, T, c.iv, r) * c.oi;
+      sum += (c.type === 'call' ? 1 : -1) * bsmGamma(S, c.k, yearsTo(c.expMs, now), c.iv, r) * c.oi;
     }
     return sum;
   };
@@ -867,9 +891,11 @@ async function handleGex(request, env, url) {
     callWall, putWall,
     expiries: [...expiries].sort((a, b) => a - b),
     rows,
+    ...(chain.partial ? { partial: true } : {}),
   };
-  const resp = json(request, out, 200, source === 'polygon' ? 20 : 300);
-  await cache.put(cacheKey, resp.clone());
+  // A partial read (rate limit, page cap) is served once but never cached.
+  const resp = json(request, out, 200, chain.partial ? 0 : (source === 'polygon' ? 20 : 300));
+  if (!chain.partial) await cache.put(cacheKey, resp.clone());
   return resp;
 }
 
@@ -914,11 +940,128 @@ function expectedMove(rows, spot) {
   };
 }
 
+// 30-day IV from at-the-money IVs across expiries: total variance (iv² · days)
+// interpolated linearly in days to 30, the VIX-style constant-maturity method.
+// Returns percent (45.3), the unit the Desk shows; null without enough data.
+function iv30FromTerm(points) {
+  const pts = points.filter((p) => p.days > 0 && p.iv > 0).sort((a, b) => a.days - b.days);
+  if (!pts.length) return null;
+  let a = null, b = null;
+  for (const p of pts) { if (p.days <= 30) a = p; else if (!b) b = p; }
+  let iv;
+  if (a && b) {
+    const va = a.iv * a.iv * a.days, vb = b.iv * b.iv * b.days;
+    iv = Math.sqrt((va + (vb - va) * (30 - a.days) / (b.days - a.days)) / 30);
+  } else {
+    iv = (a || b).iv; // only one side of 30 days: nearest point, unextrapolated
+  }
+  return Math.round(iv * 1000) / 10;
+}
+
+// The same chain from Alpaca (free): open interest from the paper contracts
+// list; bid/ask/last, IV, greeks and volume from the indicative snapshots
+// (~15-min delayed). Two snapshot reads keep it within the free rate limit:
+// the whole ±25% band for the expiry on screen, and only strikes near the money
+// for every other expiry (enough for each expected move and the 30-day IV).
+async function chainFromAlpacaQuotes(symbol, env, want, dayStart) {
+  if (!env.ALPACA_KEY_ID || !env.ALPACA_SECRET_KEY || CBOE_INDEXES.includes(symbol)) return null;
+  const snap = await alpaca(`/snapshots?symbols=${encodeURIComponent(symbol)}&feed=iex`, env);
+  const s = snap.ok && snap.data ? snap.data[symbol] : null;
+  const spot = s ? numOr((s.latestTrade && s.latestTrade.p) || (s.dailyBar && s.dailyBar.c) || (s.prevDailyBar && s.prevDailyBar.c)) : null;
+  if (!spot) return null;
+  const from = new Date(dayStart).toISOString().slice(0, 10);
+  const lo = spot * (1 - CHAIN_BAND), hi = spot * (1 + CHAIN_BAND);
+  const sym = encodeURIComponent(symbol);
+
+  // Every listed contract in the band, with its open interest.
+  // partial: a page failed or a page cap cut a list short (flagged, not cached).
+  let partial = false;
+  const contracts = new Map(); // occ -> { date, k, type, oi }
+  let token = '';
+  for (let pages = 0; ; pages++) {
+    if (pages >= 5) { partial = true; break; }
+    const r = await alpacaTrade(`/options/contracts?underlying_symbols=${sym}&status=active`
+      + `&expiration_date_gte=${from}&strike_price_gte=${Math.floor(lo)}&strike_price_lte=${Math.ceil(hi)}&limit=10000`
+      + (token ? `&page_token=${encodeURIComponent(token)}` : ''), env);
+    if (!r.ok || !r.data) { partial = pages > 0; break; }
+    const list = r.data.option_contracts || [];
+    for (const c of list) {
+      const p = parseOcc(c.symbol);
+      if (!p || p.expiryMs < dayStart) continue;
+      contracts.set(c.symbol, { date: new Date(p.expiryMs).toISOString().slice(0, 10), k: p.strike, type: p.type, oi: numOr(c.open_interest, 0) });
+    }
+    token = r.data.next_page_token || '';
+    if (!token || !list.length) break;
+  }
+  if (!contracts.size) return null;
+  const dates = [...new Set([...contracts.values()].map((c) => c.date))].sort();
+  // Default to the first expiry after today: Alpaca has no IV or greeks for
+  // contracts expiring today, and SPY/QQQ/IWM have one every trading day.
+  const exp = want && dates.includes(want) ? want : (dates.find((d) => d > from) || dates[0]);
+
+  const quotes = new Map(); // occ -> snapshot
+  let newest = 0;
+  // Returns false when a page failed; true when the read finished (or hit its cap,
+  // which marks the chain partial).
+  const readSnapshots = async (query, maxPages) => {
+    let t = '';
+    for (let pages = 0; ; pages++) {
+      if (pages >= maxPages) { partial = true; return true; }
+      const j = await alpacaOptionsData(`/snapshots/${sym}?feed=indicative&limit=1000&${query}`
+        + (t ? `&page_token=${encodeURIComponent(t)}` : ''), env);
+      if (!j.ok) { partial = true; return false; }
+      for (const [occ, v] of Object.entries(j.data.snapshots || {})) {
+        quotes.set(occ, v);
+        const ts = Date.parse((v.latestQuote && v.latestQuote.t) || '');
+        if (ts > newest) newest = ts;
+      }
+      t = j.data.next_page_token || '';
+      if (!t) return true;
+    }
+  };
+  // The expiry on screen: the whole band. Failing this read means no chain.
+  if (!(await readSnapshots(`expiration_date=${exp}&strike_price_gte=${Math.floor(lo)}&strike_price_lte=${Math.ceil(hi)}`, 3))) return null;
+  // Near-money strikes of the next ~90 days: each expected move and the 30-day IV.
+  const to90 = new Date(dayStart + 90 * 86400000).toISOString().slice(0, 10);
+  await readSnapshots(`expiration_date_gte=${from}&expiration_date_lte=${to90}`
+    + `&strike_price_gte=${Math.floor(spot * 0.95)}&strike_price_lte=${Math.ceil(spot * 1.05)}`, 4);
+
+  const byExp = new Map(); // date -> Map(strike -> { k, call, put })
+  for (const [occ, c] of contracts) {
+    const v = quotes.get(occ);
+    if (!v) continue;
+    const q = v.latestQuote || {}, g = v.greeks || {};
+    const bid = numOr(q.bp, 0), ask = numOr(q.ap, 0), last = numOr(v.latestTrade && v.latestTrade.p, 0);
+    const quote = {
+      bid, ask, last,
+      mid: bid > 0 && ask > 0 ? (bid + ask) / 2 : (last || null),
+      iv: numOr(v.impliedVolatility), delta: numOr(g.delta), gamma: numOr(g.gamma),
+      theta: numOr(g.theta), vega: numOr(g.vega),
+      volume: numOr(v.dailyBar && v.dailyBar.v, 0), oi: c.oi,
+    };
+    if (!byExp.has(c.date)) byExp.set(c.date, new Map());
+    const strikes = byExp.get(c.date);
+    const row = strikes.get(c.k) || { k: c.k, call: null, put: null };
+    row[c.type] = quote;
+    strikes.set(c.k, row);
+  }
+  if (!byExp.has(exp)) return null;
+  return { spot, dates, exp, byExp, partial, asOf: newest ? new Date(newest).toISOString() : new Date().toISOString() };
+}
+
 async function handleChain(request, env, url) {
   const symbol = (url.searchParams.get('symbol') || '').toUpperCase();
   if (!SYMBOL_RE.test(symbol)) return json(request, { error: 'Bad symbol' }, 400);
   const want = url.searchParams.get('exp') || '';
   if (want && !DATE_RE.test(want)) return json(request, { error: 'Bad expiry' }, 400);
+  // Listed expiries run up to about three years out; anything else is not a
+  // real expiry and would only force fresh upstream reads.
+  if (want) {
+    const ms = Date.parse(want + 'T00:00:00Z');
+    if (!(ms >= Date.now() - 2 * 86400000 && ms <= Date.now() + 3 * 366 * 86400000)) {
+      return json(request, { error: 'Bad expiry' }, 400);
+    }
+  }
 
   const cache = caches.default;
   const cacheKey = new Request(`https://chain.internal/${symbol}/${want || 'front'}`);
@@ -934,22 +1077,51 @@ async function handleChain(request, env, url) {
     });
   }
 
-  const path = (CBOE_INDEXES.includes(symbol) ? '_' : '') + symbol;
-  const res = await fetch(`${CBOE}/${path}.json`, {
-    headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
-    cf: { cacheTtl: 120, cacheEverything: true },
-  });
-  if (!res.ok) return json(request, { error: 'No option chain for this symbol' }, 404);
-  const body = await res.json();
-  const data = (body && body.data) || {};
-  const spot = numOr(data.current_price);
-  const opts = Array.isArray(data.options) ? data.options : [];
-  if (!spot || !opts.length) return json(request, { error: 'No option chain for this symbol' }, 404);
-
   // Count days on the New York calendar: options expire at the New York
   // close, and in the evening the UTC date has already rolled to tomorrow.
   const todayNy = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const dayStart = Date.parse(todayNy + 'T00:00:00Z');
+  const daysTo = (date) => Math.max(0, Math.round((Date.parse(date + 'T00:00:00Z') - dayStart) / 86400000));
+
+  // Free Alpaca first (Cboe's feed has refused requests since Nov 2026).
+  let alp = null;
+  try { alp = await chainFromAlpacaQuotes(symbol, env, want, dayStart); } catch (_) { alp = null; }
+  if (alp) {
+    const rowsOf = (date) => [...(alp.byExp.get(date) || new Map()).values()].sort((a, b) => a.k - b.k);
+    const expiries = alp.dates.map((date) => ({ date, days: daysTo(date), ...(expectedMove(rowsOf(date), alp.spot) || {}) }));
+    const out = {
+      symbol, spot: alp.spot, source: 'alpaca', asOf: alp.asOf,
+      iv30: iv30FromTerm(expiries.map((e) => ({ days: e.days, iv: e.atmIv }))),
+      iv30Change: null, // no free day-over-day series
+      exp: alp.exp, expiries, rows: rowsOf(alp.exp),
+      ...(alp.partial ? { partial: true } : {}),
+    };
+    // A partial read (rate limit, page cap) is served once but never cached.
+    const resp = json(request, out, 200, alp.partial ? 0 : CHAIN_CACHE_SECONDS);
+    if (!alp.partial) await cache.put(cacheKey, resp.clone());
+    return resp;
+  }
+
+  const noChain = CBOE_INDEXES.includes(symbol)
+    ? 'No option chain: index options are not in the free feed; try SPY or QQQ'
+    : 'No option chain for this symbol';
+  const path = (CBOE_INDEXES.includes(symbol) ? '_' : '') + symbol;
+  let body;
+  try {
+    const res = await fetch(`${CBOE}/${path}.json`, {
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' },
+      cf: { cacheTtl: 120, cacheEverything: true },
+    });
+    if (!res.ok) return json(request, { error: noChain }, 404);
+    body = await res.json();
+  } catch (_) {
+    return json(request, { error: 'Options feed unavailable, try again shortly' }, 502);
+  }
+  const data = (body && body.data) || {};
+  const spot = numOr(data.current_price);
+  const opts = Array.isArray(data.options) ? data.options : [];
+  if (!spot || !opts.length) return json(request, { error: noChain }, 404);
+
   const lo = spot * (1 - CHAIN_BAND), hi = spot * (1 + CHAIN_BAND);
   const byExp = new Map(); // 'YYYY-MM-DD' -> Map(strike -> { k, call, put })
   for (const o of opts) {
@@ -966,7 +1138,6 @@ async function handleChain(request, env, url) {
   if (!dates.length) return json(request, { error: 'No listed expiries' }, 404);
 
   const rowsFor = (date) => [...byExp.get(date).values()].sort((a, b) => a.k - b.k);
-  const daysTo = (date) => Math.max(0, Math.round((Date.parse(date + 'T00:00:00Z') - dayStart) / 86400000));
   const expiries = dates.map((date) => ({ date, days: daysTo(date), ...(expectedMove(rowsFor(date), spot) || {}) }));
   const exp = want && byExp.has(want) ? want : dates[0];
 
