@@ -33,14 +33,14 @@ const tickerLabel = (t) => (t === 'BTC-USD' ? '₿ BTC' : t);
 const sectionOf = (t) => (SECTIONS.find((s) => s.tickers.includes(t)) || SECTIONS[0]).name;
 
 export default function Terminal() {
-  const [ticker, setTickerState] = useState('AMD');
+  const [ticker, setTickerState] = useState('MU');
   const [exp, setExp] = useState(''); // option expiry, '' = the front one
   const setTicker = (t) => {
     setTickerState(t);
     setExp(''); // another stock's expiry dates may not exist
   };
-  const [section, setSection] = useState(() => sectionOf('AMD'));
-  const [timeframe, setTimeframe] = useState('5Min');
+  const [section, setSection] = useState(() => sectionOf('MU'));
+  const [timeframe, setTimeframe] = useState('3Min');
   const [source, setSource] = useState(null);
   const onChartStatus = useCallback((s) => setSource(s.source), []); // stable, so the memoized chart is not re-rendered
   const [chartOpen, setChartOpen] = useState(true);
